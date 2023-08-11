@@ -46,7 +46,7 @@ class particleFilter {
                 particles[i] = particle(i, i, (float)i / this->num_particles * 2 * M_PI);
             }
         }
-        
+
         void printParticles() {
             for (particle part : particles) {
                 part.printParticle();
@@ -56,8 +56,6 @@ class particleFilter {
 
 int main () {
     particle testParticle(10.0, 10.0, (float)3 / (float)750 * (float)2 * M_PI, 1);
-    std::cout << 3 / 750 * 2 * M_PI << " Why is this 0? " << std::endl;
-    std::cout << M_PI << std::endl;
     testParticle.printParticle();
 
     particleFilter myFilter(1.0, 1.0);
