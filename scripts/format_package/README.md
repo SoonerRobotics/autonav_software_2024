@@ -2,7 +2,7 @@ Run this script using python3 inside of a ros package that uses python and C++ n
 
 navigate to `~/your/ros/package/`
 
-enter `python3 ~/path/to/scripts/create_cmakelists/create_cmakelists.py`
+enter `python3 ~/path/to/scripts/format_package/format_package.py`
 
 You'll still need to update the package name in each file.
 
