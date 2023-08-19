@@ -1,0 +1,2 @@
+Invoking command in '/home/tony/autonav_software_2024/autonav_ws/build/autonav_filters': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --build /home/tony/autonav_software_2024/autonav_ws/build/autonav_filters -- -j12 -l12
+Invoked command in '/home/tony/autonav_software_2024/autonav_ws/build/autonav_filters' returned '2': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --build /home/tony/autonav_software_2024/autonav_ws/build/autonav_filters -- -j12 -l12

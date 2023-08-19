@@ -1,0 +1,23 @@
+[0.009s] Invoking command in '/home/tony/autonav_software_2024/autonav_ws/build/autonav_filters': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --build /home/tony/autonav_software_2024/autonav_ws/build/autonav_filters -- -j12 -l12
+[0.022s] [0mCMake Error: Could not find cmake module file: CMakeDetermineNAMECompiler.cmake[0m
+[0.022s] [0mCMake Error: Error required internal CMake variable not set, cmake may not be built correctly.
+[0.022s] Missing variable is:
+[0.022s] CMAKE_NAME_COMPILER_ENV_VAR[0m
+[0.022s] [0mCMake Error: Error required internal CMake variable not set, cmake may not be built correctly.
+[0.022s] Missing variable is:
+[0.022s] CMAKE_NAME_COMPILER[0m
+[0.022s] [0mCMake Error: Could not find cmake module file: /home/tony/autonav_software_2024/autonav_ws/build/autonav_filters/CMakeFiles/3.22.1/CMakeNAMECompiler.cmake[0m
+[0.022s] [31mCMake Error at CMakeLists.txt:2 (project):
+[0.022s]   No CMAKE_NAME_COMPILER could be found.
+[0.022s] 
+[0.022s]   Tell CMake where to find the compiler by setting the CMake cache entry
+[0.022s]   CMAKE_NAME_COMPILER to the full path to the compiler, or to the compiler
+[0.022s]   name if it is in the PATH.
+[0.022s] 
+[0.023s] [0m
+[0.023s] [0mCMake Error: Could not find cmake module file: CMakeNAMEInformation.cmake[0m
+[0.023s] [0mCMake Error: CMAKE_NAME_COMPILER not set, after EnableLanguage[0m
+[0.023s] -- Configuring incomplete, errors occurred!
+[0.023s] See also "/home/tony/autonav_software_2024/autonav_ws/build/autonav_filters/CMakeFiles/CMakeOutput.log".
+[0.023s] gmake: *** [Makefile:267: cmake_check_build_system] Error 1
+[0.024s] Invoked command in '/home/tony/autonav_software_2024/autonav_ws/build/autonav_filters' returned '2': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/humble /usr/bin/cmake --build /home/tony/autonav_software_2024/autonav_ws/build/autonav_filters -- -j12 -l12

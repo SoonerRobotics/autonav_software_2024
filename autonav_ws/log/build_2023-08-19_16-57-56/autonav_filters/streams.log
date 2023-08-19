@@ -1,0 +1,36 @@
+[0.009s] Invoking command in '/home/tony/autonav_software_2024/autonav_ws/build/autonav_filters': /usr/bin/cmake --build /home/tony/autonav_software_2024/autonav_ws/build/autonav_filters -- -j12 -l12
+[0.022s] [33mCMake Warning (dev) in CMakeLists.txt:
+[0.022s]   No project() command is present.  The top-level CMakeLists.txt file must
+[0.022s]   contain a literal, direct call to the project() command.  Add a line of
+[0.022s]   code such as
+[0.022s] 
+[0.022s]     project(ProjectName)
+[0.022s] 
+[0.022s]   near the top of the file, but after cmake_minimum_required().
+[0.022s] 
+[0.022s]   CMake is pretending there is a "project(Project)" command on the first
+[0.022s]   line.
+[0.022s] This warning is for project developers.  Use -Wno-dev to suppress it.
+[0.022s] [0m
+[0.026s] -- Found ament_cmake: 1.3.5 (/opt/ros/humble/share/ament_cmake/cmake)
+[0.121s] -- Found rclcpp: 16.0.5 (/opt/ros/humble/share/rclcpp/cmake)
+[0.142s] -- Found rosidl_generator_c: 3.1.5 (/opt/ros/humble/share/rosidl_generator_c/cmake)
+[0.144s] -- Found rosidl_adapter: 3.1.5 (/opt/ros/humble/share/rosidl_adapter/cmake)
+[0.149s] -- Found rosidl_generator_cpp: 3.1.5 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)
+[0.158s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[0.171s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[0.219s] -- Found rmw_implementation_cmake: 6.1.1 (/opt/ros/humble/share/rmw_implementation_cmake/cmake)
+[0.219s] -- Found rmw_fastrtps_cpp: 6.2.3 (/opt/ros/humble/share/rmw_fastrtps_cpp/cmake)
+[0.309s] -- Using RMW implementation 'rmw_fastrtps_cpp' as default
+[0.445s] -- Found rclpy: 3.3.9 (/opt/ros/humble/share/rclpy/cmake)
+[0.445s] -- Found rosidl_default_generators: 1.2.0 (/opt/ros/humble/share/rosidl_default_generators/cmake)
+[0.451s] [31mCMake Error at /opt/ros/humble/share/rosidl_cmake/cmake/rosidl_generate_interfaces.cmake:59 (message):
+[0.452s]   rosidl_generate_interfaces() called without any interface files
+[0.452s] Call Stack (most recent call first):
+[0.452s]   CMakeLists.txt:18 (rosidl_generate_interfaces)
+[0.452s] 
+[0.452s] [0m
+[0.452s] -- Configuring incomplete, errors occurred!
+[0.452s] See also "/home/tony/autonav_software_2024/autonav_ws/build/autonav_filters/CMakeFiles/CMakeOutput.log".
+[0.456s] gmake: *** [Makefile:267: cmake_check_build_system] Error 1
+[0.457s] Invoked command in '/home/tony/autonav_software_2024/autonav_ws/build/autonav_filters' returned '2': /usr/bin/cmake --build /home/tony/autonav_software_2024/autonav_ws/build/autonav_filters -- -j12 -l12

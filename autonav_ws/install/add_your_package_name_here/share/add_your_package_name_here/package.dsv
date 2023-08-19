@@ -1,0 +1,8 @@
+source;share/add_your_package_name_here/hook/cmake_prefix_path.ps1
+source;share/add_your_package_name_here/hook/cmake_prefix_path.dsv
+source;share/add_your_package_name_here/hook/cmake_prefix_path.sh
+source;share/add_your_package_name_here/local_setup.bash
+source;share/add_your_package_name_here/local_setup.dsv
+source;share/add_your_package_name_here/local_setup.ps1
+source;share/add_your_package_name_here/local_setup.sh
+source;share/add_your_package_name_here/local_setup.zsh

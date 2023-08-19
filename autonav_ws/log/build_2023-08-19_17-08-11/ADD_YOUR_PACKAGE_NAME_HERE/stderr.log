@@ -1,0 +1,16 @@
+[31mCMake Error at /opt/ros/humble/share/ament_cmake_core/cmake/ament_cmake_uninstall_target-extras.cmake:40 (add_custom_target):
+  add_custom_target called with target name containing a "<".  This character
+  is not allowed.
+Call Stack (most recent call first):
+  /opt/ros/humble/share/ament_cmake_core/cmake/ament_cmake_coreConfig.cmake:41 (include)
+  /opt/ros/humble/share/ament_cmake/cmake/ament_cmake_export_dependencies-extras.cmake:15 (find_package)
+  /opt/ros/humble/share/ament_cmake/cmake/ament_cmakeConfig.cmake:41 (include)
+  CMakeLists.txt:10 (find_package)
+
+[0m
+[31mCMake Error at /opt/ros/humble/share/rosidl_cmake/cmake/rosidl_generate_interfaces.cmake:59 (message):
+  rosidl_generate_interfaces() called without any interface files
+Call Stack (most recent call first):
+  CMakeLists.txt:19 (rosidl_generate_interfaces)
+
+[0m

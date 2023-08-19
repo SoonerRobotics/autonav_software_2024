@@ -1,0 +1,2 @@
+source;share/add_your_package_name_here/environment/ament_prefix_path.sh
+source;share/add_your_package_name_here/environment/path.sh

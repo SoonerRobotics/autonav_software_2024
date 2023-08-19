@@ -1,0 +1,58 @@
+[0.009s] Invoking command in '/home/tony/autonav_software_2024/autonav_ws/build/autonav_filters': /usr/bin/cmake --build /home/tony/autonav_software_2024/autonav_ws/build/autonav_filters -- -j12 -l12
+[0.021s] [33mCMake Warning (dev) in CMakeLists.txt:
+[0.022s]   No project() command is present.  The top-level CMakeLists.txt file must
+[0.022s]   contain a literal, direct call to the project() command.  Add a line of
+[0.022s]   code such as
+[0.022s] 
+[0.022s]     project(ProjectName)
+[0.022s] 
+[0.022s]   near the top of the file, but after cmake_minimum_required().
+[0.022s] 
+[0.022s]   CMake is pretending there is a "project(Project)" command on the first
+[0.022s]   line.
+[0.022s] This warning is for project developers.  Use -Wno-dev to suppress it.
+[0.022s] [0m
+[0.026s] -- Found ament_cmake: 1.3.5 (/opt/ros/humble/share/ament_cmake/cmake)
+[0.121s] -- Found rclcpp: 16.0.5 (/opt/ros/humble/share/rclcpp/cmake)
+[0.143s] -- Found rosidl_generator_c: 3.1.5 (/opt/ros/humble/share/rosidl_generator_c/cmake)
+[0.145s] -- Found rosidl_adapter: 3.1.5 (/opt/ros/humble/share/rosidl_adapter/cmake)
+[0.150s] -- Found rosidl_generator_cpp: 3.1.5 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)
+[0.159s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[0.171s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[0.219s] -- Found rmw_implementation_cmake: 6.1.1 (/opt/ros/humble/share/rmw_implementation_cmake/cmake)
+[0.220s] -- Found rmw_fastrtps_cpp: 6.2.3 (/opt/ros/humble/share/rmw_fastrtps_cpp/cmake)
+[0.308s] -- Using RMW implementation 'rmw_fastrtps_cpp' as default
+[0.441s] -- Found rclpy: 3.3.9 (/opt/ros/humble/share/rclpy/cmake)
+[0.441s] -- Found rosidl_default_generators: 1.2.0 (/opt/ros/humble/share/rosidl_default_generators/cmake)
+[0.446s] -- Found ament_lint_auto: 0.12.7 (/opt/ros/humble/share/ament_lint_auto/cmake)
+[0.483s] Error parsing '/home/tony/autonav_software_2024/autonav_ws/autonav_filters/package.xml':
+[0.517s] Traceback (most recent call last):
+[0.517s]   File "/opt/ros/humble/share/ament_cmake_core/cmake/core/package_xml_2_cmake.py", line 150, in <module>
+[0.517s]     main()
+[0.517s]   File "/opt/ros/humble/share/ament_cmake_core/cmake/core/package_xml_2_cmake.py", line 53, in main
+[0.517s]     raise e
+[0.517s]   File "/opt/ros/humble/share/ament_cmake_core/cmake/core/package_xml_2_cmake.py", line 49, in main
+[0.517s]     package = parse_package_string(
+[0.518s]   File "/usr/lib/python3/dist-packages/catkin_pkg/package.py", line 788, in parse_package_string
+[0.518s]     pkg.validate(warnings=warnings)
+[0.518s]   File "/usr/lib/python3/dist-packages/catkin_pkg/package.py", line 330, in validate
+[0.518s]     raise InvalidPackage('\n'.join(errors), self.filename)
+[0.518s] catkin_pkg.package.InvalidPackage: Error(s) in package '/home/tony/autonav_software_2024/autonav_ws/autonav_filters/package.xml':
+[0.518s] Package name "TODO: Add package name" does not follow naming conventions
+[0.518s] Invalid email "TODO: Maintainer email" for person "maintainer_name"
+[0.528s] [31mCMake Error at /opt/ros/humble/share/ament_cmake_core/cmake/core/ament_package_xml.cmake:95 (message):
+[0.528s]   execute_process(/usr/bin/python3.10
+[0.528s]   /opt/ros/humble/share/ament_cmake_core/cmake/core/package_xml_2_cmake.py
+[0.528s]   /home/tony/autonav_software_2024/autonav_ws/autonav_filters/package.xml
+[0.528s]   /home/tony/autonav_software_2024/autonav_ws/build/autonav_filters/ament_cmake_core/package.cmake)
+[0.528s]   returned error code 1
+[0.528s] Call Stack (most recent call first):
+[0.528s]   /opt/ros/humble/share/ament_cmake_core/cmake/core/ament_package_xml.cmake:49 (_ament_package_xml)
+[0.528s]   /opt/ros/humble/share/ament_lint_auto/cmake/ament_lint_auto_find_test_dependencies.cmake:31 (ament_package_xml)
+[0.528s]   CMakeLists.txt:64 (ament_lint_auto_find_test_dependencies)
+[0.528s] 
+[0.529s] [0m
+[0.529s] -- Configuring incomplete, errors occurred!
+[0.529s] See also "/home/tony/autonav_software_2024/autonav_ws/build/autonav_filters/CMakeFiles/CMakeOutput.log".
+[0.533s] gmake: *** [Makefile:267: cmake_check_build_system] Error 1
+[0.535s] Invoked command in '/home/tony/autonav_software_2024/autonav_ws/build/autonav_filters' returned '2': /usr/bin/cmake --build /home/tony/autonav_software_2024/autonav_ws/build/autonav_filters -- -j12 -l12
