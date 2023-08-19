@@ -1,0 +1,2 @@
+source;share/add_your_package_name_in_cmakelists_and_packagexml/environment/ament_prefix_path.sh
+source;share/add_your_package_name_in_cmakelists_and_packagexml/environment/path.sh
