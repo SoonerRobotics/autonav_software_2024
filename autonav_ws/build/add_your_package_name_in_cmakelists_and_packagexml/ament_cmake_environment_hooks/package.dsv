@@ -1,4 +1,0 @@
-source;share/add_your_package_name_in_cmakelists_and_packagexml/local_setup.bash
-source;share/add_your_package_name_in_cmakelists_and_packagexml/local_setup.dsv
-source;share/add_your_package_name_in_cmakelists_and_packagexml/local_setup.sh
-source;share/add_your_package_name_in_cmakelists_and_packagexml/local_setup.zsh

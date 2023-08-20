@@ -28,13 +28,13 @@ include_directories(include)
 # Create Cpp executables
 #add_executable(executable_name /path_to_executable/executable.cpp)
 #ament_target_dependencies(executable_name rclcpp other_dependencies)
-add_executable(my_node src/my_node.cpp)
+add_executable(particle_filter src/particlefilter.cpp)
 
 # Install Cpp executables
 install(TARGETS
   # install executables by name
   #executable_name
-  my_node
+  particle_filter
   DESTINATION lib/${PROJECT_NAME}
  )
  

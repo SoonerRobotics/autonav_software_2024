@@ -1,0 +1,47 @@
+[0.009s] Invoking command in '/home/tony/autonav_software_2024/build/autonav_filters': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/tony/autonav_software_2024/build/autonav_filters -- -j12 -l12
+[0.025s] -- Found ament_cmake: 1.3.5 (/opt/ros/humble/share/ament_cmake/cmake)
+[0.118s] -- Found rclcpp: 16.0.5 (/opt/ros/humble/share/rclcpp/cmake)
+[0.140s] -- Found rosidl_generator_c: 3.1.5 (/opt/ros/humble/share/rosidl_generator_c/cmake)
+[0.142s] -- Found rosidl_adapter: 3.1.5 (/opt/ros/humble/share/rosidl_adapter/cmake)
+[0.146s] -- Found rosidl_generator_cpp: 3.1.5 (/opt/ros/humble/share/rosidl_generator_cpp/cmake)
+[0.155s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[0.167s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[0.214s] -- Found rmw_implementation_cmake: 6.1.1 (/opt/ros/humble/share/rmw_implementation_cmake/cmake)
+[0.215s] -- Found rmw_fastrtps_cpp: 6.2.3 (/opt/ros/humble/share/rmw_fastrtps_cpp/cmake)
+[0.303s] -- Using RMW implementation 'rmw_fastrtps_cpp' as default
+[0.435s] -- Found rclpy: 3.3.9 (/opt/ros/humble/share/rclpy/cmake)
+[0.436s] -- Found rosidl_default_generators: 1.2.0 (/opt/ros/humble/share/rosidl_default_generators/cmake)
+[0.441s] -- Found ament_lint_auto: 0.12.7 (/opt/ros/humble/share/ament_lint_auto/cmake)
+[0.485s] -- Added test 'cppcheck' to perform static code analysis on C / C++ code
+[0.485s] -- Configured cppcheck include dirs: /home/tony/autonav_software_2024/autonav_ws/autonav_filters/include
+[0.485s] -- Configured cppcheck exclude dirs and/or files: 
+[0.486s] -- Added test 'lint_cmake' to check CMake code style
+[0.486s] -- Added test 'uncrustify' to check C / C++ code style
+[0.486s] -- Configured uncrustify additional arguments: 
+[0.486s] -- Added test 'xmllint' to check XML markup files
+[0.487s] -- Configuring done
+[0.491s] -- Generating done
+[0.492s] -- Build files have been written to: /home/tony/autonav_software_2024/build/autonav_filters
+[0.520s] [ 50%] [32mBuilding CXX object CMakeFiles/particle_filter.dir/src/particlefilter.cpp.o[0m
+[1.382s] [100%] [32m[1mLinking CXX executable particle_filter[0m
+[1.427s] [100%] Built target particle_filter
+[1.434s] Invoked command in '/home/tony/autonav_software_2024/build/autonav_filters' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --build /home/tony/autonav_software_2024/build/autonav_filters -- -j12 -l12
+[1.454s] Invoking command in '/home/tony/autonav_software_2024/build/autonav_filters': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /home/tony/autonav_software_2024/build/autonav_filters
+[1.458s] -- Install configuration: ""
+[1.458s] -- Installing: /home/tony/autonav_software_2024/install/autonav_filters/lib/autonav_filters/particle_filter
+[1.458s] -- Up-to-date: /home/tony/autonav_software_2024/install/autonav_filters/share/ament_index/resource_index/package_run_dependencies/autonav_filters
+[1.458s] -- Up-to-date: /home/tony/autonav_software_2024/install/autonav_filters/share/ament_index/resource_index/parent_prefix_path/autonav_filters
+[1.458s] -- Up-to-date: /home/tony/autonav_software_2024/install/autonav_filters/share/autonav_filters/environment/ament_prefix_path.sh
+[1.459s] -- Installing: /home/tony/autonav_software_2024/install/autonav_filters/share/autonav_filters/environment/ament_prefix_path.dsv
+[1.459s] -- Up-to-date: /home/tony/autonav_software_2024/install/autonav_filters/share/autonav_filters/environment/path.sh
+[1.459s] -- Installing: /home/tony/autonav_software_2024/install/autonav_filters/share/autonav_filters/environment/path.dsv
+[1.459s] -- Up-to-date: /home/tony/autonav_software_2024/install/autonav_filters/share/autonav_filters/local_setup.bash
+[1.459s] -- Up-to-date: /home/tony/autonav_software_2024/install/autonav_filters/share/autonav_filters/local_setup.sh
+[1.459s] -- Up-to-date: /home/tony/autonav_software_2024/install/autonav_filters/share/autonav_filters/local_setup.zsh
+[1.459s] -- Installing: /home/tony/autonav_software_2024/install/autonav_filters/share/autonav_filters/local_setup.dsv
+[1.459s] -- Installing: /home/tony/autonav_software_2024/install/autonav_filters/share/autonav_filters/package.dsv
+[1.459s] -- Up-to-date: /home/tony/autonav_software_2024/install/autonav_filters/share/ament_index/resource_index/packages/autonav_filters
+[1.459s] -- Up-to-date: /home/tony/autonav_software_2024/install/autonav_filters/share/autonav_filters/cmake/autonav_filtersConfig.cmake
+[1.459s] -- Up-to-date: /home/tony/autonav_software_2024/install/autonav_filters/share/autonav_filters/cmake/autonav_filtersConfig-version.cmake
+[1.459s] -- Up-to-date: /home/tony/autonav_software_2024/install/autonav_filters/share/autonav_filters/package.xml
+[1.460s] Invoked command in '/home/tony/autonav_software_2024/build/autonav_filters' returned '0': CMAKE_PREFIX_PATH=/opt/ros/humble /usr/bin/cmake --install /home/tony/autonav_software_2024/build/autonav_filters
