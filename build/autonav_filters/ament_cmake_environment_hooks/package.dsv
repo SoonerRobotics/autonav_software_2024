@@ -1,4 +1,0 @@
-source;share/autonav_filters/local_setup.bash
-source;share/autonav_filters/local_setup.dsv
-source;share/autonav_filters/local_setup.sh
-source;share/autonav_filters/local_setup.zsh

@@ -1,8 +1,0 @@
-source;share/autonav_filters/hook/cmake_prefix_path.ps1
-source;share/autonav_filters/hook/cmake_prefix_path.dsv
-source;share/autonav_filters/hook/cmake_prefix_path.sh
-source;share/autonav_filters/local_setup.bash
-source;share/autonav_filters/local_setup.dsv
-source;share/autonav_filters/local_setup.ps1
-source;share/autonav_filters/local_setup.sh
-source;share/autonav_filters/local_setup.zsh
