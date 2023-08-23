@@ -38,6 +38,8 @@ Python files should be written in the [PEP-8 style](https://peps.python.org/pep-
 
 ### C++
 file names should be in `snake_case`
+
 class names should be in `UpperCamelCase` (to agree with [rclcpp](https://docs.ros2.org/foxy/api/rclcpp/index.html))
+
 function names should be in `camelCase`
 
