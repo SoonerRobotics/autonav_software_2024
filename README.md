@@ -28,7 +28,9 @@ To edit the software with Visual Studio Code, please install the ros extension a
 
 ## Style
 All folder names including packages should be in `snake_case`
+
 Avoid most abbreviations
+
 Tab length is 4 spaces (default)
 
 CMakeLists.txt and package.xml should follow the patterns found in [format_packages](https://github.com/SoonerRobotics/autonav_software_2024/tree/feat/particle_filter/scripts/format_package)
