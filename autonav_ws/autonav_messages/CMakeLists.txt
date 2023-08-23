@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.8)
-project(autonav_filters)
+
+project(autonav_messages)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -7,19 +8,19 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(rclpy REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
-find_package(std_msgs REQUIRED)
+find_package(builtin_interfaces REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
 
 # msgs and srvs 
-#rosidl_generate_interfaces(${PROJECT_NAME}
-  # add message types here
-  #"path_to_message/message.msg"
-#)
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "messages/Position.msg"
+  "messages/GPSFeedback.msg"
+  "messages/MotorFeedback.msg"
+  DEPENDENCIES builtin_interfaces
+)
 
 # C++
 
@@ -27,18 +28,13 @@ find_package(std_msgs REQUIRED)
 include_directories(include)
 
 # Create Cpp executables
-#add_executable(executable_name /path_to_executable/executable.cpp)
+#add_executable(executable_name path_to_executable/executable.cpp)
 #ament_target_dependencies(executable_name rclcpp other_dependencies)
-add_executable(particle_filter src/particle_filter.cpp)
-add_executable(pf_msg_test src/particle_filter_messages_test.cpp)
-ament_target_dependencies(pf_msg_test rclcpp std_msgs)
 
 # Install Cpp executables
 install(TARGETS
   # install executables by name
-  #executable_name
-  particle_filter
-  pf_msg_test
+  # executable_name
   DESTINATION lib/${PROJECT_NAME}
  )
  
