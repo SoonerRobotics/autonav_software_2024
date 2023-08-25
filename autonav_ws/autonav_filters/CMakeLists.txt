@@ -11,6 +11,7 @@ find_package(rclcpp REQUIRED)
 find_package(rclpy REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(autonav_messages REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
@@ -30,15 +31,15 @@ include_directories(include)
 #add_executable(executable_name /path_to_executable/executable.cpp)
 #ament_target_dependencies(executable_name rclcpp other_dependencies)
 add_executable(particle_filter src/particle_filter.cpp)
-add_executable(pf_msg_test src/particle_filter_messages_test.cpp)
-ament_target_dependencies(pf_msg_test rclcpp std_msgs)
+add_executable(position_test src/particle_filter_position_test.cpp)
+ament_target_dependencies(position_test rclcpp std_msgs autonav_messages)
 
 # Install Cpp executables
 install(TARGETS
   # install executables by name
   #executable_name
   particle_filter
-  pf_msg_test
+  position_test
   DESTINATION lib/${PROJECT_NAME}
  )
  

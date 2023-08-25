@@ -16,9 +16,9 @@ find_package(builtin_interfaces REQUIRED)
 
 # msgs and srvs 
 rosidl_generate_interfaces(${PROJECT_NAME}
-  "messages/Position.msg"
-  "messages/GPSFeedback.msg"
-  "messages/MotorFeedback.msg"
+  "msg/Position.msg"
+  "msg/GPSFeedback.msg"
+  "msg/MotorFeedback.msg"
   DEPENDENCIES builtin_interfaces
 )
 
