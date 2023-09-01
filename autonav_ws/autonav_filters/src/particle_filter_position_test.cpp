@@ -6,8 +6,6 @@
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "autonav_messages/msg/position.hpp"
-#include "autonav_messages/msg/gps_feedback.hpp"
-#include "autonav_messages/msg/motor_feedback.hpp"
 
 using namespace std::chrono_literals;
 

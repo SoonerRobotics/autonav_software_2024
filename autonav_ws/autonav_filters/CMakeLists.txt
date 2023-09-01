@@ -31,8 +31,13 @@ include_directories(include)
 #add_executable(executable_name /path_to_executable/executable.cpp)
 #ament_target_dependencies(executable_name rclcpp other_dependencies)
 add_executable(particle_filter src/particle_filter.cpp)
+ament_target_dependencies(particle_filter rclcpp autonav_messages)
 add_executable(position_test src/particle_filter_position_test.cpp)
 ament_target_dependencies(position_test rclcpp std_msgs autonav_messages)
+add_executable(gps_feedback_test src/particle_filter_GPSFeedback_test.cpp)
+ament_target_dependencies(gps_feedback_test rclcpp std_msgs autonav_messages)
+add_executable(motor_feedback_test src/particle_filter_motor_feedback_test.cpp)
+ament_target_dependencies(motor_feedback_test rclcpp std_msgs autonav_messages)
 
 # Install Cpp executables
 install(TARGETS
@@ -40,6 +45,8 @@ install(TARGETS
   #executable_name
   particle_filter
   position_test
+  gps_feedback_test
+  motor_feedback_test
   DESTINATION lib/${PROJECT_NAME}
  )
  
