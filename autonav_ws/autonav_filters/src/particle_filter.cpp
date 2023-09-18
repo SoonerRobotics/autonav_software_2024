@@ -6,6 +6,7 @@
 #include <math.h>
 
 #include "autonav_messages/msg/motor_feedback.hpp"
+#include "autonav_messages/msg/gps_feedback.hpp"
 
 class particle {
     public:
@@ -36,6 +37,7 @@ class particleFilter {
         particle particles[num_particles];
         float latitudeLength;
         float longitudeLength;
+        float first_gps = NULL;
 
 
         // constructor
@@ -86,6 +88,12 @@ class particleFilter {
 
             std::vector<float> feedback_vector = {avg_x, avg_y, avg_theta};
             return feedback_vector;
+        }
+
+        std::vector<float> gps(autonav_messages::msg::GPSFeedback gps) {
+            if (this->first_gps == NULL) {
+                return {};
+            }
         }
 };
 
