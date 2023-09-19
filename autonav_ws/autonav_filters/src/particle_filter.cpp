@@ -32,12 +32,13 @@ class particle {
 class particleFilter {
     public:
         static const int num_particles = 750;
-        float gps_noise = 0.45;
+        float gps_noise[1] = {0.45};
         float odom_noise[3] = {0.05, 0.05, 0.01};
         particle particles[num_particles];
         float latitudeLength;
         float longitudeLength;
-        float first_gps = NULL;
+        bool first_gps_received = false;
+        autonav_messages::msg::GPSFeedback first_gps;
 
 
         // constructor
@@ -91,9 +92,22 @@ class particleFilter {
         }
 
         std::vector<float> gps(autonav_messages::msg::GPSFeedback gps) {
-            if (this->first_gps == NULL) {
-                return {};
+            if (this->first_gps_received == false) {
+                this->first_gps = gps;
+                this->first_gps_received = true;
             }
+
+            float gps_x = (gps.latitude - this->first_gps.latitude) * this->latitudeLength;
+            float gps_y = (this->first_gps.longitude - gps.longitude) * this->longitudeLength;
+
+            for (particle particle : this->particles) {
+                float distance = sqrt(pow((particle.x - gps_x), 2) + pow((particle.y - gps_y), 2));
+                particle.weight = exp(-1 * distance / 2 * pow(this->gps_noise[0], 2));
+            }
+
+            // this->resample()
+
+            std::vector<float> gps_vector = {gps_x, gps_y};
         }
 };
 
