@@ -1,6 +1,7 @@
 #include <random>
 #include <iostream>
 #include <chrono>
+#include <time.h>
 
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -39,12 +40,16 @@ class particleFilter {
         float longitudeLength;
         bool first_gps_received = false;
         autonav_messages::msg::GPSFeedback first_gps;
+        float random_value = rand();
 
+        // normal distribution
+        std::random_device rd;
 
         // constructor
         particleFilter(float latitudeLength, float longitudeLength) {
             this->latitudeLength = latitudeLength;
             this->longitudeLength = longitudeLength;
+            
         };
 
         void init_particles() {
@@ -109,6 +114,22 @@ class particleFilter {
 
             std::vector<float> gps_vector = {gps_x, gps_y};
         }
+
+        void resample() {
+            std::vector<float> weights;
+            for (int i = 0; i < std::size(particles); i++) {
+                weights[i] = particles[i].weight;
+            }
+            float weights_sum = std::accumulate(weights.begin(), weights.end(), 0);
+            if (weights_sum < 0.0001) {
+                weights_sum = 0.0001;
+            }
+            std::vector<float> temp_weights;
+            for (int i = 0; i < std::size(weights); i++) {
+                temp_weights[i] = weights[i] / weights_sum;
+            }
+            weights = temp_weights;
+        }   
 };
 
 int main () {
