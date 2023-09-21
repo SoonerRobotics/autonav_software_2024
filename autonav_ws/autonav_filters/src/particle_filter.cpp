@@ -44,12 +44,13 @@ class particleFilter {
 
         // normal distribution
         std::random_device rd;
+        std::mt19937 generator;
+        std::normal_distribution<> normal_distribution{0, 1};
 
         // constructor
         particleFilter(float latitudeLength, float longitudeLength) {
             this->latitudeLength = latitudeLength;
             this->longitudeLength = longitudeLength;
-            
         };
 
         void init_particles() {
@@ -129,6 +130,8 @@ class particleFilter {
                 temp_weights[i] = weights[i] / weights_sum;
             }
             weights = temp_weights;
+
+            
         }   
 };
 
