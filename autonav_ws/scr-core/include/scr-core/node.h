@@ -32,9 +32,13 @@ namespace SCR {
 
             // setters
             void SetSystemState(SystemState state);
-            void SetNodeState(NodeState state)
+            void SetNodeState(NodeState state);
+            void OnSystemState(scr_msgs::msg::SystemState msg);
     };
 
     private:
         NodeState state_;
+        SystemState systemState_;
+
+        rclcpp::Subscription<scr_msgs::msg::SystemState>::SharedPtr systemStateSubscriber;
 }
