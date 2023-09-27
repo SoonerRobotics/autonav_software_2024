@@ -6,8 +6,8 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-//#include "autonav_messages/msg/motor_feedback.hpp"
-//#include "autonav_messages/msg/gps_feedback.hpp"
+#include "autonav_messages/msg/motor_feedback.hpp"
+#include "autonav_messages/msg/gps_feedback.hpp"
 
 class particle {
     public:
@@ -39,8 +39,7 @@ class particleFilter {
         float latitudeLength;
         float longitudeLength;
         bool first_gps_received = false;
-        //autonav_messages::msg::GPSFeedback first_gps;
-        float random_value = rand();
+        autonav_messages::msg::GPSFeedback first_gps;
 
         // normal distribution
         std::random_device rd;
@@ -65,7 +64,7 @@ class particleFilter {
             }
         }
 
-        /*std::vector<float> feedback(autonav_messages::msg::MotorFeedback feedback) {
+        std::vector<float> feedback(autonav_messages::msg::MotorFeedback feedback) {
             float sum_x = 0;
             float sum_y = 0;
             float sum_theta_x = 0;
@@ -95,9 +94,9 @@ class particleFilter {
 
             std::vector<float> feedback_vector = {avg_x, avg_y, avg_theta};
             return feedback_vector;
-        }*/
+        }
 
-        /*std::vector<float> gps(autonav_messages::msg::GPSFeedback gps) {
+        std::vector<float> gps(autonav_messages::msg::GPSFeedback gps) {
             if (this->first_gps_received == false) {
                 this->first_gps = gps;
                 this->first_gps_received = true;
@@ -111,11 +110,11 @@ class particleFilter {
                 particle.weight = exp(-1 * distance / 2 * pow(this->gps_noise[0], 2));
             }
 
-            // this->resample()
+            resample();
 
             std::vector<float> gps_vector = {gps_x, gps_y};
             return gps_vector;
-        }*/
+        }
 
         void resample() {
             std::vector<float> weights;
@@ -157,14 +156,3 @@ class particleFilter {
             }
         }   
 };
-
-int main () {
-    particle testParticle(10.0, 10.0, (float)3 / (float)750 * (float)2 * M_PI, 1);
-    testParticle.printParticle();
-
-    particleFilter myFilter(1.0, 1.0);
-    myFilter.init_particles();
-    myFilter.printParticles();
-    myFilter.resample();
-    myFilter.printParticles();
-}
