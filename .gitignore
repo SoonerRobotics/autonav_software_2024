@@ -1,0 +1,22 @@
+# ROS Build Files
+build
+install
+log
+
+# Python Stuff
+__pycache__
+
+# Visual Studio Code
+.vscode
+
+# VNav
+setup/vectornav.zip
+setup/vectorsecrets.txt
+
+# INI
+**/imgui.ini
+
+# Zone Identifiers
+Zone.Identifier
+
+deps/songs
