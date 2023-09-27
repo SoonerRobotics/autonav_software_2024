@@ -6,14 +6,14 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-#include "autonav_messages/msg/motor_feedback.hpp"
-#include "autonav_messages/msg/gps_feedback.hpp"
+//#include "autonav_messages/msg/motor_feedback.hpp"
+//#include "autonav_messages/msg/gps_feedback.hpp"
 
 class particle {
     public:
         float x;
         float y;
-        int theta;
+        float theta;
         float weight;
 
         void printParticle() {
@@ -22,7 +22,7 @@ class particle {
         }
 
     // constructor
-    particle(float x = 0, float y = 0, int theta = 0, float weight = 1) {
+    particle(float x = 0, float y = 0, float theta = 0, float weight = 1) {
         this->x = x;
         this->y = y;
         this->theta = theta;
@@ -35,11 +35,11 @@ class particleFilter {
         static const int num_particles = 750;
         float gps_noise[1] = {0.45};
         float odom_noise[3] = {0.05, 0.05, 0.01};
-        particle particles[num_particles];
+        std::vector<particle> particles;
         float latitudeLength;
         float longitudeLength;
         bool first_gps_received = false;
-        autonav_messages::msg::GPSFeedback first_gps;
+        //autonav_messages::msg::GPSFeedback first_gps;
         float random_value = rand();
 
         // normal distribution
@@ -55,7 +55,7 @@ class particleFilter {
 
         void init_particles() {
             for (int i=0; i<this->num_particles; i++) {
-                particles[i] = particle(i, i, (float)i / this->num_particles * 2 * M_PI);
+                particles.push_back(particle(i, i, (float)i / this->num_particles * 2 * M_PI));
             }
         }
 
@@ -65,7 +65,7 @@ class particleFilter {
             }
         }
 
-        std::vector<float> feedback(autonav_messages::msg::MotorFeedback feedback) {
+        /*std::vector<float> feedback(autonav_messages::msg::MotorFeedback feedback) {
             float sum_x = 0;
             float sum_y = 0;
             float sum_theta_x = 0;
@@ -95,9 +95,9 @@ class particleFilter {
 
             std::vector<float> feedback_vector = {avg_x, avg_y, avg_theta};
             return feedback_vector;
-        }
+        }*/
 
-        std::vector<float> gps(autonav_messages::msg::GPSFeedback gps) {
+        /*std::vector<float> gps(autonav_messages::msg::GPSFeedback gps) {
             if (this->first_gps_received == false) {
                 this->first_gps = gps;
                 this->first_gps_received = true;
@@ -114,12 +114,13 @@ class particleFilter {
             // this->resample()
 
             std::vector<float> gps_vector = {gps_x, gps_y};
-        }
+            return gps_vector;
+        }*/
 
         void resample() {
             std::vector<float> weights;
             for (int i = 0; i < std::size(particles); i++) {
-                weights[i] = particles[i].weight;
+                weights.push_back(particles[i].weight);
             }
             float weights_sum = std::accumulate(weights.begin(), weights.end(), 0);
             if (weights_sum < 0.0001) {
@@ -127,11 +128,33 @@ class particleFilter {
             }
             std::vector<float> temp_weights;
             for (int i = 0; i < std::size(weights); i++) {
-                temp_weights[i] = weights[i] / weights_sum;
+                temp_weights.push_back(weights[i] / weights_sum);
             }
             weights = temp_weights;
+            std::discrete_distribution<int> discrete(weights.begin(), weights.end());
+            std::vector<particle> new_particles;
 
-            
+            for (int i = 0;i < num_particles; i++) {
+                int index = discrete(generator);
+                particle selected_particle = particles[index];
+                new_particles.push_back(selected_particle);
+            }
+
+            particles.clear();
+
+            std::normal_distribution<> normal_distribution_x{0, this->odom_noise[0]};
+            std::normal_distribution<> normal_distribution_y{0, this->odom_noise[1]};
+            for (particle p: new_particles) {
+                float random_x = normal_distribution_x(generator);
+                float random_y = normal_distribution_y(generator);
+
+                float x = p.x + random_x * cos(p.theta) + random_y * sin(p.theta);
+                float y= p.y + random_x * sin(p.theta) + random_y * cos(p.theta);
+
+                std::normal_distribution<> normal_distribution_theta{p.theta, this->odom_noise[2]};
+                float theta = normal_distribution_theta(generator);
+                particles.push_back(particle(x, y, theta, p.weight));
+            }
         }   
 };
 
@@ -141,5 +164,7 @@ int main () {
 
     particleFilter myFilter(1.0, 1.0);
     myFilter.init_particles();
+    myFilter.printParticles();
+    myFilter.resample();
     myFilter.printParticles();
 }
