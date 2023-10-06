@@ -86,6 +86,7 @@ if(BUILD_TESTING)
   )
   ament_target_dependencies(${PROJECT_NAME}_motor_feedback_test
     std_msgs
+    autonav_messages
   )
 
   install(TARGETS
