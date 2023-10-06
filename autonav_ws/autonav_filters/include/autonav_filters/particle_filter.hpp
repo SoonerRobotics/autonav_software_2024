@@ -118,7 +118,7 @@ class ParticleFilter {
 
         void resample() {
             std::vector<float> weights;
-            for (int i = 0; i < std::size(particles); i++) {
+            for (int i = 0; i < int(std::size(particles)); i++) {
                 weights.push_back(particles[i].weight);
             }
             float weights_sum = std::accumulate(weights.begin(), weights.end(), 0);
@@ -126,7 +126,7 @@ class ParticleFilter {
                 weights_sum = 0.0001;
             }
             std::vector<float> temp_weights;
-            for (int i = 0; i < std::size(weights); i++) {
+            for (int i = 0; i < int(std::size(weights)); i++) {
                 temp_weights.push_back(weights[i] / weights_sum);
             }
             weights = temp_weights;

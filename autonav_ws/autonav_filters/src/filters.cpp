@@ -8,7 +8,7 @@
 #include "autonav_messages/msg/gps_feedback.hpp"
 #include "autonav_messages/msg/position.hpp"
 
-#include "autonav_filters/src/particle_filter.hpp"
+#include "autonav_filters/particle_filter.hpp"
 
 #define _USE_MATH_DEFINES
 
@@ -20,9 +20,9 @@ class FiltersNode : public rclcpp::Node {
         {
             // subscriptions
             gps_subscription = this->create_subscription<autonav_messages::msg::GPSFeedback>("/autonav_GPS", 
-            20, std::bind(&FiltersNode::on_GPS_received));
+            20, std::bind(&FiltersNode::on_GPS_received, this, std::placeholders::_1));
             motor_subscription = this->create_subscription<autonav_messages::msg::MotorFeedback>("/autonav_MotorFeedback", 
-            20, std::bind(&FiltersNode::on_MotorFeedback_received));
+            20, std::bind(&FiltersNode::on_MotorFeedback_received, this, std::placeholders::_1));
 
             // publishers
             positionPublisher = this->create_publisher<autonav_messages::msg::Position>("/autonav/position", 20);
@@ -80,3 +80,10 @@ class FiltersNode : public rclcpp::Node {
         rclcpp::Publisher<autonav_messages::msg::Position>::SharedPtr positionPublisher;
         size_t count_;
 };
+
+int main (int argc, char * argv[]) {
+    rclcpp::init(argc, argv);
+    rclcpp::spin(std::make_shared<FiltersNode>());
+    rclcpp::shutdown();
+    return 0;
+}
