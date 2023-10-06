@@ -1,5 +1,4 @@
 #include "gtest/gtest.h"
-#include "autonav_filters/particle_filter.hpp"
 
 TEST(ParticleFilterTests, MotorFeedbackTest) {
     EXPECT_TRUE(false);
