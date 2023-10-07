@@ -1,10 +1,8 @@
 #include "gtest/gtest.h"
-#include "autonav_filters/particle_filter.hpp"
+#include "autonav_filters/motor_feedback_example.hpp"
 
 TEST(ParticleFilterTests, MotorFeedbackTest) {
-    float latitudeLength = 111086.2;
-    float longitudeLength = 81978.2;
-    ParticleFilter particle_filter{latitudeLength, longitudeLength};
+    PositionPublisher position_publisher;
     EXPECT_TRUE(false);
 }
 

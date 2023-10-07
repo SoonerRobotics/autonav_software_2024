@@ -36,8 +36,9 @@ add_executable(position_test src/particle_filter_position_test.cpp)
 ament_target_dependencies(position_test rclcpp std_msgs autonav_messages)
 add_executable(gps_feedback_test src/particle_filter_GPSFeedback_test.cpp)
 ament_target_dependencies(gps_feedback_test rclcpp std_msgs autonav_messages)
-add_executable(motor_feedback_test src/particle_filter_motor_feedback_test.cpp)
-ament_target_dependencies(motor_feedback_test rclcpp std_msgs autonav_messages)
+
+add_executable(motor_feedback_example src/motor_feedback_example_node.cpp)
+ament_target_dependencies(motor_feedback_example rclcpp std_msgs autonav_messages)
 
 # Install Cpp executables
 install(TARGETS
@@ -46,7 +47,7 @@ install(TARGETS
   filters_node
   position_test
   gps_feedback_test
-  motor_feedback_test
+  motor_feedback_example
   DESTINATION lib/${PROJECT_NAME}
 )
  
@@ -79,13 +80,13 @@ if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
 
   # Add gtest executables
-  ament_add_gtest(${PROJECT_NAME}_motor_feedback_test tests/motor_feedback_test.cpp)
+  ament_add_gtest(${PROJECT_NAME}_motor_feedback_test tests/motor_feedback_test.cpp src/motor_feedback_example)
   target_include_directories(${PROJECT_NAME}_motor_feedback_test PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
   )
   ament_target_dependencies(${PROJECT_NAME}_motor_feedback_test
-    std_msgs
+    rclcpp
     autonav_messages
   )
 
