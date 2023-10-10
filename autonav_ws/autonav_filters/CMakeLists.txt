@@ -27,6 +27,9 @@ find_package(autonav_messages REQUIRED)
 # Inlcude Cpp "include" directory
 include_directories(include)
 
+# add Cpp libraries
+add_library(motor_feedback_example src/motor_feedback_example include/autonav_filters/motor_feedback_example.hpp)
+
 # Create Cpp executables
 #add_executable(executable_name /path_to_executable/executable.cpp)
 #ament_target_dependencies(executable_name rclcpp other_dependencies)
@@ -37,8 +40,9 @@ ament_target_dependencies(position_test rclcpp std_msgs autonav_messages)
 add_executable(gps_feedback_test src/particle_filter_GPSFeedback_test.cpp)
 ament_target_dependencies(gps_feedback_test rclcpp std_msgs autonav_messages)
 
-add_executable(motor_feedback_example src/motor_feedback_example_node.cpp)
-ament_target_dependencies(motor_feedback_example rclcpp std_msgs autonav_messages)
+add_executable(motor_feedback_example_node src/motor_feedback_example_node.cpp)
+#ament_target_dependencies(motor_feedback_example_node motor_feedback_example rclcpp std_msgs autonav_messages)
+target_link_libraries(motor_feedback_example_node PUBLIC motor_feedback_example)
 
 # Install Cpp executables
 install(TARGETS
@@ -47,7 +51,7 @@ install(TARGETS
   filters_node
   position_test
   gps_feedback_test
-  motor_feedback_example
+  motor_feedback_example_node
   DESTINATION lib/${PROJECT_NAME}
 )
  
