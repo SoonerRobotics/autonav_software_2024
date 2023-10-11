@@ -6,7 +6,6 @@
 #include <string>
 
 #include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/string.hpp"
 #include "autonav_messages/msg/motor_feedback.hpp"
 
 using namespace std::chrono_literals;

@@ -4,25 +4,23 @@
 #include <string>
 
 #include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/string.hpp"
 #include "autonav_messages/msg/motor_feedback.hpp"
 
 using namespace std::chrono_literals;
 
 class PositionPublisher : public rclcpp::Node {
     public:
-    PositionPublisher() : Node("GPS_feedback_publisher"), count_(0)
-    {
-        publisher_ = this->create_publisher<autonav_messages::msg::MotorFeedback>("topic", 10);
-        timer_ = this->create_wall_timer(
-        500ms, std::bind(&PositionPublisher::timer_callback, this));
-    }
+        PositionPublisher() : Node("GPS_feedback_publisher"), count_(0)
+        {
+            publisher_ = this->create_publisher<autonav_messages::msg::MotorFeedback>("topic", 10);
+            timer_ = this->create_wall_timer(
+            500ms, std::bind(&PositionPublisher::timer_callback, this));
+        }
 
     private:
-        void timer_callback() {
-        }
+        void timer_callback();
         
-    rclcpp::TimerBase::SharedPtr timer_;
-    rclcpp::Publisher<autonav_messages::msg::MotorFeedback>::SharedPtr publisher_;
-    size_t count_;
+        rclcpp::TimerBase::SharedPtr timer_;
+        rclcpp::Publisher<autonav_messages::msg::MotorFeedback>::SharedPtr publisher_;
+        size_t count_;
 };
