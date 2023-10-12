@@ -21,31 +21,22 @@ class Particle {
             std::cout << this->theta << " weight: " << this->weight << std::endl;
         }
 
-    // constructor
-    Particle(float x = 0, float y = 0, float theta = 0, float weight = 1) {
-        this->x = x;
-        this->y = y;
-        this->theta = theta;
-        this->weight = weight;
-    }
+        std::vector<float> get_particle_data() {
+            std::vector<float> particle_data = {this->x, this->y, this->theta, this->weight};
+            return particle_data;
+        }
+
+        // constructor
+        Particle(float x = 0, float y = 0, float theta = 0, float weight = 1) {
+            this->x = x;
+            this->y = y;
+            this->theta = theta;
+            this->weight = weight;
+        }
 };
 
 class ParticleFilter {
     public:
-        static const int num_particles = 750;
-        float gps_noise[1] = {0.45};
-        float odom_noise[3] = {0.05, 0.05, 0.01};
-        std::vector<Particle> particles;
-        float latitudeLength;
-        float longitudeLength;
-        bool first_gps_received = false;
-        autonav_messages::msg::GPSFeedback first_gps;
-
-        // random generator for distributions
-        std::random_device rd;
-        std::mt19937 generator;
-        std::normal_distribution<> normal_distribution{0, 1};
-
         // constructor
         ParticleFilter(float latitudeLength, float longitudeLength) {
             this->latitudeLength = latitudeLength;
@@ -154,5 +145,61 @@ class ParticleFilter {
                 float theta = normal_distribution_theta(generator);
                 particles.push_back(Particle(x, y, theta, p.weight));
             }
-        }   
+        }
+
+        #pragma region Getters
+        
+        int get_num_particles() {
+            return this->num_particles;
+        }
+
+        float * get_gps_noise() {
+            return this->gps_noise;
+        }
+
+        float * get_odom_noise() {
+            return this->odom_noise;
+        }
+
+        std::vector<Particle> get_particles() {
+            return this->particles;
+        }
+
+        float get_latitudeLength() {
+            return this->latitudeLength;
+        }
+
+        float get_longitudeLength() {
+            return this->longitudeLength;
+        }
+
+        autonav_messages::msg::GPSFeedback get_first_gps() {
+            return this->first_gps;
+        }
+
+        std::vector<std::vector<float>> get_particles_data() {
+            std::vector<std::vector<float>> particle_as_floats_collection;
+            for (Particle part : particles) {
+                std::vector<float> particle_data = part.get_particle_data();
+                particle_as_floats_collection.push_back(particle_data);
+            }
+            return particle_as_floats_collection;
+        }
+
+        #pragma endregion Getters
+
+    private:
+        static const int num_particles = 750;
+        float gps_noise[1] = {0.45};
+        float odom_noise[3] = {0.05, 0.05, 0.01};
+        std::vector<Particle> particles;
+        float latitudeLength;
+        float longitudeLength;
+        bool first_gps_received = false;
+        autonav_messages::msg::GPSFeedback first_gps;
+
+        // random generator for distributions
+        std::random_device rd;
+        std::mt19937 generator;
+        std::normal_distribution<> normal_distribution{0, 1};
 };
