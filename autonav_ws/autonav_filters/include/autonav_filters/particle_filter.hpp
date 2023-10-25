@@ -45,7 +45,7 @@ class ParticleFilter {
 
         void init_particles() {
             for (int i=0; i<this->num_particles; i++) {
-                particles.push_back(Particle(i, i, (float)i / this->num_particles * 2 * M_PI));
+                particles.push_back(Particle(0, 0, (float)i / this->num_particles * 2 * M_PI));
             }
         }
 
