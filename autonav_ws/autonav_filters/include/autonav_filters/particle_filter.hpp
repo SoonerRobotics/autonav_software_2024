@@ -56,22 +56,25 @@ class ParticleFilter {
         }
 
         std::vector<float> feedback(autonav_messages::msg::MotorFeedback feedback) {
+            printf("feedback called \n");
             float sum_x = 0;
             float sum_y = 0;
             float sum_theta_x = 0;
             float sum_theta_y = 0;
             float sum_weight = 0;
 
-            for (Particle particle : this->particles) {
-                particle.x = feedback.delta_x * 1.2 * cos(particle.theta) + feedback.delta_y * sin(particle.theta);
-                particle.y = feedback.delta_x * 1.2 * sin(particle.theta) + feedback.delta_y * cos(particle.theta);
-                particle.theta += feedback.delta_theta;
-                particle.theta = fmod(particle.theta,(2 * M_PI));
-                float weight = pow(particle.weight, 2);
-                sum_x = particle.x * weight;
-                sum_y = particle.y * weight;
-                sum_theta_x += cos(particle.theta) * weight;
-                sum_theta_y += sin(particle.theta) * weight;
+            bool called_once = false;
+            for (int i = 0; i < this->particles.size(); i++) {
+                this->particles[i].x += feedback.delta_x * 1.2 * cos(this->particles[i].theta) + feedback.delta_y * sin(this->particles[i].theta);
+                this->particles[i].y += feedback.delta_x * 1.2 * sin(this->particles[i].theta) + feedback.delta_y * cos(this->particles[i].theta);
+                this->particles[i].theta += feedback.delta_theta;
+                this->particles[i].theta = fmod(this->particles[i].theta,(2 * M_PI));
+                float weight = pow(this->particles[i].weight, 2);
+                printf("%f \n", weight);
+                sum_x += this->particles[i].x * weight;
+                sum_y += this->particles[i].y * weight;
+                sum_theta_x += cos(this->particles[i].theta) * weight;
+                sum_theta_y += sin(this->particles[i].theta) * weight;
                 sum_weight += weight;
             }
 
@@ -134,12 +137,12 @@ class ParticleFilter {
 
             std::normal_distribution<> normal_distribution_x{0, this->odom_noise[0]};
             std::normal_distribution<> normal_distribution_y{0, this->odom_noise[1]};
-            for (Particle p: new_particles) {
+            for (Particle p : new_particles) {
                 float random_x = normal_distribution_x(generator);
                 float random_y = normal_distribution_y(generator);
 
                 float x = p.x + random_x * cos(p.theta) + random_y * sin(p.theta);
-                float y= p.y + random_x * sin(p.theta) + random_y * cos(p.theta);
+                float y = p.y + random_x * sin(p.theta) + random_y * cos(p.theta);
 
                 std::normal_distribution<> normal_distribution_theta{p.theta, this->odom_noise[2]};
                 float theta = normal_distribution_theta(generator);
