@@ -84,7 +84,8 @@
         "cinttypes": "cpp",
         "typeindex": "cpp",
         "variant": "cpp",
-        "any": "cpp"
+        "any": "cpp",
+        "regex": "cpp"
     },
     "cmake.configureOnOpen": false
 }

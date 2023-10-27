@@ -2,6 +2,7 @@
 #include <iostream>
 #include <chrono>
 #include <time.h>
+#include <iomanip>
 
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -11,23 +12,23 @@
 
 class Particle {
     public:
-        float x;
-        float y;
-        float theta;
-        float weight;
+        double x;
+        double y;
+        double theta;
+        double weight;
 
         void printParticle() {
             std::cout << "x: " << this->x << " y: " << this->y << " theta: "; 
             std::cout << this->theta << " weight: " << this->weight << std::endl;
         }
 
-        std::vector<float> get_particle_data() {
-            std::vector<float> particle_data = {this->x, this->y, this->theta, this->weight};
+        std::vector<double> get_particle_data() {
+            std::vector<double> particle_data = {this->x, this->y, this->theta, this->weight};
             return particle_data;
         }
 
         // constructor
-        Particle(float x = 0, float y = 0, float theta = 0, float weight = 1) {
+        Particle(double x = 0, double y = 0, double theta = 0, double weight = 0.000001) {
             this->x = x;
             this->y = y;
             this->theta = theta;
@@ -38,14 +39,14 @@ class Particle {
 class ParticleFilter {
     public:
         // constructor
-        ParticleFilter(float latitudeLength, float longitudeLength) {
+        ParticleFilter(double latitudeLength, double longitudeLength) {
             this->latitudeLength = latitudeLength;
             this->longitudeLength = longitudeLength;
         };
 
         void init_particles() {
             for (int i=0; i<this->num_particles; i++) {
-                particles.push_back(Particle(0, 0, (float)i / this->num_particles * 2 * M_PI));
+                particles.push_back(Particle(0, 0, (double)i / this->num_particles * 2 * M_PI));
             }
         }
 
@@ -55,26 +56,28 @@ class ParticleFilter {
             }
         }
 
-        std::vector<float> feedback(autonav_messages::msg::MotorFeedback feedback) {
+        std::vector<double> feedback(autonav_messages::msg::MotorFeedback feedback) {
             printf("feedback called \n");
-            float sum_x = 0;
-            float sum_y = 0;
-            float sum_theta_x = 0;
-            float sum_theta_y = 0;
-            float sum_weight = 0;
+            double sum_x = 0;
+            double sum_y = 0;
+            double sum_theta_x = 0;
+            double sum_theta_y = 0;
+            double sum_weight = 0;
 
-            bool called_once = false;
             for (int i = 0; i < this->particles.size(); i++) {
                 this->particles[i].x += feedback.delta_x * 1.2 * cos(this->particles[i].theta) + feedback.delta_y * sin(this->particles[i].theta);
                 this->particles[i].y += feedback.delta_x * 1.2 * sin(this->particles[i].theta) + feedback.delta_y * cos(this->particles[i].theta);
                 this->particles[i].theta += feedback.delta_theta;
-                this->particles[i].theta = fmod(this->particles[i].theta,(2 * M_PI));
-                float weight = pow(this->particles[i].weight, 2);
-                printf("%f \n", weight);
+                this->particles[i].theta = pymod(this->particles[i].theta, (2 * M_PI));
+                double weight = pow(this->particles[i].weight, 2);
                 sum_x += this->particles[i].x * weight;
                 sum_y += this->particles[i].y * weight;
                 sum_theta_x += cos(this->particles[i].theta) * weight;
                 sum_theta_y += sin(this->particles[i].theta) * weight;
+                printf("i = %d, %.20f, \n", i, sum_theta_x);
+                printf("i = %d, %.20f, \n", i, sum_theta_y);
+                printf("i = %d, %.20f, \n", i, cos(this->particles[i].theta) * weight);
+                printf("i = %d, %.20f, \n", i, sin(this->particles[i].theta) * weight);
                 sum_weight += weight;
             }
 
@@ -82,44 +85,49 @@ class ParticleFilter {
                 sum_weight = 0.000001;
             }
 
-            float avg_x = sum_x / sum_weight;
-            float avg_y = sum_y / sum_weight;
-            float avg_theta = fmod(atan2(sum_theta_y / sum_weight, sum_theta_x / sum_weight), 2 * M_PI);
+            double avg_x = sum_x / sum_weight;
+            double avg_y = sum_y / sum_weight;
+            double avg_theta = pymod(atan2(sum_theta_y / sum_weight, sum_theta_x / sum_weight), 2 * M_PI);
 
-            std::vector<float> feedback_vector = {avg_x, avg_y, avg_theta};
+            printf("%.20f, \n", sum_theta_x);
+            printf("%.20f, \n", sum_theta_y);
+            printf("%.20f, \n", sum_weight);
+            printf("%.20f, \n", avg_theta);
+            printf("%.20f, \n", atan2(sum_theta_y / sum_weight, sum_theta_x / sum_weight));
+            std::vector<double> feedback_vector = {avg_x, avg_y, avg_theta};
             return feedback_vector;
         }
 
-        std::vector<float> gps(autonav_messages::msg::GPSFeedback gps) {
+        std::vector<double> gps(autonav_messages::msg::GPSFeedback gps) {
             if (this->first_gps_received == false) {
                 this->first_gps = gps;
                 this->first_gps_received = true;
             }
 
-            float gps_x = (gps.latitude - this->first_gps.latitude) * this->latitudeLength;
-            float gps_y = (this->first_gps.longitude - gps.longitude) * this->longitudeLength;
+            double gps_x = (gps.latitude - this->first_gps.latitude) * this->latitudeLength;
+            double gps_y = (this->first_gps.longitude - gps.longitude) * this->longitudeLength;
 
             for (Particle particle : this->particles) {
-                float distance = sqrt(pow((particle.x - gps_x), 2) + pow((particle.y - gps_y), 2));
+                double distance = sqrt(pow((particle.x - gps_x), 2) + pow((particle.y - gps_y), 2));
                 particle.weight = exp(-1 * distance / 2 * pow(this->gps_noise[0], 2));
             }
 
             resample();
 
-            std::vector<float> gps_vector = {gps_x, gps_y};
+            std::vector<double> gps_vector = {gps_x, gps_y};
             return gps_vector;
         }
 
         void resample() {
-            std::vector<float> weights;
+            std::vector<double> weights;
             for (int i = 0; i < int(std::size(particles)); i++) {
                 weights.push_back(particles[i].weight);
             }
-            float weights_sum = std::accumulate(weights.begin(), weights.end(), 0);
+            double weights_sum = std::accumulate(weights.begin(), weights.end(), 0);
             if (weights_sum < 0.0001) {
                 weights_sum = 0.0001;
             }
-            std::vector<float> temp_weights;
+            std::vector<double> temp_weights;
             for (int i = 0; i < int(std::size(weights)); i++) {
                 temp_weights.push_back(weights[i] / weights_sum);
             }
@@ -138,14 +146,14 @@ class ParticleFilter {
             std::normal_distribution<> normal_distribution_x{0, this->odom_noise[0]};
             std::normal_distribution<> normal_distribution_y{0, this->odom_noise[1]};
             for (Particle p : new_particles) {
-                float random_x = normal_distribution_x(generator);
-                float random_y = normal_distribution_y(generator);
+                double random_x = normal_distribution_x(generator);
+                double random_y = normal_distribution_y(generator);
 
-                float x = p.x + random_x * cos(p.theta) + random_y * sin(p.theta);
-                float y = p.y + random_x * sin(p.theta) + random_y * cos(p.theta);
+                double x = p.x + random_x * cos(p.theta) + random_y * sin(p.theta);
+                double y = p.y + random_x * sin(p.theta) + random_y * cos(p.theta);
 
                 std::normal_distribution<> normal_distribution_theta{p.theta, this->odom_noise[2]};
-                float theta = normal_distribution_theta(generator);
+                double theta = normal_distribution_theta(generator);
                 particles.push_back(Particle(x, y, theta, p.weight));
             }
         }
@@ -156,11 +164,11 @@ class ParticleFilter {
             return this->num_particles;
         }
 
-        float * get_gps_noise() {
+        double * get_gps_noise() {
             return this->gps_noise;
         }
 
-        float * get_odom_noise() {
+        double * get_odom_noise() {
             return this->odom_noise;
         }
 
@@ -168,11 +176,11 @@ class ParticleFilter {
             return this->particles;
         }
 
-        float get_latitudeLength() {
+        double get_latitudeLength() {
             return this->latitudeLength;
         }
 
-        float get_longitudeLength() {
+        double get_longitudeLength() {
             return this->longitudeLength;
         }
 
@@ -180,24 +188,24 @@ class ParticleFilter {
             return this->first_gps;
         }
 
-        std::vector<std::vector<float>> get_particles_data() {
-            std::vector<std::vector<float>> particle_as_floats_collection;
+        std::vector<std::vector<double>> get_particles_data() {
+            std::vector<std::vector<double>> particle_data_collection;
             for (Particle part : particles) {
-                std::vector<float> particle_data = part.get_particle_data();
-                particle_as_floats_collection.push_back(particle_data);
+                std::vector<double> particle_data = part.get_particle_data();
+                particle_data_collection.push_back(particle_data);
             }
-            return particle_as_floats_collection;
+            return particle_data_collection;
         }
 
         #pragma endregion Getters
 
     private:
         static const int num_particles = 750;
-        float gps_noise[1] = {0.45};
-        float odom_noise[3] = {0.05, 0.05, 0.01};
+        double gps_noise[1] = {0.45};
+        double odom_noise[3] = {0.05, 0.05, 0.01};
         std::vector<Particle> particles;
-        float latitudeLength;
-        float longitudeLength;
+        double latitudeLength;
+        double longitudeLength;
         bool first_gps_received = false;
         autonav_messages::msg::GPSFeedback first_gps;
 
@@ -205,4 +213,8 @@ class ParticleFilter {
         std::random_device rd;
         std::mt19937 generator;
         std::normal_distribution<> normal_distribution{0, 1};
+
+        double pymod(double n, double M) {
+            return fmod(((fmod(n, M)) + M), M);
+        }
 };

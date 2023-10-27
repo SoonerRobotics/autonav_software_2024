@@ -14,8 +14,8 @@
 using namespace std::chrono_literals;
 
 //particle filter
-float latitudeLength = 111086.2;
-float longitudeLength = 81978.2;
+double latitudeLength = 111086.2;
+double longitudeLength = 81978.2;
 ParticleFilter particle_filter{latitudeLength, longitudeLength};
 autonav_messages::msg::GPSFeedback first_gps;
 autonav_messages::msg::GPSFeedback last_gps;
@@ -36,7 +36,7 @@ void FiltersNode::on_GPS_received(const autonav_messages::msg::GPSFeedback gps_m
     
 }
 void FiltersNode::on_MotorFeedback_received(const autonav_messages::msg::MotorFeedback motorFeedback_message) {
-    std::vector<float> averages;
+    std::vector<double> averages;
     averages = this->particle_filter.feedback(motorFeedback_message);
 
     if (averages.size() < 3) {
@@ -49,8 +49,8 @@ void FiltersNode::on_MotorFeedback_received(const autonav_messages::msg::MotorFe
     position.theta = (-1 * M_PI * 2 + averages[2]);
 
     if (this->first_gps_received = true) {
-        float gps_x = this->first_gps.latitude + position.x / this->latitudeLength;
-        float gps_y = this->first_gps.longitude - position.y / this->longitudeLength;
+        double gps_x = this->first_gps.latitude + position.x / this->latitudeLength;
+        double gps_y = this->first_gps.longitude - position.y / this->longitudeLength;
 
         position.latitude = gps_x;
         position.longitude = gps_y;
