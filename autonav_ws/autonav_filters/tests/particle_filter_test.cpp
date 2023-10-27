@@ -51,9 +51,9 @@ TEST(ParticleFilterTests, feedback_test) {
 
     autonav_messages::msg::MotorFeedback message = autonav_messages::msg::MotorFeedback();
     message.delta_x = delta_x_data[0];
-    message.delta_x = 300;
+    //message.delta_x = 300;
     message.delta_y = delta_y_data[0];
-    message.delta_y = 500;
+    //message.delta_y = 500;
     message.delta_theta = delta_theta_data[0];
 
     std::vector<double> python_feedback_0 = {-1.1449174941446927e-19, 2.488063285492152e-19, 0.11056456634372756};
