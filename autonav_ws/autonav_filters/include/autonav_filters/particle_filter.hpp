@@ -74,10 +74,10 @@ class ParticleFilter {
                 sum_y += this->particles[i].y * weight;
                 sum_theta_x += cos(this->particles[i].theta) * weight;
                 sum_theta_y += sin(this->particles[i].theta) * weight;
-                printf("i = %d, %.20f, \n", i, sum_theta_x);
+                /*printf("i = %d, %.20f, \n", i, sum_theta_x);
                 printf("i = %d, %.20f, \n", i, sum_theta_y);
                 printf("i = %d, %.20f, \n", i, cos(this->particles[i].theta) * weight);
-                printf("i = %d, %.20f, \n", i, sin(this->particles[i].theta) * weight);
+                printf("i = %d, %.20f, \n", i, sin(this->particles[i].theta) * weight);*/
                 sum_weight += weight;
             }
 
