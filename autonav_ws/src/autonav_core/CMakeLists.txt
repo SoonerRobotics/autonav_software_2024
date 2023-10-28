@@ -15,7 +15,7 @@ ament_auto_find_build_dependencies()
 
 
 # C++
-ament_auto_add_library(${PROJECT_NAME} SHARED src/core.cpp src/logger.cpp)
+ament_auto_add_library(${PROJECT_NAME} SHARED src/core.cpp)
 
 # python
 ament_python_install_package(${PROJECT_NAME})
@@ -25,7 +25,7 @@ ament_auto_package()
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
 
-  ament_add_gtest(${PROJECT_NAME}_logger_test tests/logger_test.cpp src/logger.cpp)
+  ament_add_gtest(${PROJECT_NAME}_logger_test tests/logger_test.cpp)
   target_include_directories(${PROJECT_NAME}_logger_test PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>

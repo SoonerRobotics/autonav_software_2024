@@ -1,4 +1,5 @@
 #include "autonav_core/json.hpp"
+#include <fstream>
 
 class Logger {
     public:
@@ -16,10 +17,13 @@ class Logger {
         // convert an object to json
         template<typename T>
         nlohmann::json toJson(T object) {
-            nlohmann::json j = object;
-            return j;
+            nlohmann::json json_object = object;
+            return object;
         }
 
         // log a json object to a file
-        void jsonToFile(nlohmann::json json_object, std::string filename);
+        void jsonToFile(nlohmann::json json_object, std::string filename) {
+            std::ofstream o(filename);
+            o << std::setw(4) << json_object << std::endl;
+        }
 };
