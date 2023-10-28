@@ -45,6 +45,7 @@ class ParticleFilter {
         };
 
         void init_particles() {
+            particles.clear();
             for (int i=0; i<this->num_particles; i++) {
                 particles.push_back(Particle(0, 0, (double)i / this->num_particles * 2 * M_PI));
             }
@@ -57,7 +58,6 @@ class ParticleFilter {
         }
 
         std::vector<double> feedback(autonav_messages::msg::MotorFeedback feedback) {
-            printf("feedback called \n");
             double sum_x = 0;
             double sum_y = 0;
             double sum_theta_x = 0;
@@ -74,10 +74,6 @@ class ParticleFilter {
                 sum_y += this->particles[i].y * weight;
                 sum_theta_x += cos(this->particles[i].theta) * weight;
                 sum_theta_y += sin(this->particles[i].theta) * weight;
-                /*printf("i = %d, %.20f, \n", i, sum_theta_x);
-                printf("i = %d, %.20f, \n", i, sum_theta_y);
-                printf("i = %d, %.20f, \n", i, cos(this->particles[i].theta) * weight);
-                printf("i = %d, %.20f, \n", i, sin(this->particles[i].theta) * weight);*/
                 sum_weight += weight;
             }
 
@@ -89,11 +85,6 @@ class ParticleFilter {
             double avg_y = sum_y / sum_weight;
             double avg_theta = pymod(atan2(sum_theta_y / sum_weight, sum_theta_x / sum_weight), 2 * M_PI);
 
-            printf("%.20f, \n", sum_theta_x);
-            printf("%.20f, \n", sum_theta_y);
-            printf("%.20f, \n", sum_weight);
-            printf("%.20f, \n", avg_theta);
-            printf("%.20f, \n", atan2(sum_theta_y / sum_weight, sum_theta_x / sum_weight));
             std::vector<double> feedback_vector = {avg_x, avg_y, avg_theta};
             return feedback_vector;
         }

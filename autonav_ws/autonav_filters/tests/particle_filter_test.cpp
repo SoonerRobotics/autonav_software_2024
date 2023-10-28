@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "autonav_filters/particle_filter.hpp"
 #include "autonav_messages/msg/motor_feedback.hpp"
+#include "autonav_messages/msg/gps_feedback.hpp"
 #include <iostream>
 
 TEST(ParticleFilterTests, initialization_test) {
@@ -61,7 +62,6 @@ TEST(ParticleFilterTests, feedback_test) {
     std::vector<double> python_feedback_2 = {1.006586515062011e-21, 2.660556662374303e-22, 4.4964617464665135};
     std::vector<double> feedback_vector_2 = particle_filter.feedback(message);
 
-    //ASSERT_EQ(feedback_vector_1, python_feedback_1);
     ASSERT_NEAR(feedback_vector_2[0], python_feedback_2[0], 0.0001);
     ASSERT_NEAR(feedback_vector_2[1], python_feedback_2[1], 0.0001);
     ASSERT_NEAR(feedback_vector_2[2], python_feedback_2[2], 1);
@@ -78,6 +78,28 @@ TEST(ParticleFilterTests, feedback_test) {
     ASSERT_NEAR(feedback_vector_3[0], python_feedback_3[0], 0.0001);
     ASSERT_NEAR(feedback_vector_3[1], python_feedback_3[1], 0.0001);
     ASSERT_NEAR(feedback_vector_3[2], python_feedback_3[2], 1);
+}
+
+TEST(ParticleFilterTests, gps_test) {
+    double latitudeLength = 111086.2;
+    double longitudeLength = 81978.2;
+    ParticleFilter particle_filter = ParticleFilter(latitudeLength, longitudeLength);
+
+    particle_filter.init_particles();
+
+    autonav_messages::msg::GPSFeedback gps_feedback_1 = autonav_messages::msg::GPSFeedback();
+    gps_feedback_1.latitude = 42.6681254;
+    gps_feedback_1.longitude = -83.2188876;
+    gps_feedback_1.altitude = 234.891;
+    gps_feedback_1.gps_fix = 4;
+    gps_feedback_1.is_locked = true;
+    gps_feedback_1.satellites = 16;
+
+    std::vector<double> python_gps_vector_1 = {0.0, 0.0};
+
+    std::vector<double> gps_vector_1 = particle_filter.gps(gps_feedback_1);
+
+    ASSERT_EQ(gps_vector_1, python_gps_vector_1);
 }
 
 int main(int argc, char* argv[]) {
