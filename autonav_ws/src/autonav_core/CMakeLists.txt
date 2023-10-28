@@ -10,11 +10,32 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 find_package(ament_cmake_auto REQUIRED)
+find_package(rclcpp REQUIRED)
 ament_auto_find_build_dependencies()
 
-ament_auto_add_library(${PROJECT_NAME} SHARED
-  src/core.cpp
-)
 
+# C++
+ament_auto_add_library(${PROJECT_NAME} SHARED src/core.cpp src/logger.cpp)
+
+# python
 ament_python_install_package(${PROJECT_NAME})
 ament_auto_package()
+
+# testing
+if(BUILD_TESTING)
+  find_package(ament_cmake_gtest REQUIRED)
+
+  ament_add_gtest(${PROJECT_NAME}_logger_test tests/logger_test.cpp src/logger.cpp)
+  target_include_directories(${PROJECT_NAME}_logger_test PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+  )
+
+  install(TARGETS 
+  ${PROJECT_NAME}_logger_test
+  
+  # Install the generated test executable file to the path after DESTINATION
+  DESTINATION lib/${PROJECT_NAME}
+  )
+  
+endif()
