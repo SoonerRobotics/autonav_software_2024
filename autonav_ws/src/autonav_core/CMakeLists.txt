@@ -15,6 +15,9 @@ ament_auto_find_build_dependencies()
 
 
 # C++
+
+include_directories(include)
+
 ament_auto_add_library(${PROJECT_NAME} SHARED src/core.cpp)
 
 # python
@@ -31,8 +34,15 @@ if(BUILD_TESTING)
     $<INSTALL_INTERFACE:include>
   )
 
+  ament_add_gtest(${PROJECT_NAME}_performance_timer_test tests/performance_timer_test.cpp src/performance_timer.cpp)
+  target_include_directories(${PROJECT_NAME}_logger_test PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+  )
+
   install(TARGETS 
   ${PROJECT_NAME}_logger_test
+  ${PROJECT_NAME}_performance_timer_test
   
   # Install the generated test executable file to the path after DESTINATION
   DESTINATION lib/${PROJECT_NAME}

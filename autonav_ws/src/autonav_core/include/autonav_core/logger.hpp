@@ -1,5 +1,6 @@
 #include "autonav_core/json.hpp"
 #include <fstream>
+#include <string>
 
 class Logger {
     public:
