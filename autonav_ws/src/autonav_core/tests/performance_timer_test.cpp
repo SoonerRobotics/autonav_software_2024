@@ -14,9 +14,9 @@ TEST(PerformanceTimerTests, false_stop_test) {
 TEST(PerformanceTimerTests, false_lap_test) {
     PerformanceTimer test_timer = PerformanceTimer("test_timer");
 
-    double false_stop_time = test_timer.lap();
+    double false_lap_time = test_timer.lap();
 
-    ASSERT_EQ(false_stop_time, 0.0);
+    ASSERT_EQ(false_lap_time, 0.0);
 }
 
 TEST(PerformanceTimerTests, one_second_stop_test) {
