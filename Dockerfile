@@ -13,4 +13,4 @@ WORKDIR /autonav/setup
 RUN /bin/bash -c "./setup.sh"
 
 WORKDIR /autonav/autonav_ws
-RUN /bin/bash -c "source /opt/ros/humble/setup.bash; colcon build"
+RUN /bin/bash -c "source /opt/ros/humble/setup.bash; colcon build && colcon test"
