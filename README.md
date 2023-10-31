@@ -1,7 +1,45 @@
 # autonav_software_2024
 
-Software for the 2024 [Intelligent Ground Vehicle Competition](http://www.igvc.org/), AutoNav challenge, the **Robot**.  
+![Github Workflow Status](https://img.shields.io/github/actions/workflow/status/SoonerRobotics/autonav_software_2024/compile_run.yml)
+
+Software for the 2024 [Intelligent Ground Vehicle Competition](http://www.igvc.org/), AutoNav challenge.  
 We are using [ROS2 Humble](https://docs.ros.org/en/humble/index.html) on [Ubuntu 22.04](https://releases.ubuntu.com/22.04/).
+
+## Dependencies
+
+To setup all dependencies, run the following two commands. It is **CRITICAL** you do **NOT** run these commmands as **sudo**
+```bash
+cd setup
+echo "machine files.dylanzeml.in login <user> password <password>" > vectorsecrets.txt
+./setup.sh
+```
+
+## Building
+
+```bash
+source /opt/ros/humble/setup.bash
+cd autonav_ws
+colcon build
+source /install/setup.bash
+```
+
+## Autonomous/Manual
+
+Follow the steps in [building](#building) and then run the following command
+```bash
+ros2 launch autonav_launch competition.xml
+```
+or
+```bash
+ros2 launch autonav_launch practice.xml
+```
+
+## Simulation
+
+Follow the steps in [building](#building) and then run the following command
+```bash
+ros2 launch autonav_launch simulation.xml
+```
 
 ## VSCode
 
