@@ -4,9 +4,9 @@
 #include <string>
 
 #include "rclcpp/rclcpp.hpp"
-#include "autonav_messages/msg/motor_feedback.hpp"
-#include "autonav_messages/msg/gps_feedback.hpp"
-#include "autonav_messages/msg/position.hpp"
+#include "autonav_msgs/msg/motor_feedback.hpp"
+#include "autonav_msgs/msg/gps_feedback.hpp"
+#include "autonav_msgs/msg/position.hpp"
 
 #include "autonav_filters/particle_filter.hpp"
 
@@ -19,13 +19,13 @@ class FiltersNode : public rclcpp::Node {
         FiltersNode() : Node("autonav_filters"), count_(0)
         {
             // subscriptions
-            gps_subscription = this->create_subscription<autonav_messages::msg::GPSFeedback>("/autonav_GPS", 
+            gps_subscription = this->create_subscription<autonav_msgs::msg::GPSFeedback>("/autonav_GPS", 
             20, std::bind(&FiltersNode::on_GPS_received, this, std::placeholders::_1));
-            motor_subscription = this->create_subscription<autonav_messages::msg::MotorFeedback>("/autonav_MotorFeedback", 
+            motor_subscription = this->create_subscription<autonav_msgs::msg::MotorFeedback>("/autonav_MotorFeedback", 
             20, std::bind(&FiltersNode::on_MotorFeedback_received, this, std::placeholders::_1));
 
             // publishers
-            positionPublisher = this->create_publisher<autonav_messages::msg::Position>("/autonav/position", 20);
+            positionPublisher = this->create_publisher<autonav_msgs::msg::Position>("/autonav/position", 20);
         }
 
     private:
@@ -33,16 +33,16 @@ class FiltersNode : public rclcpp::Node {
         float latitudeLength = 111086.2;
         float longitudeLength = 81978.2;
         ParticleFilter particle_filter{latitudeLength, longitudeLength};
-        autonav_messages::msg::GPSFeedback first_gps;
-        autonav_messages::msg::GPSFeedback last_gps;
+        autonav_msgs::msg::GPSFeedback first_gps;
+        autonav_msgs::msg::GPSFeedback last_gps;
         bool first_gps_received = false;
         
-        void on_GPS_received(const autonav_messages::msg::GPSFeedback gps_message);
+        void on_GPS_received(const autonav_msgs::msg::GPSFeedback gps_message);
 
-        void on_MotorFeedback_received(const autonav_messages::msg::MotorFeedback motorFeedback_message);
+        void on_MotorFeedback_received(const autonav_msgs::msg::MotorFeedback motorFeedback_message);
 
-        rclcpp::Subscription<autonav_messages::msg::GPSFeedback>::SharedPtr gps_subscription;
-        rclcpp::Subscription<autonav_messages::msg::MotorFeedback>::SharedPtr motor_subscription;
-        rclcpp::Publisher<autonav_messages::msg::Position>::SharedPtr positionPublisher;
+        rclcpp::Subscription<autonav_msgs::msg::GPSFeedback>::SharedPtr gps_subscription;
+        rclcpp::Subscription<autonav_msgs::msg::MotorFeedback>::SharedPtr motor_subscription;
+        rclcpp::Publisher<autonav_msgs::msg::Position>::SharedPtr positionPublisher;
         size_t count_;
 };

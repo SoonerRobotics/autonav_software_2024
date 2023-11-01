@@ -12,6 +12,7 @@ find_package(rclpy REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(autonav_messages REQUIRED)
+find_package(autonav_msgs REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
@@ -34,7 +35,7 @@ include_directories(include)
 #add_executable(executable_name /path_to_executable/executable.cpp)
 #ament_target_dependencies(executable_name rclcpp other_dependencies)
 add_executable(filters_node src/filters_node.cpp src/filters.cpp)
-ament_target_dependencies(filters_node rclcpp autonav_messages)
+ament_target_dependencies(filters_node rclcpp autonav_msgs)
 
 add_executable(motor_feedback_example_node src/motor_feedback_example_node.cpp src/motor_feedback_example.cpp)
 ament_target_dependencies(motor_feedback_example_node rclcpp autonav_messages std_msgs)
@@ -93,7 +94,7 @@ if(BUILD_TESTING)
   )
   ament_target_dependencies(${PROJECT_NAME}_particle_filter_test
     rclcpp
-    autonav_messages
+    autonav_msgs
   )
 
   install(TARGETS

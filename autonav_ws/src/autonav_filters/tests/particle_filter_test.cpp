@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 #include "autonav_filters/particle_filter.hpp"
-#include "autonav_messages/msg/motor_feedback.hpp"
-#include "autonav_messages/msg/gps_feedback.hpp"
+#include "autonav_msgs/msg/motor_feedback.hpp"
+#include "autonav_msgs/msg/gps_feedback.hpp"
 #include <iostream>
 
 TEST(ParticleFilterTests, initialization_test) {
@@ -40,7 +40,7 @@ TEST(ParticleFilterTests, feedback_test) {
 
     // check the particles after 1 motorFeedBack
 
-    autonav_messages::msg::MotorFeedback message = autonav_messages::msg::MotorFeedback();
+    autonav_msgs::msg::MotorFeedback message = autonav_msgs::msg::MotorFeedback();
     message.delta_x = delta_x_data[0];
     message.delta_y = delta_y_data[0];
     message.delta_theta = delta_theta_data[0];
@@ -87,7 +87,7 @@ TEST(ParticleFilterTests, gps_test) {
 
     particle_filter.init_particles();
 
-    autonav_messages::msg::GPSFeedback gps_feedback_1 = autonav_messages::msg::GPSFeedback();
+    autonav_msgs::msg::GPSFeedback gps_feedback_1 = autonav_msgs::msg::GPSFeedback();
     gps_feedback_1.latitude = 42.6681254;
     gps_feedback_1.longitude = -83.2188876;
     gps_feedback_1.altitude = 234.891;

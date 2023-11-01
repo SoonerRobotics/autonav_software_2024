@@ -7,8 +7,8 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-#include "autonav_messages/msg/motor_feedback.hpp"
-#include "autonav_messages/msg/gps_feedback.hpp"
+#include "autonav_msgs/msg/motor_feedback.hpp"
+#include "autonav_msgs/msg/gps_feedback.hpp"
 
 class Particle {
     public:
@@ -57,7 +57,7 @@ class ParticleFilter {
             }
         }
 
-        std::vector<double> feedback(autonav_messages::msg::MotorFeedback feedback) {
+        std::vector<double> feedback(autonav_msgs::msg::MotorFeedback feedback) {
             double sum_x = 0;
             double sum_y = 0;
             double sum_theta_x = 0;
@@ -89,7 +89,7 @@ class ParticleFilter {
             return feedback_vector;
         }
 
-        std::vector<double> gps(autonav_messages::msg::GPSFeedback gps) {
+        std::vector<double> gps(autonav_msgs::msg::GPSFeedback gps) {
             if (this->first_gps_received == false) {
                 this->first_gps = gps;
                 this->first_gps_received = true;
@@ -175,7 +175,7 @@ class ParticleFilter {
             return this->longitudeLength;
         }
 
-        autonav_messages::msg::GPSFeedback get_first_gps() {
+        autonav_msgs::msg::GPSFeedback get_first_gps() {
             return this->first_gps;
         }
 
@@ -198,7 +198,7 @@ class ParticleFilter {
         double latitudeLength;
         double longitudeLength;
         bool first_gps_received = false;
-        autonav_messages::msg::GPSFeedback first_gps;
+        autonav_msgs::msg::GPSFeedback first_gps;
 
         // random generator for distributions
         std::random_device rd;
