@@ -34,6 +34,7 @@ class TransformationNode(Node):
 
         # invert mask (because we threshold for the ground, and anything that's not the ground is an obstacle)
         # which might change
+        # at least I'm pretty sure that's what these lines of code do, idk I copied them from last year
         mask = 255 - mask
         mask[mask < 250] = 0
 
