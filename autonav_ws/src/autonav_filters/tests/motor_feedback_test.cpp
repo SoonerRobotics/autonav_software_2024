@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "autonav_filters/motor_feedback_example.hpp"
-#include "autonav_messages/msg/motor_feedback.hpp"
+#include "autonav_msgs/msg/motor_feedback.hpp"
 
 TEST(ParticleFilterTests, MotorFeedbackTest) {
     ASSERT_TRUE(true);

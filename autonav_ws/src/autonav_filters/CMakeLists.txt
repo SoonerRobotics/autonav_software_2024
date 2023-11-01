@@ -38,7 +38,7 @@ add_executable(filters_node src/filters_node.cpp src/filters.cpp)
 ament_target_dependencies(filters_node rclcpp autonav_msgs)
 
 add_executable(motor_feedback_example_node src/motor_feedback_example_node.cpp src/motor_feedback_example.cpp)
-ament_target_dependencies(motor_feedback_example_node rclcpp autonav_messages std_msgs)
+ament_target_dependencies(motor_feedback_example_node rclcpp autonav_msgs std_msgs)
 
 # Install Cpp executables
 install(TARGETS
@@ -85,7 +85,7 @@ if(BUILD_TESTING)
   )
   ament_target_dependencies(${PROJECT_NAME}_motor_feedback_test
     rclcpp
-    autonav_messages
+    autonav_msgs
   )
   ament_add_gtest(${PROJECT_NAME}_particle_filter_test tests/particle_filter_test.cpp)
   target_include_directories(${PROJECT_NAME}_motor_feedback_test PUBLIC
