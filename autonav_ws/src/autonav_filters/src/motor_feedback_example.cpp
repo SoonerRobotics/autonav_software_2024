@@ -10,7 +10,7 @@
 
 using namespace std::chrono_literals;
 
-void PositionPublisher::timer_callback() {
+void PositionPublisher::publish_motor_feedback() {
     autonav_msgs::msg::MotorFeedback message = autonav_msgs::msg::MotorFeedback();
     message.delta_x = 10;
     message.delta_y = 10;
