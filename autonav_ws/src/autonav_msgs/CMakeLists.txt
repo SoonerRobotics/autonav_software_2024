@@ -13,6 +13,8 @@ find_package(builtin_interfaces REQUIRED)
 # generate messages
 set(msg_files
   "msg/Test.msg"
+  "msg/RobotState.msg"
+  "msg/DeviceState.msg"
 )
 
 set(srv_files

@@ -4,7 +4,7 @@
 #include <thread>
 
 TEST(PerformanceTimerTests, false_stop_test) {
-    PerformanceTimer test_timer = PerformanceTimer("test_timer");
+    SCR::PerformanceTimer test_timer = SCR::PerformanceTimer("test_timer");
 
     double false_stop_time = test_timer.stop();
 
@@ -12,7 +12,7 @@ TEST(PerformanceTimerTests, false_stop_test) {
 }
 
 TEST(PerformanceTimerTests, false_lap_test) {
-    PerformanceTimer test_timer = PerformanceTimer("test_timer");
+    SCR::PerformanceTimer test_timer = SCR::PerformanceTimer("test_timer");
 
     double false_lap_time = test_timer.lap();
 
@@ -20,7 +20,7 @@ TEST(PerformanceTimerTests, false_lap_test) {
 }
 
 TEST(PerformanceTimerTests, one_second_stop_test) {
-    PerformanceTimer test_timer = PerformanceTimer("test_timer");
+    SCR::PerformanceTimer test_timer = SCR::PerformanceTimer("test_timer");
     test_timer.start();
     std::this_thread::sleep_for(std::chrono::seconds(1));
     test_timer.stop();
