@@ -25,7 +25,8 @@ namespace SCR
 
             rclcpp::Publisher<autonav_msgs::msg::RobotState>::SharedPtr robot_state_publisher;
 
-            void DeviceStateUpdate(autonav_msgs::msg::DeviceState::SharedPtr msg);
-            void RobotStateUpdate(autonav_msgs::msg::RobotState::SharedPtr msg);
+            void DeviceStateUpdate(autonav_msgs::msg::DeviceState::SharedPtr device_state_msg);
+            void RobotStateUpdate(autonav_msgs::msg::RobotState::SharedPtr robot_state_msg);
+            void UpdateRobotState(autonav_msgs::msg::RobotState::SharedPtr robot_state_msg);
     };
 }

@@ -18,13 +18,17 @@ namespace SCR
     {
     }
 
-    void AutonavNode::RobotStateUpdate(autonav_msgs::msg::RobotState::SharedPtr msg) {
-        this->robot_state = SCR::RobotState(msg->value);
+    void AutonavNode::RobotStateUpdate(autonav_msgs::msg::RobotState::SharedPtr robot_state_msg) {
+        this->robot_state = SCR::RobotState(robot_state_msg->value);
     }
 
     void AutonavNode::DeviceStateUpdate(autonav_msgs::msg::DeviceState::SharedPtr msg) {
         if (msg->node_name == this->get_name()) {
             this->device_state = SCR::DeviceState(msg->value);
         }
+    }
+
+    void AutonavNode::UpdateRobotState(autonav_msgs::msg::RobotState::SharedPtr robot_state_msg) {
+        robot_state_publisher->publish(*robot_state_msg);
     }
 }
