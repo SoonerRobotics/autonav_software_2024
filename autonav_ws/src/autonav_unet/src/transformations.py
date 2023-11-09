@@ -35,7 +35,8 @@ class ImageTransformer(Node):
         super().__init__("autonav_vision_transformer")
 
         # Reload the model
-        self.model = tf.keras.models.load_model('/mnt/c/Users/isasq/Documents/GitHub/autonav_software_2023/autonav_ws/src/autonav_unet/src/results/SCRUNet_model')
+        self.model = tf.keras.models.load_model('/mnt/c/Users/isasq/Documents/GitHub/autonav_software_2023/autonav_ws/src/autonav_unet/src/results/SCRUNet_model.keras')
+
 
     def configure(self):
         self.cameraSubscriber = self.create_subscription(CompressedImage, "/autonav/camera/compressed", self.onImageReceived, 5)
@@ -86,7 +87,8 @@ class ImageTransformer(Node):
         # cv2.destroyAllWindows()
 
         start_time = time.time()
-        mask = self.model.predict(np.array([image, image], dtype=np.float32))[0]
+        mask_ = self.model.predict(np.array([image, image], dtype=np.float32))[0]
+        # mask_ = tf.squeeze(self.model(tf.expand_dims(image, axis=0)), axis=0)
         # self.get_logger().error(time.time() - start_time)
 
         # print()
@@ -94,25 +96,49 @@ class ImageTransformer(Node):
         # print()
 
         # self.get_logger().error(mask_.shape)
+        # cv2.imshow("mask", mask_)
 
-        # mask = cv2.transpose(mask_) / 255.0 
-        # mask = cv2.resize(mask, (640, 480))
+        mask = cv2.transpose(mask_ * 255.0)
+        mask = cv2.resize(mask, (640, 480))
+        # cv2.imshow("image", mask)
 
-        # cv2.imshow("mask", mask)
+        # cv2.imshow("mask2", mask)
         # cv2.waitKey()
 
         #==========================================================
 
-        mask = self.flattenImage(mask) #FIXME XXX HACK
+        # Apply region of disinterest and flattening
+        height = mask.shape[0]
+        width = mask.shape[1]
+        region_of_disinterest_vertices=[
+            (0, height),
+            (width / 2, height / 2 + 100),
+            (width, height)
+        ]
+        mask = self.regionOfDisinterest(mask, np.array([region_of_disinterest_vertices], np.int32))
+        # cv2.imshow("disinterest", mask)
 
-        preview_image = cv2.cvtColor(mask, cv2.COLOR_GRAY2RGB)
-        preview_msg = g_bridge.cv2_to_compressed_imgmsg(preview_image)
-        preview_msg.header = image_.header #TODO FIXME
+        mask = self.flattenImage(mask)
+        # cv2.imshow("flattened", mask)
+
+        # cv2.waitKey()
+        # preview_image = cv2.cvtColor(mask, cv2.COLOR_GRAY2RGB)
+        preview_msg = g_bridge.cv2_to_compressed_imgmsg(mask)
+        # image = g_bridge.compressed_imgmsg_to_cv2(preview_msg)
+        # cv2.imshow("processed", image)
+        # cv2.waitKey()
+        preview_msg.header = image_.header
         preview_msg.format = "jpeg"
         self.filteredImagePublisher.publish(preview_msg)
 
         # Actually generate the map
         self.publishOccupancyMap(mask)
+    
+    def regionOfDisinterest(self, img, vertices):
+        mask = np.ones_like(img) * 255
+        cv2.fillPoly(mask, vertices, 0)
+        masked_image = cv2.bitwise_and(img, mask)
+        return masked_image
 
 
 def main():
