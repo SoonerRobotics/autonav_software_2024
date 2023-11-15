@@ -4,51 +4,49 @@
 #include "differential_drive.h"
 #include "motor_with_encoder.h"
 #include "common.h"
-#include <CONBus.h> 
-#include <CANBusDriver.h>
 
-//LEDs
-const int ledPin = LED_BUILTIN;
-const int CANLED = 0;
-const int LED0 = 1;
+//LED
+static int LED1 = 22;
+static int LED2 = 21;
 
-//Encoder Pins
-const int encoderLeftA = 3;
-const int encoderLeftB = 2;
-const int encoderRightA = 5;
-const int encoderRightB = 4;
-//Motor PWM pins
-const int leftMotorPwmPin = 16;
-const int rightMotorPwmPin = 14;
+//ESTOP
+static int ESTOP = 27;
 
-const int estopPin = 27;
+//PWM
+static int PWM0 = 6;
+static int PWM1 = 7;
 
-//SPI pins
-static const byte MCP2515_SCK = 10;   // SCK input of MCP2515
-static const byte MCP2515_MOSI = 11;  // SDI input of MCP2515
-static const byte MCP2515_MISO = 8;   // SDO output of MCP2515
-static const byte MCP2515_CS = 9;   // CS input of MCP2515
-static const byte MCP2515_INT = 7;  // INT output of MCP2515
+//ENCODER
+static int ENC0A = 8;
+static int ENC0B = 9;
+static int ENC1A = 10;
+static int ENC1B = 11;
 
-ACAN2515 can(MCP2515_CS, SPI1, MCP2515_INT);
+//EEPROM
+static int EEPROMSDA = 0;
+static int EEPROMSCL = 1;
+static int EEPROMWP = 2;
+
+//SPI
+static int MCP2515_MISO = 16;
+static int MCP2515_CS = 17;
+static int MCP2515_SCK = 18;
+static int MCP2515_MOSI = 19;
+static int MCP215_INT = 20;
+
+//Quartz oscillator - 8MHz
+static uint23_t QUARTZFREQUENCY = 8UL * 1000UL * 1000UL
+
+ACAN2515 can(MCP2515_CS, SPI0, MCP2515_INT);
 
 TickTwo motor_update_timer(setMotorUpdateFlag, 25);
-
-static const uint32_t QUARTZ_FREQUENCY = 8UL * 1000UL * 1000UL;  // 8 MHz
 
 CANMessage frame;
 CANMessage outFrame;
 
-// Setup CONBus variables
-CONBus::CONBus conbus;
-CONBus::CANBusDriver conbus_can(conbus, 0x10); // device id 0x10 (16)
-
 robotStatus_t roboStatus;
 distance motorDistances;
 MotorCommand motorCommand;
-
-// motor leftMotor(leftMotorPwmPin, true);
-// motor rightMotor(rightMotorPwmPin, false);
 
 MotorWithEncoder leftMotor(leftMotorPwmPin, encoderLeftA, encoderLeftB, true);
 MotorWithEncoder rightMotor(rightMotorPwmPin, encoderRightA, encoderRightB, false);
@@ -80,54 +78,26 @@ float desired_forward_velocity;
 float desired_angular_velocity;
 
 void setup() {
-  delay(50);
+  pinMode(ENC0A, INPUT);
+  pinMode(ENC0B, INPUT);
+  pinMode(ENC1A, INPUT);
+  pinMode(ENC1B, INPUT);
+
+  pinMode(LED1, OUTPUT);
+  pinMode(LED2, OUTPUT);
+  pinMode(ESTOP, INPUT);
 
   drivetrain.setup();
-
-  pinMode(encoderRightA, INPUT);
-  pinMode(encoderRightB, INPUT);
-  pinMode(encoderLeftA, INPUT);
-  pinMode(encoderLeftB, INPUT);
 
   attachInterrupt(encoderLeftA, updateLeft, CHANGE);
   attachInterrupt(encoderRightA, updateRight, CHANGE);
 
   motor_update_timer.start();
-}
-void setup1(){
-  Serial.begin(9600);
-  delay(50);
+  
   configureCan();
 
-  pinMode(LED0, OUTPUT);
-  pinMode(CANLED, OUTPUT);
-  pinMode(estopPin, INPUT);
-
-  conbus.addReadOnlyRegister(0x00, drivetrain.getUpdatePeriod());
-  conbus.addRegister(0x01, drivetrain.getPulsesPerRadian());
-  conbus.addRegister(0x02, drivetrain.getWheelRadius());
-  conbus.addRegister(0x03, drivetrain.getWheelbaseLength());
-  conbus.addRegister(0x04, drivetrain.getSlewRateLimit());
-  conbus.addRegister(0x05, drivetrain.getLeftEncoderFactor());
-  conbus.addRegister(0x06, drivetrain.getRightEncoderFactor());
-
-  conbus.addRegister(0x10, drivetrain.getVelocitykP());
-  conbus.addRegister(0x11, drivetrain.getVelocitykI());
-  conbus.addRegister(0x12, drivetrain.getVelocitykD());
-  conbus.addRegister(0x13, drivetrain.getVelocitykF());
-
-  conbus.addRegister(0x20, drivetrain.getAngularkP());
-  conbus.addRegister(0x21, drivetrain.getAngularkI());
-  conbus.addRegister(0x22, drivetrain.getAngularkD());
-  conbus.addRegister(0x23, drivetrain.getAngularkF());
-
-  conbus.addRegister(0x30, &useObstacleAvoidance);
-  conbus.addRegister(0x31, &collisonBoxDist);
-
-  conbus.addRegister(0x40, &sendStatistics);
-
-  conbus.addRegister(0x50, &motor_updates_between_deltaodom);
 }
+
 void loop() {
   updateTimers();
   if (MOTOR_UPDATE_FLAG) {
@@ -137,8 +107,6 @@ void loop() {
 
     MOTOR_UPDATE_FLAG = false;
   }
-}
-void loop1(){
 
   if (motor_updates_in_deltaodom >= motor_updates_between_deltaodom) {
     motor_updates_in_deltaodom = 0;
@@ -155,7 +123,12 @@ void loop1(){
       conbus_can.popReply();
     }
   }
+
+
+
+
 }
+
 void configureCan() {
   SPI1.setSCK(MCP2515_SCK);
   SPI1.setTX(MCP2515_MOSI);
@@ -237,9 +210,9 @@ void sendCanOdomMsgOut(){
     outFrame.len = 4;
     memcpy(outFrame.data, &pid_controls, 4);
     can.tryToSend(outFrame);
-  }
-
+  } 
 }
+
 void printCanMsg(CANMessage frame) {
   Serial.print("  id: ");
   Serial.println(frame.id, HEX);
@@ -251,12 +224,15 @@ void printCanMsg(CANMessage frame) {
   }
   Serial.println("");
 }
+
 void updateLeft(){
   drivetrain.pulseLeftEncoder();
 }
+
 void updateRight(){
   drivetrain.pulseRightEncoder();
 }
+
 void resetDelta(){
   motorDistances.xn = 0;
   motorDistances.yn = 0;
@@ -265,6 +241,7 @@ void resetDelta(){
   delta_y = 0;
   delta_theta = 0;
 }
+
 void updateTimers() {
   motor_update_timer.update();
 }
