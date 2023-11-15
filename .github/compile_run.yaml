@@ -1,0 +1,19 @@
+name: Autonav Run All Tests
+
+on:
+  schedule:
+    - cron: "0 6 * * 5"
+  pull_request:
+    branches:
+      - feat/particle_filter
+  workflow_dispatch:
+
+  obs:
+  compile project and run all tests:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Code Checkout
+        uses: actions/checkout@v3
+
+      - name: Build the docker image
+        run: docker build . --file Dockerfile
