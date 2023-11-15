@@ -30,20 +30,8 @@ set(msg_files
   "msg/PathingDebug.msg"
 )
 
-# generate messages
-set(msg_files
-  "msg/Test.msg"
-  "msg/RobotState.msg"
-  "msg/DeviceState.msg"
-)
-
-set(srv_files
-  "srv/Test.srv"
-)
-
 rosidl_generate_interfaces(${PROJECT_NAME}
   ${msg_files}
-  ${srv_files}
   DEPENDENCIES builtin_interfaces
 )
 
