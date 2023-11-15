@@ -89,7 +89,9 @@ $(document).ready(function () {
         };
     }
 
-    createWebsocket();
+    $(".connecting").hide();
+    $("#main").show();
+    // createWebsocket();
 
     var sendQueue = [];
 
