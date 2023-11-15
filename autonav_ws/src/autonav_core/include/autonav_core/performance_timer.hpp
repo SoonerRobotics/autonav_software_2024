@@ -6,7 +6,7 @@
 namespace SCR {
     class PerformanceTimer {
         public:
-            std::vector<double> lap_times_seconds;
+            std::vector<double> lap_times_microseconds;
             double end_time_seconds;
 
             // constructor
@@ -16,15 +16,15 @@ namespace SCR {
 
             void start();
 
-            double lap();
+            std::chrono::milliseconds::rep lap();
 
-            double stop();
+            std::chrono::milliseconds::rep stop();
 
         private:
             std::string name;
-            std::time_t start_time_seconds_internal;
-            std::time_t lap_time_seconds_internal;
-            std::time_t end_time_seconds_internal;
+            std::chrono::high_resolution_clock::time_point start_time_microseconds_internal;
+            std::chrono::high_resolution_clock::time_point lap_time_microseconds_internal;
+            std::chrono::high_resolution_clock::time_point end_time_microseconds_internal;
 
             bool started = false;
     };

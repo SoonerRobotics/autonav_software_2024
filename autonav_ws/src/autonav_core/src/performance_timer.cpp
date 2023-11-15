@@ -5,33 +5,40 @@
 namespace SCR {
     void PerformanceTimer::start() {
         this->started = true;
-        auto start = std::chrono::system_clock::now();
-        this->start_time_seconds_internal = std::chrono::system_clock::to_time_t(start);
+        auto start = std::chrono::high_resolution_clock::now();
+        this->start_time_microseconds_internal = start;
     }
 
-    double PerformanceTimer::lap() {
+    std::chrono::milliseconds::rep PerformanceTimer::lap() {
         if (this->started) {
-            auto lap = std::chrono::system_clock::now();
-            this->lap_time_seconds_internal = std::chrono::system_clock::to_time_t(lap);
-            double time_delta_seconds = difftime(this->lap_time_seconds_internal, this->start_time_seconds_internal);
+            auto lap = std::chrono::high_resolution_clock::now();
+            this->lap_time_microseconds_internal = lap;
 
-            this->lap_times_seconds.push_back(time_delta_seconds);
-            return time_delta_seconds;
+            auto difference = this->lap_time_microseconds_internal - this->start_time_microseconds_internal;
+            std::chrono::milliseconds::rep time_delta_microseconds = std::chrono::duration_cast<std::chrono::microseconds>(difference).count();
+            double time_delta_seconds = time_delta_microseconds * 1e-6;
+
+            this->lap_times_microseconds.push_back(time_delta_seconds);
+            return time_delta_microseconds;
         } else {
             std::cout << "timer " << this->name << " not started!" << std::endl;
             return 0;
         }
     }
 
-    double PerformanceTimer::stop() {
+    std::chrono::milliseconds::rep PerformanceTimer::stop() {
         if (this->started) {
-            auto stop = std::chrono::system_clock::now();
-            this->end_time_seconds_internal = std::chrono::system_clock::to_time_t(stop);
-            double time_delta_seconds = difftime(this->end_time_seconds_internal, this->start_time_seconds_internal);
-            started = false;
+            auto stop = std::chrono::high_resolution_clock::now();
+            this->end_time_microseconds_internal = stop;
 
+            auto difference = this->end_time_microseconds_internal - this->start_time_microseconds_internal;
+            std::chrono::milliseconds::rep time_delta_microseconds = std::chrono::duration_cast<std::chrono::microseconds>(difference).count();
+            double time_delta_seconds = time_delta_microseconds * 1e-6;
+
+            started = false;
             this->end_time_seconds = time_delta_seconds;
             return time_delta_seconds;
+
         } else {
             std::cout << "timer " << this->name << " not started!" << std::endl;
             return 0;
