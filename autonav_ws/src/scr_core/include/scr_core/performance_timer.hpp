@@ -2,6 +2,8 @@
 #include <ctime>
 #include <chrono>
 #include <vector>
+#include "rclcpp/rclcpp.hpp"
+#include "scr_msgs/msg/performance_result.hpp"
 
 namespace SCR {
     class PerformanceTimer {
