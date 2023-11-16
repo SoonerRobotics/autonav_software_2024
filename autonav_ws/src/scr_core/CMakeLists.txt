@@ -16,5 +16,24 @@ ament_auto_add_library(${PROJECT_NAME} SHARED
   src/configuration.cpp src/node.cpp src/performance.cpp
 )
 
+# testing
+if(BUILD_TESTING)
+  find_package(ament_cmake_gtest REQUIRED)
+
+  ament_add_gtest(${PROJECT_NAME}_performance_timer_test tests/performance_timer_test.cpp src/performance_timer.cpp)
+  target_include_directories(${PROJECT_NAME}_performance_timer_test PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+  )
+
+  install(TARGETS 
+  ${PROJECT_NAME}_performance_timer_test
+  
+  # Install the generated test executable file to the path after DESTINATION
+  DESTINATION lib/${PROJECT_NAME}
+  )
+  
+endif()
+
 ament_python_install_package(${PROJECT_NAME})
 ament_auto_package()

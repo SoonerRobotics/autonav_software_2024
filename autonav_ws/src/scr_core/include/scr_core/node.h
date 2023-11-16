@@ -11,6 +11,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "configuration.h"
 #include "performance.h"
+#include "performance_timer.hpp"
 #include "device_state.h"
 #include "system_state.h"
 #include "system_mode.h"
@@ -65,5 +66,8 @@ namespace SCR
 		rclcpp::Publisher<scr_msgs::msg::Log>::SharedPtr logPublisher;
 		std::map<std::string, DeviceState> deviceStates;
 		scr_msgs::msg::SystemState state;
+
+	private:
+		PerformanceTimer default_timer = PerformanceTimer("default timer");
 	};
 }

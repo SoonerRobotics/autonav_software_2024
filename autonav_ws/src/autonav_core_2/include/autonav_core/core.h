@@ -12,6 +12,6 @@ namespace SCR
             ~AutonavNode();
 
         private:
-            SCR::PerformanceTimer performance_timer = SCR::PerformanceTimer("default_timer");
+            PerformanceTimer performance_timer = PerformanceTimer("default_timer");
     };
 }
