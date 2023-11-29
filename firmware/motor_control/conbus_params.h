@@ -74,26 +74,26 @@ private:
     bool MotorUpdaatesBetweenDeltaOdom;
     int collisionDist;
 
-    int addr_updatePeriod;
-    int addr_pulsesPerRadian;
-    int addr_wheelRadius;
-    int addr_wheelBaseLength;
-    int addr_slewRateLimit;
-    int addr_leftEncoderFactor;
-    int addr_rightEncoderFactor;
-    int addr_velocitykP;
-    int addr_velocitykI;
-    int addr_velocitykD;
-    int addr_velocitykF;
-    int addr_angularkP;
-    int addr_angularkI;
-    int addr_angularkD;
-    int addr_angularkF;
-    int addr_useObstacleAvoidance;
-    int addr_sendStatisics;
-    int addr_MotorUpdaatesBetweenDeltaOdom;
-    int addr_updatePeriod;
-    int addr_collisionDist;
+    int addr_updatePeriod = 0x00;
+    int addr_pulsesPerRadian = 0x04;
+    int addr_wheelRadius = 0x08;
+    int addr_wheelBaseLength = 0xC;
+    int addr_slewRateLimit = 0x10;
+    int addr_leftEncoderFactor = 0x14;
+    int addr_rightEncoderFactor = 0x18;
+    int addr_velocitykP = 0x1C;
+    int addr_velocitykI = 0x20;
+    int addr_velocitykD = 0x24;
+    int addr_velocitykF = 0x28;
+    int addr_angularkP = 0x2C;
+    int addr_angularkI = 0x30;
+    int addr_angularkD = 0x34;
+    int addr_angularkF = 0x38;
+    int addr_useObstacleAvoidance = 0x3C;
+    int addr_sendStatisics = 0x40;
+    int addr_MotorUpdaatesBetweenDeltaOdom = 0x44;
+    int addr_updatePeriod = 0x48;
+    int addr_collisionDist = 0x4C;
 
 
     int EEPROM_SDA;
@@ -107,5 +107,5 @@ inline ConbusParams::ConbusParams(int SDA, int SCL, int WP) {
     Wire.setSDA(SDA);
     Wire.setSCL(SCL);
     pinMode(WP, OUTPUT);
-    
+
 }
