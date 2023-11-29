@@ -13,14 +13,14 @@ static int LED2 = 21;
 static int ESTOP = 27;
 
 //PWM
-static int PWM0 = 6;
-static int PWM1 = 7;
+static int PWM0 = 6; //right motor controller
+static int PWM1 = 7; //left motor controller
 
 //ENCODER
-static int ENC0A = 8;
-static int ENC0B = 9;
-static int ENC1A = 10;
-static int ENC1B = 11;
+static int ENC0A = 8; //right encoder
+static int ENC0B = 9; //right encoder
+static int ENC1A = 10; //left encoder
+static int ENC1B = 11; //left encoder
 
 //EEPROM
 static int EEPROMSDA = 0;
@@ -48,8 +48,8 @@ robotStatus_t roboStatus;
 distance motorDistances;
 MotorCommand motorCommand;
 
-MotorWithEncoder leftMotor(leftMotorPwmPin, encoderLeftA, encoderLeftB, true);
-MotorWithEncoder rightMotor(rightMotorPwmPin, encoderRightA, encoderRightB, false);
+MotorWithEncoder leftMotor(PWM1, ENC1A, ENC1B, true);
+MotorWithEncoder rightMotor(PWM0, ENC0A, ENC1B, false);
 DifferentialDrive drivetrain(leftMotor, rightMotor, 0.025);
 
 void configureCan();
@@ -89,13 +89,12 @@ void setup() {
 
   drivetrain.setup();
 
-  attachInterrupt(encoderLeftA, updateLeft, CHANGE);
-  attachInterrupt(encoderRightA, updateRight, CHANGE);
+  attachInterrupt(ENC0A, updateLeft, CHANGE);
+  attachInterrupt(ENC1A, updateRight, CHANGE);
 
   motor_update_timer.start();
   
   configureCan();
-
 }
 
 void loop() {
@@ -123,10 +122,6 @@ void loop() {
       conbus_can.popReply();
     }
   }
-
-
-
-
 }
 
 void configureCan() {
@@ -161,7 +156,7 @@ void onCanRecieve() {
 
   switch (frame.id) {
     case 10:
-      motorCommand = *(MotorCommand*)(frame.data);     //Noah made me cry. I dont know what they did but I dont like it one bit - Jorge
+      motorCommand = *(MotorCommand*)(frame.data);
 
       desired_forward_velocity = (float)motorCommand.setpoint_forward_velocity / SPEED_SCALE_FACTOR;
       desired_angular_velocity = (float)motorCommand.setpoint_angular_velocity / SPEED_SCALE_FACTOR;
