@@ -3,6 +3,7 @@
 #include "autonav_msgs/msg/motor_feedback.hpp"
 #include "autonav_msgs/msg/gps_feedback.hpp"
 #include <iostream>
+#include "autonav_filters/rapidcsv.h"
 
 TEST(ParticleFilterTests, initialization_test) {
     double latitudeLength = 111086.2;
@@ -20,7 +21,6 @@ TEST(ParticleFilterTests, initialization_test) {
 
     std::vector<std::vector<double>> cpp_data = particle_filter.get_particles_data();
 
-    printf("%d \n", cpp_data.size());
     for(int i = 0; i < cpp_data.size(); i++) {
         ASSERT_NEAR(cpp_data[i][0], python_data[i][0], 0.00001);
         ASSERT_NEAR(cpp_data[i][1], python_data[i][1], 0.00001);
@@ -100,6 +100,22 @@ TEST(ParticleFilterTests, gps_test) {
     std::vector<double> gps_vector_1 = particle_filter.gps(gps_feedback_1);
 
     ASSERT_EQ(gps_vector_1, python_gps_vector_1);
+}
+
+TEST(ParticleFilterTests, complete_test) {
+    double latitudeLength = 111086.2;
+    double longitudeLength = 81978.2;
+    ParticleFilter particle_filter = ParticleFilter(latitudeLength, longitudeLength);
+
+    particle_filter.init_particles();
+
+    rapidcsv::Document motor_feedback_sheet("~/Downloads/igvc_data_2023/day3_p2/autonomous_2023-06-04_13-10-36/ENTRY_FEEDBACK.csv");
+    rapidcsv::Document gps_feedback_sheet("~/Downloads/igvc_data_2023/day3_p2/autonomous_2023-06-04_13-10-36/ENTRY_GPS.csv");
+
+    std::vector<float> motor_feedbacks = motor_feedback_sheet.GetColumn<float>(2);
+    for (float i : motor_feedbacks) {
+        std::cout << i << std::endl;
+    }
 }
 
 int main(int argc, char* argv[]) {
