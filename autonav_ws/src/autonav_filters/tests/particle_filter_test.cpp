@@ -3,6 +3,10 @@
 #include "autonav_msgs/msg/motor_feedback.hpp"
 #include "autonav_msgs/msg/gps_feedback.hpp"
 #include <iostream>
+#include <filesystem>
+#include <chrono>
+#include <thread>
+#include "autonav_filters/csv_utils.hpp"
 #include "autonav_filters/rapidcsv.h"
 
 TEST(ParticleFilterTests, initialization_test) {
@@ -109,13 +113,60 @@ TEST(ParticleFilterTests, complete_test) {
 
     particle_filter.init_particles();
 
-    rapidcsv::Document motor_feedback_sheet("~/Downloads/igvc_data_2023/day3_p2/autonomous_2023-06-04_13-10-36/ENTRY_FEEDBACK.csv");
-    rapidcsv::Document gps_feedback_sheet("~/Downloads/igvc_data_2023/day3_p2/autonomous_2023-06-04_13-10-36/ENTRY_GPS.csv");
+    rapidcsv::Document motor_feedback_sheet("/home/tony/autonav_software_2024/autonav_ws/src/autonav_filters/tests/ENTRY_FEEDBACK.csv");
+    rapidcsv::Document gps_feedback_sheet("/home/tony/autonav_software_2024/autonav_ws/src/autonav_filters/tests/ENTRY_GPS.csv");
 
-    std::vector<float> motor_feedbacks = motor_feedback_sheet.GetColumn<float>(2);
-    for (float i : motor_feedbacks) {
-        std::cout << i << std::endl;
+    std::vector<float> delta_xs = motor_feedback_sheet.GetColumn<float>(2);
+    std::vector<float> delta_ys = motor_feedback_sheet.GetColumn<float>(3);
+    std::vector<float> delta_thetas = motor_feedback_sheet.GetColumn<float>(4);
+
+    std::vector<float> latitudes = gps_feedback_sheet.GetColumn<float>(2);
+    std::vector<float> longitudes = gps_feedback_sheet.GetColumn<float>(3);
+    std::vector<float> altitudes = gps_feedback_sheet.GetColumn<float>(4);
+    std::vector<float> gps_fix = gps_feedback_sheet.GetColumn<float>(5);
+    std::vector<std::string> is_locked_str = gps_feedback_sheet.GetColumn<std::string>(6);
+    std::vector<bool> is_locked;
+    std::vector<float> satellites = gps_feedback_sheet.GetColumn<float>(7);
+
+    for (std::string s : is_locked_str) {
+        is_locked.push_back(csv_utils::to_bool(s));
+    };
+
+    // cut down the deltas until they are the same length as the gps values
+    
+    int n = latitudes.size();
+
+    std::vector sliced_delta_xs(delta_xs.begin(), delta_xs.begin() + n);
+    std::vector sliced_delta_ys(delta_ys.begin(), delta_ys.begin() + n);
+    std::vector sliced_delta_thetas(delta_thetas.begin(), delta_thetas.begin() + n);
+
+    // construct feedback messages
+
+    autonav_msgs::msg::MotorFeedback motor_message;
+    autonav_msgs::msg::GPSFeedback gps_message;
+    std::vector<double> position_vector; 
+    for (int i = 0; i < n; i++) {
+        motor_message.delta_x = sliced_delta_xs[i];
+        motor_message.delta_y = sliced_delta_ys[i];
+        motor_message.delta_theta = sliced_delta_thetas[i];
+
+        gps_message.latitude = latitudes[i];
+        gps_message.longitude = longitudes[i];
+        gps_message.altitude = altitudes[i];
+        gps_message.gps_fix = gps_fix[i];
+        gps_message.is_locked = is_locked[i];
+        gps_message.satellites = satellites[i];
+
+        particle_filter.feedback(motor_message);
+        position_vector = particle_filter.gps(gps_message);
     }
+
+    printf("%f", position_vector[0]);
+    printf("%f", position_vector[1]);
+
+    /*std::filesystem::path cwd = std::filesystem::current_path();
+    std::string cwd_str = cwd.string();
+    printf(cwd_str.c_str()); */
 }
 
 int main(int argc, char* argv[]) {

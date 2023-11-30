@@ -106,6 +106,8 @@ class ParticleFilter {
             resample();
 
             std::vector<double> gps_vector = {gps_x, gps_y};
+            //printf("gps_x: %f \n", gps_x);
+            //printf("gps_y: %f \n", gps_y);
             return gps_vector;
         }
 

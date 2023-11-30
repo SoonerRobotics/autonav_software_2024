@@ -11,7 +11,6 @@ find_package(rclcpp REQUIRED)
 find_package(rclpy REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(std_msgs REQUIRED)
-find_package(autonav_messages REQUIRED)
 find_package(autonav_msgs REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
