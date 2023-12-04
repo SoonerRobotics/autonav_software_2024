@@ -31,15 +31,47 @@ g_mapData.origin.position.y = -10.0
 
 MAP_RES = 80
 
+# image flattening constants calculations
+#TODO at some point we might not want these to be constant, but for now there's no need for them to be calculated every loop iteration/clutter the node class code
+offset = 270
+
+#TEMP FIXME
+# top_left = (0+offset, 480)
+# top_right = (640-offset, 480)
+top_left = (0, 480)
+top_right = (640, 480)
+bottom_left = (0, 0)
+bottom_right = (640, 0)
+
+# source points are just the four corners of the image
+src_pts = np.float32([[top_left], [top_right], [bottom_left], [bottom_right]])
+# dest_pts = np.float32([[0, 480],  [640, 480],  [0+offset, 0],      [640-offset, 0]])
+dest_pts = np.float32([[0, 480],  [640, 480],  [0, 0],      [640, 0]])
+
+# this is the actual thing we need to perform the flattening
+MATRIX = cv2.getPerspectiveTransform(dest_pts, src_pts)
+
+# and here's the constants for region of disinterest
+# vertices according to MS paint and a frame I grabbed from Scrabby (now with some tuning from running in Scrabby)
+region_of_disinterest_vertices = [(10, 479), (319, 390), (630, 479)] # triangle shape | (x, y) | bottom left, top, bottom right I think
+region_of_disinterest = np.array([region_of_disinterest_vertices], np.int32)
+
+
+# for erode/dilate/blur operations
+# 0 for rectangle, 1 for cross, 2 for ellipse
+EROSION_SHAPE = 2
+KERNEL_SIZE = 3
+
+# the actual kernel creating using OpenCV magic
+kernel = cv2.getStructuringElement(EROSION_SHAPE, (KERNEL_SIZE, KERNEL_SIZE))
+ 
 
 class ImageTransformer(Node):
     def __init__(self):
         super().__init__("autonav_vision_transformer")
 
         # Reload the unet model
-        #TODO figure out a way to not use absolute paths so it can run on things that aren't my laptop
-        self.model = tf.keras.models.load_model('/mnt/c/Users/isasq/Documents/GitHub/autonav_software_2024/autonav_ws/src/autonav_unet/src/results/SCRUNet_model.keras')
-
+        self.model = tf.keras.models.load_model('autonav_ws/src/autonav_unet/src/results/SCRUNet_model.keras')
 
     def configure(self):
         # create the nodes
@@ -56,17 +88,7 @@ class ImageTransformer(Node):
 
     # flatten the image (convert it from 3d to 2d) so it's like we have a top-down view of the course in front of us
     def flattenImage(self, img):
-        top_left = (int)(img.shape[1] * 0.26), (int)(img.shape[0])
-        top_right = (int)(img.shape[1] - img.shape[1] * 0.26), (int)(img.shape[0])
-        bottom_left = 0, 0
-        bottom_right = (int)(img.shape[1]), 0
-
-        src_pts = np.float32([[top_left], [top_right], [bottom_left], [bottom_right]])
-        dest_pts = np.float32([ [0, 480], [640, 480] ,[0, 0], [640, 0]])
-
-        matrix = cv2.getPerspectiveTransform(dest_pts, src_pts)
-        output = cv2.warpPerspective(img, matrix, (640, 480))
-        return output
+        return cv2.warpPerspective(img, MATRIX, (640, 480)) # just let OpenCV work its magic.
 
     # publish the occupancy map or something
     # idk what this does or how it does it I didn't write this code
@@ -82,7 +104,7 @@ class ImageTransformer(Node):
         # Decompressify
         cv_image = g_bridge.compressed_imgmsg_to_cv2(image_)
 
-        #======================================================
+        #=====================CNN THINGS=====================
         # Histogram equalization of HSV value channel
         image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
         image[:,:,2] = cv2.equalizeHist(image[:,:,2])
@@ -103,19 +125,18 @@ class ImageTransformer(Node):
 
         # scale the image back up
         mask = cv2.resize(mask, (640, 480)) #TODO find a better way to do this because when it scales the image up it introduces a lot of artefacts
-
+        #=====================/CNN THINGS=====================
 
         # Apply region of disinterest and flattening
-        # I don't know how it does this I didn't write this code
-        #TODO rewrite this code
-        height = mask.shape[0]
-        width = mask.shape[1]
-        region_of_disinterest_vertices=[
-            (0, height),
-            (width / 2, height / 2 + 100),
-            (width, height)
-        ]
-        mask = self.regionOfDisinterest(mask, np.array([region_of_disinterest_vertices], np.int32))
+        # I don't really know how it does this but it does it
+        cv_image = self.regionOfDisinterest(cv_image, region_of_disinterest)
+        
+        # erode the mask a little bit to remove artefacts and small bits that aren't actually there
+        mask = cv2.erode(mask, kernel)
+
+        # dilate it back up to make up for lost information
+        mask = cv2.dilate(mask, kernel)
+
 
         # get our top-down view so we can make our map
         mask = self.flattenImage(mask)
@@ -133,9 +154,15 @@ class ImageTransformer(Node):
     # I don't know how this code works I didn't write it
     #TODO rewrite this code    
     def regionOfDisinterest(self, img, vertices):
+        # create a binary image from the given image? not sure what this line of code does
         mask = np.ones_like(img) * 255
+
+        # have OpenCV work its magic and draw a triangle (the given vertices) on the mask
         cv2.fillPoly(mask, vertices, 0)
+
+        # apply the mask (not keeping the pixels we don't want, keeping the ones we do)
         masked_image = cv2.bitwise_and(img, mask)
+
         return masked_image
 
 

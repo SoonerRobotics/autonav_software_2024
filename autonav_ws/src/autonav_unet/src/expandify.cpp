@@ -89,7 +89,7 @@ public:
 		{
 			for (int y = 1; y < ExpandifyConstants::MAP_RES; y++)
 			{
-				if(cfg->data.at(x + y * ExpandifyConstants::MAP_RES) > 0)
+				if(cfg->data.at(x + y * ExpandifyConstants::MAP_RES) > 30)
 				{
 					for (Circle& circle : circles)
 					{
@@ -139,7 +139,7 @@ private:
 
 	nav_msgs::msg::MapMetaData map;
 	
-	float maxRange = 0.65;
+	float maxRange = 0.45;
 	float noGoPercent = 0.70;
 	int noGoRange = 0;
 	std::vector<Circle> circles;
