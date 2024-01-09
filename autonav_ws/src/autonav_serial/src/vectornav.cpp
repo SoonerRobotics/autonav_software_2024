@@ -1,4 +1,4 @@
-#include "scr_core/node.h"
+#include "scr/node.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "autonav_msgs/msg/gps_feedback.hpp"
 #include "autonav_msgs/msg/imu_data.hpp"
@@ -70,40 +70,40 @@ public:
     VectornavNode() : SCR::Node("autonav_vectornav") {}
     ~VectornavNode() {}
 
-    void configure() override
+    void init() override
     {
-        this->gpsFeedbackPublisher = this->create_publisher<autonav_msgs::msg::GPSFeedback>("/autonav/gps", 20);
-        this->imuDataPublisher = this->create_publisher<autonav_msgs::msg::IMUData>("/autonav/imu", 20);
-
         auto ptrs = new PublisherPtrs();
-        ptrs->gpsFeedbackPublisher = this->gpsFeedbackPublisher;
-        ptrs->imuDataPublisher = this->imuDataPublisher;
+        ptrs->gpsFeedbackPublisher = this->create_publisher<autonav_msgs::msg::GPSFeedback>("/autonav/gps", 20);
+        ptrs->imuDataPublisher = this->create_publisher<autonav_msgs::msg::IMUData>("/autonav/imu", 20);
         ptrs->sensor = sensor;
 
         sensor->writeAsyncDataOutputType(vn::protocol::uart::VNGPS, true);
         sensor->registerAsyncPacketReceivedHandler(ptrs, onGpsMessageReceived);
 
-        this->setDeviceState(SCR::DeviceState::OPERATING);
+        set_device_state(SCR::DeviceState::OPERATING);
     }
 
-
-    void transition(scr_msgs::msg::SystemState old, scr_msgs::msg::SystemState updated) override
+    void system_state_transition(scr_msgs::msg::SystemState old, scr_msgs::msg::SystemState updated) override
     {
-        
     }
 
-private:
-    rclcpp::Publisher<autonav_msgs::msg::GPSFeedback>::SharedPtr gpsFeedbackPublisher;
-    rclcpp::Publisher<autonav_msgs::msg::IMUData>::SharedPtr imuDataPublisher;
+    void config_updated(json config) override
+    {
+    }
+
+    json get_default_config() override
+    {
+        return json();
+    }
 };
 
-int main(int a, char **b)
+int main(int argc, char **argv)
 {
     sensor = std::make_shared<vn::sensors::VnSensor>();
     sensor->connect(VectornavConstants::SENSOR_PORT, VectornavConstants::SENSOR_BAUDRATE);
 
-    rclcpp::init(a, b);
-    rclcpp::spin(std::make_shared<VectornavNode>());
+    rclcpp::init(argc, argv);
+    SCR::Node::run_node(std::make_shared<VectornavNode>());
     rclcpp::shutdown();
 
     sensor->disconnect();

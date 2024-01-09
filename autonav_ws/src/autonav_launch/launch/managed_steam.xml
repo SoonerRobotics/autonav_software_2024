@@ -1,13 +1,11 @@
 <launch>
-    <node pkg="scr_state" exec="statemanager" />
+    <node pkg="scr_controller" exec="core" />
     <node pkg="scr_logging" exec="logging">
         <param name="log_to_console" value="true" />
     </node>
     <node pkg="scr_configuration" exec="config">
         <param name="preset" value="default" />
     </node>
-    <node pkg="autonav_display" exec="broadcast.py" />
-    <node pkg="autonav_serial" exec="imu.py" />
     <node pkg="autonav_serial" exec="serial_node.py" />
     <node pkg="autonav_serial" exec="camera.py" />
     <node pkg="autonav_vision" exec="transformations.py" />
@@ -19,5 +17,4 @@
     </node>
     <node pkg="autonav_manual" exec="steam.py" />
     <node pkg="autonav_manual" exec="steamremote" />
-    <node pkg="autonav_playback" exec="playback.py" />
 </launch>

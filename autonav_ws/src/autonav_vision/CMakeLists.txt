@@ -15,7 +15,7 @@ find_package(sensor_msgs REQUIRED)
 find_package(autonav_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
-find_package(scr_core REQUIRED)
+find_package(scr REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(image_transport REQUIRED)
 
@@ -34,7 +34,7 @@ install(PROGRAMS
 
 # C++
 add_executable(expandify src/expandify.cpp)
-ament_target_dependencies(expandify rclcpp sensor_msgs autonav_msgs scr_core nav_msgs cv_bridge image_transport)
+ament_target_dependencies(expandify rclcpp sensor_msgs autonav_msgs nav_msgs cv_bridge image_transport scr)
 
 install(TARGETS
   expandify

@@ -8,7 +8,7 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
-find_package(scr_core REQUIRED)
+find_package(scr REQUIRED)
 find_package(scr_msgs REQUIRED)
 find_package(autonav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -21,10 +21,8 @@ ament_python_install_package(${PROJECT_NAME})
 # Install Python executables
 install(PROGRAMS
 	src/serial_node.py
-	src/imu.py
 	src/camera.py
 	src/safety_lights.py
-	src/jams.py
 	DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -63,7 +61,7 @@ add_executable(vectornav_node
 	src/vectornav.cpp
 )
 ament_target_dependencies(vectornav_node
-	scr_core
+	scr
 	scr_msgs
 	autonav_msgs
 	rclcpp
