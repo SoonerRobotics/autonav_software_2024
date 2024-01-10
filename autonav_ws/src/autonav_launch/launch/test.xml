@@ -1,5 +1,4 @@
 <launch>
-    <include file="$(find-pkg-share rosbridge_server)/launch/rosbridge_websocket_launch.xml" />
     <node pkg="scr_controller" exec="core" />
     <node pkg="autonav_manual" exec="steamremote" />
     <node pkg="autonav_nav" exec="astar.py" />
@@ -11,4 +10,5 @@
     </node>
     <node pkg="autonav_vision" exec="transformations.py" />
     <node pkg="autonav_vision" exec="expandify" />
+    <node pkg="autonav_display" exec="display" />
 </launch>

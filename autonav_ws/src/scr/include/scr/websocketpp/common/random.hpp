@@ -28,7 +28,7 @@
 #ifndef WEBSOCKETPP_COMMON_RANDOM_DEVICE_HPP
 #define WEBSOCKETPP_COMMON_RANDOM_DEVICE_HPP
 
-#include <websocketpp/common/cpp11.hpp>
+#include "scr/websocketpp/common/cpp11.hpp"
 
 // If we've determined that we're in full C++11 mode and the user hasn't
 // explicitly disabled the use of C++11 random header, then prefer it to
@@ -51,15 +51,15 @@
 
 
 #ifdef _WEBSOCKETPP_CPP11_RANDOM_DEVICE_
-    #include <random>
+    #include "random"
 #else
-    #include <boost/version.hpp>
+    #include "boost/version.hpp"
 
     #if (BOOST_VERSION/100000) == 1 && ((BOOST_VERSION/100)%1000) > 46
-        #include <boost/random/uniform_int_distribution.hpp>
-        #include <boost/random/random_device.hpp>
+        #include "boost/random/uniform_int_distribution.hpp"
+        #include "boost/random/random_device.hpp"
     #elif (BOOST_VERSION/100000) == 1 && ((BOOST_VERSION/100)%1000) >= 43
-        #include <boost/nondet_random.hpp>
+        #include "boost/nondet_random.hpp"
     #else
         // TODO: static_assert(false, "Could not find a suitable random_device")
     #endif

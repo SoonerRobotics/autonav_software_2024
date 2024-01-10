@@ -28,7 +28,7 @@
 #ifndef WEBSOCKETPP_COMMON_TYPE_TRAITS_HPP
 #define WEBSOCKETPP_COMMON_TYPE_TRAITS_HPP
 
-#include <websocketpp/common/cpp11.hpp>
+#include "scr/websocketpp/common/cpp11.hpp"
 
 // If we've determined that we're in full C++11 mode and the user hasn't
 // explicitly disabled the use of C++11 functional header, then prefer it to
@@ -41,9 +41,9 @@
 
 
 #ifdef _WEBSOCKETPP_CPP11_TYPE_TRAITS_
-    #include <type_traits>
+    #include "type_traits"
 #else
-    #include <boost/aligned_storage.hpp>
+    #include "boost/aligned_storage.hpp"
 #endif
 
 

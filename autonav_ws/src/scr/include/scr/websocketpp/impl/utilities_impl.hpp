@@ -28,8 +28,8 @@
 #ifndef WEBSOCKETPP_UTILITIES_IMPL_HPP
 #define WEBSOCKETPP_UTILITIES_IMPL_HPP
 
-#include <algorithm>
-#include <string>
+#include "algorithm"
+#include "string"
 
 namespace websocketpp {
 namespace utility {

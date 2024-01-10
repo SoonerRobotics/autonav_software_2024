@@ -43,27 +43,27 @@
 // for this has passed this should be cleaned up and simplified.
 
 #ifdef ASIO_STANDALONE
-    #include <asio/version.hpp>
+    #include "asio/version.hpp"
     
     #if (ASIO_VERSION/100000) == 1 && ((ASIO_VERSION/100)%1000) < 8
         static_assert(false, "The minimum version of standalone Asio is 1.8.0");
     #endif
     
-    #include <asio.hpp>
-    #include <asio/steady_timer.hpp>
-    #include <websocketpp/common/chrono.hpp> 
+    #include "asio.hpp"
+    #include "asio/steady_timer.hpp"
+    #include "scr/websocketpp/common/chrono.hpp" 
 #else
-    #include <boost/version.hpp>
+    #include "boost/version.hpp"
     
     // See note above about boost <1.49 compatibility. If we are running on 
     // boost > 1.48 pull in the steady timer and chrono library
     #if (BOOST_VERSION/100000) == 1 && ((BOOST_VERSION/100)%1000) > 48
-        #include <boost/asio/steady_timer.hpp>
-        #include <websocketpp/common/chrono.hpp>
+        #include "boost/asio/steady_timer.hpp"
+        #include "scr/websocketpp/common/chrono.hpp"
     #endif
     
-    #include <boost/asio.hpp>
-    #include <boost/system/error_code.hpp>
+    #include "boost/asio.hpp"
+    #include "boost/system/error_code.hpp"
 #endif
 
 namespace websocketpp {

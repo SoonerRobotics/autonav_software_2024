@@ -28,28 +28,28 @@
 #ifndef WEBSOCKETPP_TRANSPORT_ASIO_CON_HPP
 #define WEBSOCKETPP_TRANSPORT_ASIO_CON_HPP
 
-#include <websocketpp/transport/asio/base.hpp>
+#include "scr/websocketpp/transport/asio/base.hpp"
 
-#include <websocketpp/transport/base/connection.hpp>
+#include "scr/websocketpp/transport/base/connection.hpp"
 
-#include <websocketpp/logger/levels.hpp>
-#include <websocketpp/http/constants.hpp>
+#include "scr/websocketpp/logger/levels.hpp"
+#include "scr/websocketpp/http/constants.hpp"
 
-#include <websocketpp/base64/base64.hpp>
-#include <websocketpp/error.hpp>
-#include <websocketpp/uri.hpp>
+#include "scr/websocketpp/base64/base64.hpp"
+#include "scr/websocketpp/error.hpp"
+#include "scr/websocketpp/uri.hpp"
 
-#include <websocketpp/common/asio.hpp>
-#include <websocketpp/common/chrono.hpp>
-#include <websocketpp/common/cpp11.hpp>
-#include <websocketpp/common/memory.hpp>
-#include <websocketpp/common/functional.hpp>
-#include <websocketpp/common/connection_hdl.hpp>
+#include "scr/websocketpp/common/asio.hpp"
+#include "scr/websocketpp/common/chrono.hpp"
+#include "scr/websocketpp/common/cpp11.hpp"
+#include "scr/websocketpp/common/memory.hpp"
+#include "scr/websocketpp/common/functional.hpp"
+#include "scr/websocketpp/common/connection_hdl.hpp"
 
-#include <istream>
-#include <sstream>
-#include <string>
-#include <vector>
+#include "istream"
+#include "sstream"
+#include "string"
+#include "vector"
 
 namespace websocketpp {
 namespace transport {

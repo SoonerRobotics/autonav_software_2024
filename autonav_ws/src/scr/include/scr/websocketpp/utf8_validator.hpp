@@ -29,9 +29,8 @@
 #ifndef UTF8_VALIDATOR_HPP
 #define UTF8_VALIDATOR_HPP
 
-#include <websocketpp/common/stdint.hpp>
-
-#include <string>
+#include "scr/websocketpp/common/stdint.hpp"
+#include "string"
 
 namespace websocketpp {
 namespace utf8_validator {

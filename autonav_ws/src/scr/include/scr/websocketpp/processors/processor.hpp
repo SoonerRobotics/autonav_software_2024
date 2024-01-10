@@ -28,17 +28,17 @@
 #ifndef WEBSOCKETPP_PROCESSOR_HPP
 #define WEBSOCKETPP_PROCESSOR_HPP
 
-#include <websocketpp/processors/base.hpp>
-#include <websocketpp/common/system_error.hpp>
+#include "scr/websocketpp/processors/base.hpp"
+#include "scr/websocketpp/common/system_error.hpp"
 
-#include <websocketpp/close.hpp>
-#include <websocketpp/utilities.hpp>
-#include <websocketpp/uri.hpp>
+#include "scr/websocketpp/close.hpp"
+#include "scr/websocketpp/utilities.hpp"
+#include "scr/websocketpp/uri.hpp"
 
-#include <sstream>
-#include <string>
-#include <utility>
-#include <vector>
+#include "sstream"
+#include "string"
+#include "utility"
+#include "vector"
 
 namespace websocketpp {
 /// Processors encapsulate the protocol rules specific to each WebSocket version

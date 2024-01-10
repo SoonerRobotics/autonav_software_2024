@@ -28,7 +28,7 @@
 #ifndef WEBSOCKETPP_ENDPOINT_IMPL_HPP
 #define WEBSOCKETPP_ENDPOINT_IMPL_HPP
 
-#include <string>
+#include "string"
 
 namespace websocketpp {
 

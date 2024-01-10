@@ -1,5 +1,4 @@
-from autonav_msgs.msg import MotorFeedback, GPSFeedback, Position
-from scr_core.state import SystemMode
+from autonav_msgs.msg import MotorFeedback, GPSFeedback
 import math
 
 class DeadReckoningFilter:

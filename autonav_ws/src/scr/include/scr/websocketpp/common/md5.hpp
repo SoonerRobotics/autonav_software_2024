@@ -67,9 +67,9 @@
  * efficiently on either one than if ARCH_IS_BIG_ENDIAN is defined.
  */
 
-#include <stddef.h>
-#include <string>
-#include <cstring>
+#include "stddef.h"
+#include "string"
+#include "cstring"
 
 namespace websocketpp {
 /// Provides MD5 hashing functionality

@@ -88,7 +88,9 @@
         "any": "cpp",
         "regex": "cpp",
         "ranges": "cpp",
-        "valarray": "cpp"
+        "valarray": "cpp",
+        "coroutine": "cpp",
+        "source_location": "cpp"
     },
     "cmake.configureOnOpen": false
 }

@@ -120,6 +120,9 @@ namespace SCR
         /// @brief The current map of performance measurements
         std::map<std::string, std::chrono::time_point<std::chrono::high_resolution_clock>> perf_measurements;
 
+        /// @brief The current map of device configurations
+        std::map<std::string, SCR::DeviceState> device_states;
+
     private:
         NodeSubscriptions subscriptions;
         NodePublishers publishers;

@@ -87,6 +87,7 @@ class Node(ROSNode):
                 self.get_logger().error("Failed to set default config: " + str(e))
 
             # Set the device state to standby and initialize
+            self.config_updated(defaultConfig)
             self.set_device_state(DeviceStateEnum.STANDBY)
             self.init()
 

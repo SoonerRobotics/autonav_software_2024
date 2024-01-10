@@ -33,7 +33,7 @@
 #endif
 
 #if defined (_WIN32) && defined (_MSC_VER) && (_MSC_VER < 1600)
-    #include <boost/cstdint.hpp>
+    #include "boost/cstdint.hpp"
 
     using boost::int8_t;
     using boost::int_least8_t;
@@ -67,7 +67,7 @@
     using boost::intmax_t;
     using boost::uintmax_t;
 #else
-    #include <stdint.h>
+    #include "stdint.h"
 #endif
 
 #endif // WEBSOCKETPP_COMMON_STDINT_HPP

@@ -31,12 +31,12 @@
 #ifndef WEBSOCKETPP_LOGGER_SYSLOG_HPP
 #define WEBSOCKETPP_LOGGER_SYSLOG_HPP
 
-#include <syslog.h>
+#include "syslog.h"
 
-#include <websocketpp/logger/basic.hpp>
+#include "scr/websocketpp/logger/basic.hpp"
 
-#include <websocketpp/common/cpp11.hpp>
-#include <websocketpp/logger/levels.hpp>
+#include "scr/websocketpp/common/cpp11.hpp"
+#include "scr/websocketpp/logger/levels.hpp"
 
 namespace websocketpp {
 namespace log {

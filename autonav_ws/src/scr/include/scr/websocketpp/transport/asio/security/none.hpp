@@ -28,16 +28,16 @@
 #ifndef WEBSOCKETPP_TRANSPORT_SECURITY_NONE_HPP
 #define WEBSOCKETPP_TRANSPORT_SECURITY_NONE_HPP
 
-#include <websocketpp/uri.hpp>
+#include "scr/websocketpp/uri.hpp"
 
-#include <websocketpp/transport/base/connection.hpp>
-#include <websocketpp/transport/asio/security/base.hpp>
+#include "scr/websocketpp/transport/base/connection.hpp"
+#include "scr/websocketpp/transport/asio/security/base.hpp"
 
-#include <websocketpp/common/asio.hpp>
-#include <websocketpp/common/memory.hpp>
+#include "scr/websocketpp/common/asio.hpp"
+#include "scr/websocketpp/common/memory.hpp"
 
-#include <sstream>
-#include <string>
+#include "sstream"
+#include "string"
 
 namespace websocketpp {
 namespace transport {

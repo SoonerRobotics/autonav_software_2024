@@ -28,18 +28,18 @@
 #ifndef WEBSOCKETPP_TRANSPORT_ASIO_HPP
 #define WEBSOCKETPP_TRANSPORT_ASIO_HPP
 
-#include <websocketpp/transport/base/endpoint.hpp>
-#include <websocketpp/transport/asio/connection.hpp>
-#include <websocketpp/transport/asio/security/none.hpp>
+#include "scr/websocketpp/transport/base/endpoint.hpp"
+#include "scr/websocketpp/transport/asio/connection.hpp"
+#include "scr/websocketpp/transport/asio/security/none.hpp"
 
-#include <websocketpp/uri.hpp>
-#include <websocketpp/logger/levels.hpp>
+#include "scr/websocketpp/uri.hpp"
+#include "scr/websocketpp/logger/levels.hpp"
 
-#include <websocketpp/common/asio.hpp>
-#include <websocketpp/common/functional.hpp>
+#include "scr/websocketpp/common/asio.hpp"
+#include "scr/websocketpp/common/functional.hpp"
 
-#include <sstream>
-#include <string>
+#include "sstream"
+#include "string"
 
 namespace websocketpp {
 namespace transport {

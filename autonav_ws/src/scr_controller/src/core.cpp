@@ -94,6 +94,33 @@ private:
 
         // Update the device state
         RCLCPP_INFO(this->get_logger(), "Device %s state changed to %s", request->device.c_str(), SCR::toString((SCR::DeviceState)request->state).c_str());
+        if (device_states.find(request->device) == device_states.end())
+        {
+            // This is the first time we've seen this device, so we need to publish the system state, device state, and all known configs
+            scr_msgs::msg::SystemState system_state_message;
+            system_state_message.state = (uint8_t)state;
+            system_state_message.mode = (uint8_t)mode;
+            system_state_message.mobility = mobility;
+            publishers.system_state->publish(system_state_message);
+
+            // Publish all known device states
+            for (auto &device_state : device_states)
+            {
+                scr_msgs::msg::DeviceState device_state_message;
+                device_state_message.device = device_state.first;
+                device_state_message.state = (uint8_t)device_state.second;
+                publishers.device_state->publish(device_state_message);
+            }
+
+            // Publish all known configs
+            for (auto &config : configs)
+            {
+                scr_msgs::msg::ConfigUpdated config_updated_message;
+                config_updated_message.device = config.first;
+                config_updated_message.json = config.second.dump();
+                publishers.config_updated->publish(config_updated_message);
+            }
+        }
         device_states[request->device] = (SCR::DeviceState)request->state;
 
         // Send the response

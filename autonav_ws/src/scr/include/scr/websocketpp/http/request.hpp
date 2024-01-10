@@ -28,10 +28,10 @@
 #ifndef HTTP_PARSER_REQUEST_HPP
 #define HTTP_PARSER_REQUEST_HPP
 
-#include <string>
+#include "string"
 
-#include <websocketpp/common/memory.hpp>
-#include <websocketpp/http/parser.hpp>
+#include "scr/websocketpp/common/memory.hpp"
+#include "scr/websocketpp/http/parser.hpp"
 
 namespace websocketpp {
 namespace http {
@@ -119,6 +119,6 @@ private:
 } // namespace http
 } // namespace websocketpp
 
-#include <websocketpp/http/impl/request.hpp>
+#include "scr/websocketpp/http/impl/request.hpp"
 
 #endif // HTTP_PARSER_REQUEST_HPP

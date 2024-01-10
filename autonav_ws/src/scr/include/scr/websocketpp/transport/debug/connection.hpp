@@ -28,19 +28,19 @@
 #ifndef WEBSOCKETPP_TRANSPORT_DEBUG_CON_HPP
 #define WEBSOCKETPP_TRANSPORT_DEBUG_CON_HPP
 
-#include <websocketpp/transport/debug/base.hpp>
+#include "scr/websocketpp/transport/debug/base.hpp"
 
-#include <websocketpp/transport/base/connection.hpp>
+#include "scr/websocketpp/transport/base/connection.hpp"
 
-#include <websocketpp/uri.hpp>
-#include <websocketpp/logger/levels.hpp>
+#include "scr/websocketpp/uri.hpp"
+#include "scr/websocketpp/logger/levels.hpp"
 
-#include <websocketpp/common/connection_hdl.hpp>
-#include <websocketpp/common/memory.hpp>
-#include <websocketpp/common/platforms.hpp>
+#include "scr/websocketpp/common/connection_hdl.hpp"
+#include "scr/websocketpp/common/memory.hpp"
+#include "scr/websocketpp/common/platforms.hpp"
 
-#include <string>
-#include <vector>
+#include "string"
+#include "vector"
 
 namespace websocketpp {
 namespace transport {

@@ -69,6 +69,7 @@ namespace SCR
 
     void Node::device_state_callback(const scr_msgs::msg::DeviceState msg)
     {
+        device_states[msg.device] = static_cast<SCR::DeviceState>(msg.state);
         if (msg.device != identifier)
         {
             return;
@@ -109,6 +110,7 @@ namespace SCR
             }
 
             // We are booted and have a connection to the server, lets go into standby and call our own init function
+            config_updated(config);
             set_device_state(SCR::DeviceState::STANDBY);
             init();
             return;

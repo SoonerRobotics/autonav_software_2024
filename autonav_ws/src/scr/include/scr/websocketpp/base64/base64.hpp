@@ -36,7 +36,7 @@
 #ifndef _BASE64_HPP_
 #define _BASE64_HPP_
 
-#include <string>
+#include "string"
 
 namespace websocketpp {
 

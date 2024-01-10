@@ -33,12 +33,12 @@
  * A package of types and methods for manipulating WebSocket close codes.
  */
 
-#include <websocketpp/error.hpp>
-#include <websocketpp/common/network.hpp>
-#include <websocketpp/common/stdint.hpp>
-#include <websocketpp/utf8_validator.hpp>
+#include "scr/websocketpp/error.hpp"
+#include "scr/websocketpp/common/network.hpp"
+#include "scr/websocketpp/common/stdint.hpp"
+#include "scr/websocketpp/utf8_validator.hpp"
 
-#include <string>
+#include "string"
 
 namespace websocketpp {
 /// A package of types and methods for manipulating WebSocket close codes.

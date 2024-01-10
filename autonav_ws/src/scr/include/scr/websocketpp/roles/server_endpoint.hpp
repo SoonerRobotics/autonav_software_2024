@@ -28,11 +28,11 @@
 #ifndef WEBSOCKETPP_SERVER_ENDPOINT_HPP
 #define WEBSOCKETPP_SERVER_ENDPOINT_HPP
 
-#include <websocketpp/endpoint.hpp>
+#include "scr/websocketpp/endpoint.hpp"
 
-#include <websocketpp/logger/levels.hpp>
+#include "scr/websocketpp/logger/levels.hpp"
 
-#include <websocketpp/common/system_error.hpp>
+#include "scr/websocketpp/common/system_error.hpp"
 
 namespace websocketpp {
 

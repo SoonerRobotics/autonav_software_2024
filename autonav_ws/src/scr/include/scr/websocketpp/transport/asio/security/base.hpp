@@ -28,14 +28,14 @@
 #ifndef WEBSOCKETPP_TRANSPORT_ASIO_SOCKET_BASE_HPP
 #define WEBSOCKETPP_TRANSPORT_ASIO_SOCKET_BASE_HPP
 
-#include <websocketpp/common/asio.hpp>
-#include <websocketpp/common/memory.hpp>
-#include <websocketpp/common/functional.hpp>
-#include <websocketpp/common/system_error.hpp>
-#include <websocketpp/common/cpp11.hpp>
-#include <websocketpp/common/connection_hdl.hpp>
+#include "scr/websocketpp/common/asio.hpp"
+#include "scr/websocketpp/common/memory.hpp"
+#include "scr/websocketpp/common/functional.hpp"
+#include "scr/websocketpp/common/system_error.hpp"
+#include "scr/websocketpp/common/cpp11.hpp"
+#include "scr/websocketpp/common/connection_hdl.hpp"
 
-#include <string>
+#include "string"
 
 // Interface that sockets/security policies must implement
 

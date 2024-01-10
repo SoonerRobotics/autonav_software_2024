@@ -28,13 +28,13 @@
 #ifndef WEBSOCKETPP_TRANSPORT_ASIO_BASE_HPP
 #define WEBSOCKETPP_TRANSPORT_ASIO_BASE_HPP
 
-#include <websocketpp/common/asio.hpp>
-#include <websocketpp/common/cpp11.hpp>
-#include <websocketpp/common/functional.hpp>
-#include <websocketpp/common/system_error.hpp>
-#include <websocketpp/common/type_traits.hpp>
+#include "scr/websocketpp/common/asio.hpp"
+#include "scr/websocketpp/common/cpp11.hpp"
+#include "scr/websocketpp/common/functional.hpp"
+#include "scr/websocketpp/common/system_error.hpp"
+#include "scr/websocketpp/common/type_traits.hpp"
 
-#include <string>
+#include "string"
 
 namespace websocketpp {
 namespace transport {

@@ -28,13 +28,13 @@
 #ifndef HTTP_PARSER_HPP
 #define HTTP_PARSER_HPP
 
-#include <algorithm>
-#include <map>
-#include <string>
-#include <utility>
+#include "algorithm"
+#include "map"
+#include "string"
+#include "utility"
 
-#include <websocketpp/utilities.hpp>
-#include <websocketpp/http/constants.hpp>
+#include "scr/websocketpp/utilities.hpp"
+#include "scr/websocketpp/http/constants.hpp"
 
 namespace websocketpp {
 namespace http {
@@ -624,6 +624,6 @@ protected:
 } // namespace http
 } // namespace websocketpp
 
-#include <websocketpp/http/impl/parser.hpp>
+#include "scr/websocketpp/http/impl/parser.hpp"
 
 #endif // HTTP_PARSER_HPP

@@ -28,10 +28,10 @@
 #ifndef WEBSOCKETPP_TRANSPORT_DEBUG_BASE_HPP
 #define WEBSOCKETPP_TRANSPORT_DEBUG_BASE_HPP
 
-#include <websocketpp/common/system_error.hpp>
-#include <websocketpp/common/cpp11.hpp>
+#include "scr/websocketpp/common/system_error.hpp"
+#include "scr/websocketpp/common/cpp11.hpp"
 
-#include <string>
+#include "string"
 
 namespace websocketpp {
 namespace transport {

@@ -28,13 +28,13 @@
 #ifndef WEBSOCKETPP_FRAME_HPP
 #define WEBSOCKETPP_FRAME_HPP
 
-#include <algorithm>
-#include <string>
+#include "algorithm"
+#include "string"
 
-#include <websocketpp/common/system_error.hpp>
-#include <websocketpp/common/network.hpp>
+#include "scr/websocketpp/common/system_error.hpp"
+#include "scr/websocketpp/common/network.hpp"
 
-#include <websocketpp/utilities.hpp>
+#include "scr/websocketpp/utilities.hpp"
 
 namespace websocketpp {
 /// Data structures and utility functions for manipulating WebSocket frames

@@ -28,16 +28,16 @@
 #ifndef WEBSOCKETPP_EXTENSION_PERMESSAGE_DEFLATE_DISABLED_HPP
 #define WEBSOCKETPP_EXTENSION_PERMESSAGE_DEFLATE_DISABLED_HPP
 
-#include <websocketpp/common/cpp11.hpp>
-#include <websocketpp/common/stdint.hpp>
-#include <websocketpp/common/system_error.hpp>
+#include "scr/websocketpp/common/cpp11.hpp"
+#include "scr/websocketpp/common/stdint.hpp"
+#include "scr/websocketpp/common/system_error.hpp"
 
-#include <websocketpp/http/constants.hpp>
-#include <websocketpp/extensions/extension.hpp>
+#include "scr/websocketpp/http/constants.hpp"
+#include "scr/websocketpp/extensions/extension.hpp"
 
-#include <map>
-#include <string>
-#include <utility>
+#include "map"
+#include "string"
+#include "utility"
 
 namespace websocketpp {
 namespace extensions {

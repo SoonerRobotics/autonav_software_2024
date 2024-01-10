@@ -40,16 +40,16 @@
  *
  */
 
-#include <websocketpp/logger/levels.hpp>
+#include "scr/websocketpp/logger/levels.hpp"
 
-#include <websocketpp/common/cpp11.hpp>
-#include <websocketpp/common/stdint.hpp>
-#include <websocketpp/common/time.hpp>
+#include "scr/websocketpp/common/cpp11.hpp"
+#include "scr/websocketpp/common/stdint.hpp"
+#include "scr/websocketpp/common/time.hpp"
 
-#include <ctime>
-#include <iostream>
-#include <iomanip>
-#include <string>
+#include "ctime"
+#include "iostream"
+#include "iomanip"
+#include "string"
 
 namespace websocketpp {
 namespace log {

@@ -28,7 +28,7 @@
 #ifndef WEBSOCKETPP_COMMON_CHRONO_HPP
 #define WEBSOCKETPP_COMMON_CHRONO_HPP
 
-#include <websocketpp/common/cpp11.hpp>
+#include "scr/websocketpp/common/cpp11.hpp"
 
 // If we've determined that we're in full C++11 mode and the user hasn't
 // explicitly disabled the use of C++11 functional header, then prefer it to
@@ -48,9 +48,9 @@
 #endif
 
 #ifdef _WEBSOCKETPP_CPP11_CHRONO_
-    #include <chrono>
+    #include "chrono"
 #else
-    #include <boost/chrono.hpp>
+    #include "boost/chrono.hpp"
 #endif
 
 namespace websocketpp {

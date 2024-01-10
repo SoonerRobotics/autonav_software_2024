@@ -28,11 +28,11 @@
 #ifndef HTTP_PARSER_IMPL_HPP
 #define HTTP_PARSER_IMPL_HPP
 
-#include <algorithm>
-#include <cstdlib>
-#include <istream>
-#include <sstream>
-#include <string>
+#include "algorithm"
+#include "cstdlib"
+#include "istream"
+#include "sstream"
+#include "string"
 
 namespace websocketpp {
 namespace http {

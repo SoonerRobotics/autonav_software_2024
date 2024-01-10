@@ -28,11 +28,11 @@
 #ifndef WEBSOCKETPP_LOGGER_STUB_HPP
 #define WEBSOCKETPP_LOGGER_STUB_HPP
 
-#include <websocketpp/logger/levels.hpp>
+#include "scr/websocketpp/logger/levels.hpp"
 
-#include <websocketpp/common/cpp11.hpp>
+#include "scr/websocketpp/common/cpp11.hpp"
 
-#include <string>
+#include "string"
 
 namespace websocketpp {
 namespace log {

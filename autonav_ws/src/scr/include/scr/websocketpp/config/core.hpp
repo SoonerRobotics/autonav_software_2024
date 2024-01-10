@@ -29,37 +29,37 @@
 #define WEBSOCKETPP_CONFIG_CORE_HPP
 
 // Non-Policy common stuff
-#include <websocketpp/common/platforms.hpp>
-#include <websocketpp/common/cpp11.hpp>
-#include <websocketpp/common/stdint.hpp>
+#include "scr/websocketpp/common/platforms.hpp"
+#include "scr/websocketpp/common/cpp11.hpp"
+#include "scr/websocketpp/common/stdint.hpp"
 
 // Concurrency
-#include <websocketpp/concurrency/basic.hpp>
+#include "scr/websocketpp/concurrency/basic.hpp"
 
 // Transport
-#include <websocketpp/transport/iostream/endpoint.hpp>
+#include "scr/websocketpp/transport/iostream/endpoint.hpp"
 
 // HTTP
-#include <websocketpp/http/request.hpp>
-#include <websocketpp/http/response.hpp>
+#include "scr/websocketpp/http/request.hpp"
+#include "scr/websocketpp/http/response.hpp"
 
 // Messages
-#include <websocketpp/message_buffer/message.hpp>
-#include <websocketpp/message_buffer/alloc.hpp>
+#include "scr/websocketpp/message_buffer/message.hpp"
+#include "scr/websocketpp/message_buffer/alloc.hpp"
 
 // Loggers
-#include <websocketpp/logger/basic.hpp>
-#include <websocketpp/logger/levels.hpp>
+#include "scr/websocketpp/logger/basic.hpp"
+#include "scr/websocketpp/logger/levels.hpp"
 
 // RNG
-#include <websocketpp/random/none.hpp>
+#include "scr/websocketpp/random/none.hpp"
 
 // User stub base classes
-#include <websocketpp/endpoint_base.hpp>
-#include <websocketpp/connection_base.hpp>
+#include "scr/websocketpp/endpoint_base.hpp"
+#include "scr/websocketpp/connection_base.hpp"
 
 // Extensions
-#include <websocketpp/extensions/permessage_deflate/disabled.hpp>
+#include "scr/websocketpp/extensions/permessage_deflate/disabled.hpp"
 
 namespace websocketpp {
 namespace config {

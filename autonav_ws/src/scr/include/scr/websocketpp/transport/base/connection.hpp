@@ -28,12 +28,12 @@
 #ifndef WEBSOCKETPP_TRANSPORT_BASE_CON_HPP
 #define WEBSOCKETPP_TRANSPORT_BASE_CON_HPP
 
-#include <websocketpp/common/cpp11.hpp>
-#include <websocketpp/common/connection_hdl.hpp>
-#include <websocketpp/common/functional.hpp>
-#include <websocketpp/common/system_error.hpp>
+#include "scr/websocketpp/common/cpp11.hpp"
+#include "scr/websocketpp/common/connection_hdl.hpp"
+#include "scr/websocketpp/common/functional.hpp"
+#include "scr/websocketpp/common/system_error.hpp"
 
-#include <string>
+#include "string"
 
 namespace websocketpp {
 /// Transport policies provide network connectivity and timers

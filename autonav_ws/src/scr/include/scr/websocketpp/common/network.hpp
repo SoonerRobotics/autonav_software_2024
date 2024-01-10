@@ -30,13 +30,13 @@
 
 // For ntohs and htons
 #if defined(_WIN32)
-    #include <winsock2.h>
+    #include "winsock2.h"
 #else
-    //#include <arpa/inet.h>
-    #include <netinet/in.h>
+    //#include "arpa/inet.h"
+    #include "netinet/in.h"
 #endif
 
-#include <websocketpp/common/stdint.hpp>
+#include "scr/websocketpp/common/stdint.hpp"
 
 namespace websocketpp {
 namespace lib {

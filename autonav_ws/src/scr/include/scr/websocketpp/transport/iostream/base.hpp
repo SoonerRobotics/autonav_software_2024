@@ -28,15 +28,15 @@
 #ifndef WEBSOCKETPP_TRANSPORT_IOSTREAM_BASE_HPP
 #define WEBSOCKETPP_TRANSPORT_IOSTREAM_BASE_HPP
 
-#include <websocketpp/common/system_error.hpp>
-#include <websocketpp/common/cpp11.hpp>
-#include <websocketpp/common/functional.hpp>
-#include <websocketpp/common/connection_hdl.hpp>
+#include "scr/websocketpp/common/system_error.hpp"
+#include "scr/websocketpp/common/cpp11.hpp"
+#include "scr/websocketpp/common/functional.hpp"
+#include "scr/websocketpp/common/connection_hdl.hpp"
 
-#include <websocketpp/transport/base/connection.hpp>
+#include "scr/websocketpp/transport/base/connection.hpp"
 
-#include <string>
-#include <vector>
+#include "string"
+#include "vector"
 
 namespace websocketpp {
 namespace transport {

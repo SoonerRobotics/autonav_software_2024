@@ -16,5 +16,10 @@ ament_auto_add_library(${PROJECT_NAME} SHARED
   src/node.cpp
 )
 
+target_include_directories(${PROJECT_NAME} PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
 ament_python_install_package(${PROJECT_NAME})
 ament_auto_package()

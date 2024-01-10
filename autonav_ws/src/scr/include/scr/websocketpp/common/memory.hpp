@@ -28,7 +28,7 @@
 #ifndef WEBSOCKETPP_COMMON_MEMORY_HPP
 #define WEBSOCKETPP_COMMON_MEMORY_HPP
 
-#include <websocketpp/common/cpp11.hpp>
+#include "scr/websocketpp/common/cpp11.hpp"
 
 // If we've determined that we're in full C++11 mode and the user hasn't
 // explicitly disabled the use of C++11 memory header, then prefer it to
@@ -50,13 +50,13 @@
 
 
 #ifdef _WEBSOCKETPP_CPP11_MEMORY_
-    #include <memory>
+    #include "memory"
 #else
-    #include <boost/shared_ptr.hpp>
-	#include <boost/make_shared.hpp>
-    #include <boost/scoped_array.hpp>
-    #include <boost/enable_shared_from_this.hpp>
-    #include <boost/pointer_cast.hpp>
+    #include "boost/shared_ptr.hpp"
+	#include "boost/make_shared.hpp"
+    #include "boost/scoped_array.hpp"
+    #include "boost/enable_shared_from_this.hpp"
+    #include "boost/pointer_cast.hpp"
 #endif
 
 namespace websocketpp {

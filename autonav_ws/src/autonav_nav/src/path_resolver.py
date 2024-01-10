@@ -4,7 +4,7 @@ from autonav_msgs.msg import MotorInput, Position, SafetyLights
 from scr_msgs.msg import SystemState
 from scr.node import Node
 from scr.states import DeviceStateEnum, SystemStateEnum
-from scr_core import clamp
+from scr.utils import clamp
 from nav_msgs.msg import Path
 from pure_pursuit import PurePursuit
 import math

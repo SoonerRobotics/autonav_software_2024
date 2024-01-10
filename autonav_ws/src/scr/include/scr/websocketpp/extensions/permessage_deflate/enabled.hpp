@@ -29,20 +29,20 @@
 #define WEBSOCKETPP_PROCESSOR_EXTENSION_PERMESSAGEDEFLATE_HPP
 
 
-#include <websocketpp/common/cpp11.hpp>
-#include <websocketpp/common/memory.hpp>
-#include <websocketpp/common/platforms.hpp>
-#include <websocketpp/common/stdint.hpp>
-#include <websocketpp/common/system_error.hpp>
-#include <websocketpp/error.hpp>
+#include "scr/websocketpp/common/cpp11.hpp"
+#include "scr/websocketpp/common/memory.hpp"
+#include "scr/websocketpp/common/platforms.hpp"
+#include "scr/websocketpp/common/stdint.hpp"
+#include "scr/websocketpp/common/system_error.hpp"
+#include "scr/websocketpp/error.hpp"
 
-#include <websocketpp/extensions/extension.hpp>
+#include "scr/websocketpp/extensions/extension.hpp"
 
 #include "zlib.h"
 
-#include <algorithm>
-#include <string>
-#include <vector>
+#include "algorithm"
+#include "string"
+#include "vector"
 
 namespace websocketpp {
 namespace extensions {

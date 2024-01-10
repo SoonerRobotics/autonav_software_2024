@@ -28,12 +28,12 @@
 #ifndef HTTP_PARSER_RESPONSE_IMPL_HPP
 #define HTTP_PARSER_RESPONSE_IMPL_HPP
 
-#include <algorithm>
-#include <istream>
-#include <sstream>
-#include <string>
+#include "algorithm"
+#include "istream"
+#include "sstream"
+#include "string"
 
-#include <websocketpp/http/parser.hpp>
+#include "scr/websocketpp/http/parser.hpp"
 
 namespace websocketpp {
 namespace http {

@@ -28,11 +28,11 @@
 #ifndef WEBSOCKETPP_UTILITIES_HPP
 #define WEBSOCKETPP_UTILITIES_HPP
 
-#include <websocketpp/common/stdint.hpp>
+#include "scr/websocketpp/common/stdint.hpp"
 
-#include <algorithm>
-#include <string>
-#include <locale>
+#include "algorithm"
+#include "string"
+#include "locale"
 
 namespace websocketpp {
 /// Generic non-websocket specific utility functions and data structures
@@ -175,6 +175,6 @@ std::string to_hex(char const * input, size_t length);
 } // namespace utility
 } // namespace websocketpp
 
-#include <websocketpp/impl/utilities_impl.hpp>
+#include "scr/websocketpp/impl/utilities_impl.hpp"
 
 #endif // WEBSOCKETPP_UTILITIES_HPP
