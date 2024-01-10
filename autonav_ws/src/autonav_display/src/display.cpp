@@ -2,7 +2,11 @@
 #include "rclcpp/rclcpp.hpp"
 #include "scr/websocketpp/config/asio_no_tls.hpp"
 #include "scr/websocketpp/server.hpp"
+#include "scr/base64.hpp"
 #include <iostream>
+
+// Type includes
+#include "sensor_msgs/msg/compressed_image.hpp"
 
 typedef websocketpp::server<websocketpp::config::asio> server;
 
@@ -27,6 +31,7 @@ public:
         // Setup subscriptions
         device_state_subscription = this->create_subscription<scr_msgs::msg::DeviceState>(SCR::Constants::Topics::DEVICE_STATE, 10, std::bind(&DisplayNode::device_state_callback, this, std::placeholders::_1));
         system_state_subscription = this->create_subscription<scr_msgs::msg::SystemState>(SCR::Constants::Topics::SYSTEM_STATE, 10, std::bind(&DisplayNode::system_state_callback, this, std::placeholders::_1));
+        camera_raw_subscription = this->create_subscription<sensor_msgs::msg::CompressedImage>("/autonav/camera/compressed", 10, std::bind(&DisplayNode::camera_raw_callback, this, std::placeholders::_1));
 
         // Setup server logging
         m_server.set_access_channels(websocketpp::log::alevel::all);
@@ -94,7 +99,8 @@ public:
         try
         {
             opcode = data["op"].get<std::string>();
-        } catch (json::type_error &e)
+        }
+        catch (json::type_error &e)
         {
             RCLCPP_ERROR(this->get_logger(), "Failed to parse opcode from incoming message: %s", e.what());
             return;
@@ -117,7 +123,9 @@ public:
         if (send)
         {
             m_server.send(hdl, packet.dump(), websocketpp::frame::opcode::text);
-        } else {
+        }
+        else
+        {
             broadcast_cache.push_back(packet.dump());
         }
     }
@@ -175,6 +183,18 @@ public:
         broadcast_data("/scr/state/system", data);
     }
 
+    void camera_raw_callback(const sensor_msgs::msg::CompressedImage::SharedPtr msg)
+    {
+        auto bytes = msg->data;
+        auto bytesString = std::string(bytes.begin(), bytes.end());
+        auto base64_encoded = macaron::Base64::Encode(bytesString);
+
+        json data = {
+            {"data", base64_encoded},
+            {"format", msg->format}};
+        broadcast_data("/autonav/camera/compressed", data);
+    }
+
     // Generic callbacks
     void system_state_transition(scr_msgs::msg::SystemState old, scr_msgs::msg::SystemState updated) override
     {
@@ -204,10 +224,15 @@ private:
     DisplayNodeConfig config;
 
     rclcpp::TimerBase::SharedPtr broadcast_timer;
-    rclcpp::Subscription<scr_msgs::msg::DeviceState>::SharedPtr device_state_subscription;
-    rclcpp::Subscription<scr_msgs::msg::SystemState>::SharedPtr system_state_subscription;
     std::set<websocketpp::connection_hdl, std::owner_less<websocketpp::connection_hdl>> connections;
     std::vector<std::string> broadcast_cache;
+
+    // System
+    rclcpp::Subscription<scr_msgs::msg::DeviceState>::SharedPtr device_state_subscription;
+    rclcpp::Subscription<scr_msgs::msg::SystemState>::SharedPtr system_state_subscription;
+
+    // Images
+    rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr camera_raw_subscription;
 
 public:
     std::thread m_server_thread;

@@ -10,9 +10,10 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(scr_msgs REQUIRED)
 find_package(scr REQUIRED)
+find_package(sensor_msgs REQUIRED)
 
 add_executable(display src/display.cpp)
-ament_target_dependencies(display rclcpp scr_msgs scr)
+ament_target_dependencies(display rclcpp scr_msgs scr sensor_msgs)
 
 install(TARGETS
   display
