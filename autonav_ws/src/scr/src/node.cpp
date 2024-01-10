@@ -17,6 +17,9 @@ namespace SCR
         subscriptions.device_state = this->create_subscription<scr_msgs::msg::DeviceState>(Constants::Topics::DEVICE_STATE, 10, std::bind(&Node::device_state_callback, this, std::placeholders::_1));
         subscriptions.config_updated = this->create_subscription<scr_msgs::msg::ConfigUpdated>(Constants::Topics::CONFIG_UPDATE, 10, std::bind(&Node::config_updated_callback, this, std::placeholders::_1));
 
+        // Create publishers
+        publishers.performance_track = this->create_publisher<std_msgs::msg::Float64>(Constants::Topics::PERFORMANCE_TRACK, 10);
+
         // Create clients
         clients.system_state = this->create_client<scr_msgs::srv::UpdateSystemState>(Constants::Services::SYSTEM_STATE, rmw_qos_profile_services_default, callback_groups.system_state);
         clients.device_state = this->create_client<scr_msgs::srv::UpdateDeviceState>(Constants::Services::DEVICE_STATE, rmw_qos_profile_services_default, callback_groups.device_state);
@@ -209,6 +212,30 @@ namespace SCR
     void Node::set_mobility(bool nMobility)
     {
         set_system_total_state(system_state, system_mode, nMobility);
+    }
+
+    void Node::perf_start(std::string name)
+    {
+        perf_measurements[name] = std::chrono::high_resolution_clock::now();
+    }
+
+    void Node::perf_end(std::string name)
+    {
+        if (perf_measurements.find(name) == perf_measurements.end())
+        {
+            RCLCPP_ERROR(this->get_logger(), "There was no performance measurement with the name '%s'", name.c_str());
+            return;
+        }
+
+        auto start = perf_measurements[name];
+        auto end = std::chrono::high_resolution_clock::now();
+        auto duration_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+
+        std_msgs::msg::Float64 msg;
+        msg.data = duration_ms;
+        publishers.performance_track->publish(msg);
+
+        perf_measurements.erase(name);
     }
 
     void Node::run_node(std::shared_ptr<Node> node)

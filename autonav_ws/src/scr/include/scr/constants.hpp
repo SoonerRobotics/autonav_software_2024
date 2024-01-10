@@ -10,6 +10,7 @@ namespace SCR
             const std::string SYSTEM_STATE = "/scr/system_state";
             const std::string DEVICE_STATE = "/scr/device_state";
             const std::string CONFIG_UPDATE = "/scr/config_updated";
+            const std::string PERFORMANCE_TRACK = "/scr/performance";
         }
 
         namespace Services

@@ -2,16 +2,14 @@ import threading
 from scr.states import DeviceStateEnum, SystemStateEnum, SystemModeEnum
 from scr_msgs.srv import UpdateDeviceState, UpdateSystemState, UpdateConfig
 from scr_msgs.msg import DeviceState, SystemState, ConfigUpdated
+from std_msgs.msg import Float64
 from rclpy.node import Node as ROSNode
-from std_msgs.msg import Empty
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 import scr.constants
 import time
 import rclpy
 from rclpy.executors import MultiThreadedExecutor
-import signal
 import json
-import os
 
 
 class Node(ROSNode):
@@ -32,14 +30,18 @@ class Node(ROSNode):
         self.device_state_subscriber = self.create_subscription(DeviceState, scr.constants.Topics.DEVICE_STATE, self.on_device_state, 10)
         self.system_state_subscriber = self.create_subscription(SystemState, scr.constants.Topics.SYSTEM_STATE, self.on_system_state, 10)
         self.config_updated_subscriber = self.create_subscription(ConfigUpdated, scr.constants.Topics.CONFIG_UPDATE, self.on_config_updated, 10)
+        
         self.device_state_client = self.create_client(UpdateDeviceState, scr.constants.Services.DEVICE_STATE, callback_group=self.device_state_callback_group)
         self.system_state_client = self.create_client(UpdateSystemState, scr.constants.Services.SYSTEM_STATE, callback_group=self.system_state_callback_group)
         self.config_updated_client = self.create_client(UpdateConfig, scr.constants.Services.CONFIG_UPDATE, callback_group=self.config_updated_callback_group)
+        
+        self.performance_publisher = self.create_publisher(Float64, scr.constants.Topics.PERFORMANCE_TRACK, 10)
 
         self.device_state = DeviceStateEnum.OFF
         self.system_state = SystemStateEnum.DISABLED
         self.system_mode = SystemModeEnum.COMPETITION
         self.mobility = False
+        self.perf_measurements = {}
 
         # Create a thread to wait a sec for the node to boot without blocking the main thread
         self.booting_thread = threading.Thread(target=self.booting_worker)
@@ -225,6 +227,30 @@ class Node(ROSNode):
 
         self.set_system_total_state(
             self.system_state, self.system_mode, mobility)
+        
+    def perf_start(self, name: str):
+        """
+        Starts a performance measurement.
+
+        :param self: The name of the measurement.
+        """
+
+        self.perf_measurements[name] = time.time_ns() // 1_000_000
+
+    def perf_end(self, name: str):
+        """
+        Ends a performance measurement.
+
+        :param self: The name of the measurement.
+        """
+
+        if name not in self.perf_measurements:
+            self.get_logger().error("There was no performance measurement with the name '" + name + "'")
+            return
+
+        elapsed_time = time.time_ns() // 1_000_000 - self.perf_measurements[name]
+        self.performance_publisher.publish(Float64(data=elapsed_time))
+        del self.perf_measurements[name]
 
     def run_node(node):
         """

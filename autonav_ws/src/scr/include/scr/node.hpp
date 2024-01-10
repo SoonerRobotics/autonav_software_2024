@@ -1,7 +1,7 @@
 #pragma once
 
 #include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/int32.hpp"
+#include "std_msgs/msg/float64.hpp"
 #include "scr_msgs/srv/update_config.hpp"
 #include "scr_msgs/srv/update_device_state.hpp"
 #include "scr_msgs/srv/update_system_state.hpp"
@@ -23,6 +23,11 @@ namespace SCR
         rclcpp::Subscription<scr_msgs::msg::SystemState>::SharedPtr system_state;
         rclcpp::Subscription<scr_msgs::msg::DeviceState>::SharedPtr device_state;
         rclcpp::Subscription<scr_msgs::msg::ConfigUpdated>::SharedPtr config_updated;
+    };
+
+    struct NodePublishers
+    {
+        rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr performance_track;
     };
 
     struct NodeClients
@@ -60,6 +65,14 @@ namespace SCR
         /// @brief Set the mobility state
         /// @param mobility The new mobility state
         void set_mobility(bool mobility);
+
+        /// @brief Begin a performance measurement
+        /// @param name The name of the performance measurement
+        void perf_start(std::string name);
+
+        /// @brief End a performance measurement
+        /// @param name The name of the performance measurement
+        void perf_end(std::string name);
 
         /// @brief Runs the node with the correct ROS parameters and specifications
         /// @param node 
@@ -104,8 +117,12 @@ namespace SCR
         /// @brief The current mobility state
         bool mobility;
 
+        /// @brief The current map of performance measurements
+        std::map<std::string, std::chrono::time_point<std::chrono::high_resolution_clock>> perf_measurements;
+
     private:
         NodeSubscriptions subscriptions;
+        NodePublishers publishers;
         NodeClients clients;
         CallbackGroups callback_groups;
     };
