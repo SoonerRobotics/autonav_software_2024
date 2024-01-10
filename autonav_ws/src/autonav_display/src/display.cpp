@@ -21,6 +21,9 @@ public:
 
     void init() override
     {
+        // Setup timer
+        broadcast_timer = this->create_wall_timer(std::chrono::milliseconds(250), std::bind(&DisplayNode::broadcast_timer_callback, this));
+
         // Setup subscriptions
         device_state_subscription = this->create_subscription<scr_msgs::msg::DeviceState>(SCR::Constants::Topics::DEVICE_STATE, 10, std::bind(&DisplayNode::device_state_callback, this, std::placeholders::_1));
         system_state_subscription = this->create_subscription<scr_msgs::msg::SystemState>(SCR::Constants::Topics::SYSTEM_STATE, 10, std::bind(&DisplayNode::system_state_callback, this, std::placeholders::_1));
@@ -50,6 +53,30 @@ public:
         set_device_state(SCR::DeviceState::OPERATING);
     }
 
+    void broadcast_timer_callback()
+    {
+        // Send all cached messages as one big message separated by new lines
+        if (broadcast_cache.size() <= 0)
+        {
+            return;
+        }
+
+        std::string message = "";
+        for (auto it = broadcast_cache.begin(); it != broadcast_cache.end(); ++it)
+        {
+            message += *it;
+            if (it != broadcast_cache.end() - 1)
+            {
+                message += "\n";
+            }
+        }
+
+        for (auto it : connections)
+        {
+            m_server.send(it, message, websocketpp::frame::opcode::text);
+        }
+    }
+
     void on_message_received(websocketpp::connection_hdl hdl, server::message_ptr msg)
     {
         json data;
@@ -63,10 +90,21 @@ public:
             return;
         }
 
+        std::string opcode;
+        try
+        {
+            opcode = data["op"].get<std::string>();
+        } catch (json::type_error &e)
+        {
+            RCLCPP_ERROR(this->get_logger(), "Failed to parse opcode from incoming message: %s", e.what());
+            return;
+        }
+
+        RCLCPP_INFO(this->get_logger(), "Received message with opcode %s", opcode.c_str());
         // TODO: Handle json
     }
 
-    void send_data(websocketpp::connection_hdl hdl, std::string topic, json data)
+    void send_data(websocketpp::connection_hdl hdl, std::string topic, json data, bool send = false)
     {
         json packet;
         packet["op"] = "data";
@@ -76,7 +114,12 @@ public:
             packet[it.key()] = it.value();
         }
 
-        m_server.send(hdl, packet.dump(), websocketpp::frame::opcode::text);
+        if (send)
+        {
+            m_server.send(hdl, packet.dump(), websocketpp::frame::opcode::text);
+        } else {
+            broadcast_cache.push_back(packet.dump());
+        }
     }
 
     void broadcast_data(std::string topic, json data)
@@ -160,10 +203,11 @@ public:
 private:
     DisplayNodeConfig config;
 
+    rclcpp::TimerBase::SharedPtr broadcast_timer;
     rclcpp::Subscription<scr_msgs::msg::DeviceState>::SharedPtr device_state_subscription;
     rclcpp::Subscription<scr_msgs::msg::SystemState>::SharedPtr system_state_subscription;
-
     std::set<websocketpp::connection_hdl, std::owner_less<websocketpp::connection_hdl>> connections;
+    std::vector<std::string> broadcast_cache;
 
 public:
     std::thread m_server_thread;

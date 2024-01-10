@@ -52,6 +52,13 @@ class Node(ROSNode):
         time.sleep(1)
         self.set_device_state(DeviceStateEnum.BOOTING)
 
+    def jdump(self, obj):
+        isDict = isinstance(obj, dict)
+        if not isDict:
+            return json.dumps(obj.__dict__)
+        else:
+            return json.dumps(obj)
+
     def on_device_state(self, msg: DeviceState):
         """
         Called when a device state message is received.
@@ -68,11 +75,7 @@ class Node(ROSNode):
             defaultConfig = self.get_default_config()
             request = UpdateConfig.Request()
             request.device = self.identifier
-            isDict = isinstance(defaultConfig, dict)
-            if not isDict:
-                request.json = json.dumps(defaultConfig.__dict__)
-            else:
-                request.json = json.dumps(defaultConfig)
+            request.json = self.jdump(defaultConfig)
 
             while not self.config_updated_client.wait_for_service(timeout_sec=1.0):
                 if not rclpy.ok():
