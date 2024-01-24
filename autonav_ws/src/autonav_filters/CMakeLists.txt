@@ -103,4 +103,6 @@ if(BUILD_TESTING)
     DESTINATION lib/${PROJECT_NAME}
   )
 
+endif()
+
 ament_package()
