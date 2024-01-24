@@ -4,6 +4,8 @@
 #include "differential_drive.h"
 #include "motor_with_encoder.h"
 #include "common.h"
+#include <CONBus.h> 
+#include <CANBusDriver.h>
 
 //LED
 static int LED1 = 22;
@@ -44,12 +46,19 @@ TickTwo motor_update_timer(setMotorUpdateFlag, 25);
 CANMessage frame;
 CANMessage outFrame;
 
+// Setup CONBus variables
+CONBus::CONBus conbus;
+CONBus::CANBusDriver conbus_can(conbus, 0x10); // device id 0x10 (16)
+
 robotStatus_t roboStatus;
 distance motorDistances;
 MotorCommand motorCommand;
 
-MotorWithEncoder leftMotor(PWM1, ENC1A, ENC1B, true);
-MotorWithEncoder rightMotor(PWM0, ENC0A, ENC1B, false);
+// motor leftMotor(leftMotorPwmPin, true);
+// motor rightMotor(rightMotorPwmPin, false);
+
+MotorWithEncoder leftMotor(leftMotorPwmPin, encoderLeftA, encoderLeftB, true);
+MotorWithEncoder rightMotor(rightMotorPwmPin, encoderRightA, encoderRightB, false);
 DifferentialDrive drivetrain(leftMotor, rightMotor, 0.025);
 
 void configureCan();
@@ -78,25 +87,54 @@ float desired_forward_velocity;
 float desired_angular_velocity;
 
 void setup() {
-  pinMode(ENC0A, INPUT);
-  pinMode(ENC0B, INPUT);
-  pinMode(ENC1A, INPUT);
-  pinMode(ENC1B, INPUT);
-
-  pinMode(LED1, OUTPUT);
-  pinMode(LED2, OUTPUT);
-  pinMode(ESTOP, INPUT);
+  delay(50);
 
   drivetrain.setup();
 
-  attachInterrupt(ENC0A, updateLeft, CHANGE);
-  attachInterrupt(ENC1A, updateRight, CHANGE);
+  pinMode(encoderRightA, INPUT);
+  pinMode(encoderRightB, INPUT);
+  pinMode(encoderLeftA, INPUT);
+  pinMode(encoderLeftB, INPUT);
+
+  attachInterrupt(encoderLeftA, updateLeft, CHANGE);
+  attachInterrupt(encoderRightA, updateRight, CHANGE);
 
   motor_update_timer.start();
-  
-  configureCan();
 }
+void setup1(){
+  Serial.begin(9600);
+  delay(50);
+  configureCan();
 
+  pinMode(LED0, OUTPUT);
+  pinMode(CANLED, OUTPUT);
+  pinMode(estopPin, INPUT);
+
+  conbus.addReadOnlyRegister(0x00, drivetrain.getUpdatePeriod());
+  conbus.addRegister(0x01, drivetrain.getPulsesPerRadian());
+  conbus.addRegister(0x02, drivetrain.getWheelRadius());
+  conbus.addRegister(0x03, drivetrain.getWheelbaseLength());
+  conbus.addRegister(0x04, drivetrain.getSlewRateLimit());
+  conbus.addRegister(0x05, drivetrain.getLeftEncoderFactor());
+  conbus.addRegister(0x06, drivetrain.getRightEncoderFactor());
+
+  conbus.addRegister(0x10, drivetrain.getVelocitykP());
+  conbus.addRegister(0x11, drivetrain.getVelocitykI());
+  conbus.addRegister(0x12, drivetrain.getVelocitykD());
+  conbus.addRegister(0x13, drivetrain.getVelocitykF());
+
+  conbus.addRegister(0x20, drivetrain.getAngularkP());
+  conbus.addRegister(0x21, drivetrain.getAngularkI());
+  conbus.addRegister(0x22, drivetrain.getAngularkD());
+  conbus.addRegister(0x23, drivetrain.getAngularkF());
+
+  conbus.addRegister(0x30, &useObstacleAvoidance);
+  conbus.addRegister(0x31, &collisonBoxDist);
+
+  conbus.addRegister(0x40, &sendStatistics);
+
+  conbus.addRegister(0x50, &motor_updates_between_deltaodom);
+}
 void loop() {
   updateTimers();
   if (MOTOR_UPDATE_FLAG) {
@@ -106,6 +144,8 @@ void loop() {
 
     MOTOR_UPDATE_FLAG = false;
   }
+}
+void loop1(){
 
   if (motor_updates_in_deltaodom >= motor_updates_between_deltaodom) {
     motor_updates_in_deltaodom = 0;
@@ -123,7 +163,6 @@ void loop() {
     }
   }
 }
-
 void configureCan() {
   SPI1.setSCK(MCP2515_SCK);
   SPI1.setTX(MCP2515_MOSI);
@@ -156,7 +195,7 @@ void onCanRecieve() {
 
   switch (frame.id) {
     case 10:
-      motorCommand = *(MotorCommand*)(frame.data);
+      motorCommand = *(MotorCommand*)(frame.data);     //Noah made me cry. I dont know what they did but I dont like it one bit - Jorge
 
       desired_forward_velocity = (float)motorCommand.setpoint_forward_velocity / SPEED_SCALE_FACTOR;
       desired_angular_velocity = (float)motorCommand.setpoint_angular_velocity / SPEED_SCALE_FACTOR;
@@ -205,9 +244,9 @@ void sendCanOdomMsgOut(){
     outFrame.len = 4;
     memcpy(outFrame.data, &pid_controls, 4);
     can.tryToSend(outFrame);
-  } 
-}
+  }
 
+}
 void printCanMsg(CANMessage frame) {
   Serial.print("  id: ");
   Serial.println(frame.id, HEX);
@@ -240,4 +279,3 @@ void resetDelta(){
 void updateTimers() {
   motor_update_timer.update();
 }
-
