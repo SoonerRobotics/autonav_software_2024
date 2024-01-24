@@ -1,15 +1,11 @@
 <launch>
-    <node pkg="scr_state" exec="statemanager" >
-        <param name="mode" value="0" />
-    </node>
+    <node pkg="scr_controller" exec="core" />
     <node pkg="scr_logging" exec="logging">
         <param name="log_to_console" value="true" />
     </node>
     <node pkg="scr_configuration" exec="config">
         <param name="preset" value="competition" />
     </node>
-    <node pkg="autonav_display" exec="broadcast.py" />
-    <!-- <node pkg="autonav_serial" exec="imu.py" /> -->
     <node pkg="autonav_serial" exec="vectornav_node" />
     <node pkg="autonav_serial" exec="serial_node.py" />
     <node pkg="autonav_serial" exec="camera.py" />
@@ -27,5 +23,4 @@
         <param name="longitude_length" value="81978.2" />
     </node>
     <node pkg="autonav_nav" exec="path_resolver.py" />
-    <node pkg="autonav_playback" exec="playback.py" />
 </launch>

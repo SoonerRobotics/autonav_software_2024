@@ -6,8 +6,8 @@ import can
 import threading
 import struct
 from autonav_msgs.msg import MotorInput, MotorFeedback, ObjectDetection, MotorControllerDebug, SafetyLights, Conbus
-from scr_core.node import Node
-from scr_core.state import DeviceStateEnum
+from scr.node import Node
+from scr.states import DeviceStateEnum
 
 
 MOTOR_CONTROL_ID = 10
@@ -54,18 +54,15 @@ class SerialMotors(Node):
         self.conbuSubscriber = self.create_subscription(Conbus, "/autonav/conbus/instruction", self.onConbusReceived, 20)
         self.conbusPublisher = self.create_publisher(Conbus, "/autonav/conbus/data", 20)
 
-    def configure(self):
+    def init(self):
         self.canTimer = self.create_timer(0.5, self.canWorker)
         self.canReadThread = threading.Thread(target=self.canThreadWorker)
         self.canReadThread.daemon = True
         self.canReadThread.start()
 
-    def transition(self, old, updated):
-        return
-
     def canThreadWorker(self):
         while rclpy.ok():
-            if self.getDeviceState() != DeviceStateEnum.READY and self.getDeviceState() != DeviceStateEnum.OPERATING:
+            if self.device_state != DeviceStateEnum.READY and self.device_state != DeviceStateEnum.OPERATING:
                 continue
             if self.can is not None:
                 try:
@@ -85,20 +82,18 @@ class SerialMotors(Node):
             feedback.delta_x = deltaX / 10000.0
             self.motorFeedbackPublisher.publish(feedback)
 
-        if arb_id == ESTOP_ID:
-            self.log(f"[CAN -> {ESTOP_ID}] Received E-Stop")
-            self.setEStop(True)
+        # if arb_id == ESTOP_ID:
+        #     self.setEStop(True)
 
         if arb_id == MOBILITY_STOP_ID:
-            self.log(f"[CAN -> {MOBILITY_STOP_ID}] Received Mobility Stop")
-            self.setMobility(False)
+            self.set_system_mobility(False)
 
         if arb_id == MOBILITY_START_ID:
-            self.log(f"[CAN -> {MOBILITY_START_ID}] Received Mobility Start")
-            self.setMobility(True)
+            self.set_system_mobility(True)
 
         if arb_id == CAN_50:
-            currentForwardVel, setpointForwardVel, currentAngularVel, setpointAngularVel = struct.unpack("hhhh", msg.data)
+            currentForwardVel, setpointForwardVel, currentAngularVel, setpointAngularVel = struct.unpack(
+                "hhhh", msg.data)
             self.currentForwardVel = currentForwardVel / 1000.0
             self.setpointForwardVel = setpointForwardVel / 1000.0
             self.currentAngularVel = currentAngularVel / 1000.0
@@ -128,7 +123,7 @@ class SerialMotors(Node):
             pkg.sensor_2 = middle
             pkg.sensor_3 = right
             self.objectDetectionPublisher.publish(pkg)
-            
+
         if arb_id >= 1000 and arb_id < 1400:
             # self.log(f"[CAN -> {arb_id}] Received ConBus message")
             pkg = Conbus()
@@ -144,18 +139,18 @@ class SerialMotors(Node):
             if self.can is not None:
                 return
 
-            self.can = can.ThreadSafeBus(bustype="slcan", channel="/dev/autonav-can-835", bitrate=100000)
-            self.log("Successfully opened CAN device")
-            self.setDeviceState(DeviceStateEnum.OPERATING)
+            self.can = can.ThreadSafeBus(
+                bustype="slcan", channel="/dev/autonav-can-835", bitrate=100000)
+            self.set_device_state(DeviceStateEnum.OPERATING)
         except:
             if self.can is not None:
                 self.can = None
 
-            if self.getDeviceState() != DeviceStateEnum.STANDBY:
-                self.setDeviceState(DeviceStateEnum.STANDBY)
+            if self.device_state != DeviceStateEnum.STANDBY:
+                self.set_device_state(DeviceStateEnum.STANDBY)
 
     def onSafetyLightsReceived(self, lights: SafetyLights):
-        if self.getDeviceState() != DeviceStateEnum.OPERATING:
+        if self.device_state != DeviceStateEnum.OPERATING:
             return
 
         packed_data = SafetyLightsPacket()
@@ -166,44 +161,46 @@ class SerialMotors(Node):
         packed_data.red = lights.red
         packed_data.green = lights.green
         packed_data.blue = lights.blue
-        can_msg = can.Message(arbitration_id=SAFETY_LIGHTS_ID, data=bytes(packed_data))
-        self.log(f"[{SAFETY_LIGHTS_ID} -> CAN] Sending SafetyLights CAN message [autonomous={lights.autonomous}, eco={lights.eco}, mode={lights.mode}, brightness={lights.brightness}, red={lights.red}, green={lights.green}, blue={lights.blue}")
-
+        can_msg = can.Message(
+            arbitration_id=SAFETY_LIGHTS_ID, data=bytes(packed_data))
         try:
             self.can.send(can_msg)
         except can.CanError:
-            self.log("Failed to send SafetyLights CAN message")
-            
+            pass
+
     def onConbusReceived(self, instruction: Conbus):
-        if self.getDeviceState() != DeviceStateEnum.OPERATING:
+        if self.device_state != DeviceStateEnum.OPERATING:
             return
 
         try:
             actual_bytes = bytes(instruction.data)
-            can_msg = can.Message(arbitration_id = instruction.id, data = actual_bytes)
-            self.log(f"[{instruction.id} -> CAN | {instruction.iterator}] Sending ConBus CAN message")
+            can_msg = can.Message(
+                arbitration_id=instruction.id, data=actual_bytes)
             try:
                 self.can.send(can_msg)
             except can.CanError:
-                self.log("Failed to send ConBus CAN message -> 1")  
+                pass
         except:
-            self.log("Failed to send ConBus CAN message -> 2")
+            pass
 
     def onMotorInputReceived(self, input: MotorInput):
-        if self.getDeviceState() != DeviceStateEnum.OPERATING:
+        if self.device_state != DeviceStateEnum.OPERATING:
             return
 
-        packed_data = struct.pack("hh", int(input.forward_velocity * 1000.0), int(input.angular_velocity * 1000.0))
-        can_msg = can.Message(arbitration_id=MOTOR_CONTROL_ID, data=packed_data)
+        packed_data = struct.pack("hh", int(
+            input.forward_velocity * 1000.0), int(input.angular_velocity * 1000.0))
+        can_msg = can.Message(
+            arbitration_id=MOTOR_CONTROL_ID, data=packed_data)
         try:
             self.can.send(can_msg)
         except can.CanError:
-            self.log("Failed to send MotorInput CAN message")
+            pass
 
 
 def main():
     rclpy.init()
-    rclpy.spin(SerialMotors())
+    node = SerialMotors()
+    Node.run_node(node)
     rclpy.shutdown()
 
 

@@ -7,8 +7,8 @@ from steamcontroller import SteamController
 from steamcontroller import SteamControllerInput
 from enum import IntEnum
 from autonav_msgs.msg import SteamInput, SafetyLights
-from scr_core.node import Node
-from scr_core.state import DeviceStateEnum, SystemStateEnum
+from scr.node import Node
+from scr.states import DeviceStateEnum, SystemStateEnum
 
 
 class SteamControllerButton(IntEnum):
@@ -54,7 +54,7 @@ class SteamTranslationNode(Node):
     def __init__(self):
         super().__init__("autonav_manual_steamtranslator")
 
-    def configure(self):
+    def init(self):
         self.buttons = {}
         for button in SteamControllerButton:
             self.buttons[button] = 0
@@ -64,42 +64,40 @@ class SteamTranslationNode(Node):
         self.steamThread.start()
         self.joyPublisher = self.create_publisher(SteamInput, "/autonav/joy/steam", 20)
         self.safetyLightsPublisher = self.create_publisher(SafetyLights, "/autonav/SafetyLights", 20)
-        
-    def transition(self, old, new):
-        pass
+    
 
     def startSteamController(self):
         try:
             self.sc = SteamController(callback=self.onSteamControllerInput)
             if self.sc._handle:
-                self.setDeviceState(DeviceStateEnum.OPERATING)
+                self.set_device_state(DeviceStateEnum.OPERATING)
             self.sc.run()
         except KeyboardInterrupt:
-            self.setDeviceState(DeviceStateEnum.OFF)
+            self.set_device_state(DeviceStateEnum.OFF)
             self.sc.close()
             pass
         finally:
             time.sleep(5)
-            self.setDeviceState(DeviceStateEnum.STANDBY)
+            self.set_device_state(DeviceStateEnum.STANDBY)
             self.startSteamController()
     
     def onButtonReleased(self, button: SteamControllerButton, msTime: float):
         if button == SteamControllerButton.B:
-            self.setSystemState(SystemStateEnum.SHUTDOWN)
+            self.set_system_state(SystemStateEnum.SHUTDOWN)
             
-        if button == SteamControllerButton.START and self.getSystemState().state != SystemStateEnum.MANUAL:
-            self.setSystemState(SystemStateEnum.MANUAL)
+        if button == SteamControllerButton.START and self.system_state != SystemStateEnum.MANUAL:
+            self.set_system_state(SystemStateEnum.MANUAL)
             self.safetyLightsPublisher.publish(toSafetyLights(False, False, 2, 100, "#FF6F00"))
             
-        if button == SteamControllerButton.STEAM and self.getSystemState().state != SystemStateEnum.AUTONOMOUS:
-            self.setSystemState(SystemStateEnum.AUTONOMOUS)
+        if button == SteamControllerButton.STEAM and self.system_state != SystemStateEnum.AUTONOMOUS:
+            self.set_system_state(SystemStateEnum.AUTONOMOUS)
             
-        if button == SteamControllerButton.BACK and self.getSystemState().state != SystemStateEnum.DISABLED:
-            self.setSystemState(SystemStateEnum.DISABLED)
+        if button == SteamControllerButton.BACK and self.system_state != SystemStateEnum.DISABLED:
+            self.set_system_state(SystemStateEnum.DISABLED)
             self.safetyLightsPublisher.publish(toSafetyLights(False, False, 2, 100, "#A020F0"))
 
     def onSteamControllerInput(self, _, sci: SteamControllerInput):
-        if self.getDeviceState() != DeviceStateEnum.OPERATING:
+        if self.device_state != DeviceStateEnum.OPERATING:
             return
         
         msg = SteamInput()
@@ -133,7 +131,8 @@ class SteamTranslationNode(Node):
 
 def main():
     rclpy.init()
-    rclpy.spin(SteamTranslationNode())
+    node = SteamTranslationNode()
+    Node.run_node(node)
     rclpy.shutdown()
 
 

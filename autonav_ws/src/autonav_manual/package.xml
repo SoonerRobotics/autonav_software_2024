@@ -13,7 +13,7 @@
   <depend>sensor_msgs</depend>
   <depend>rclpy</depend>
   <depend>autonav_msgs</depend>
-  <depend>scr_core</depend>
+  <depend>scr</depend>
   <exec_depend>ros2launch</exec_depend>
 
   <export>

@@ -1,5 +1,6 @@
 {
     "files.associations": {
+        "*.css": "css",
         "algorithm": "cpp",
         "atomic": "cpp",
         "cmath": "cpp",
@@ -85,7 +86,11 @@
         "typeindex": "cpp",
         "variant": "cpp",
         "any": "cpp",
-        "regex": "cpp"
+        "regex": "cpp",
+        "ranges": "cpp",
+        "valarray": "cpp",
+        "coroutine": "cpp",
+        "source_location": "cpp"
     },
     "cmake.configureOnOpen": false
 }
