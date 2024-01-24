@@ -161,8 +161,11 @@ TEST(ParticleFilterTests, complete_test) {
         position_vector = particle_filter.gps(gps_message);
     }
 
-    printf("%f", position_vector[0]);
-    printf("%f", position_vector[1]);
+    printf("%f\n", position_vector[0]);
+    printf("%f\n", position_vector[1]);
+
+    ASSERT_NEAR(position_vector[0], 18.49585229987204, 1.0);
+    ASSERT_NEAR(position_vector[1], 18.936964199952953, 1.0);
 
     /*std::filesystem::path cwd = std::filesystem::current_path();
     std::string cwd_str = cwd.string();
