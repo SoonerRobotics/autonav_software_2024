@@ -54,11 +54,11 @@ robotStatus_t roboStatus;
 distance motorDistances;
 MotorCommand motorCommand;
 
-// motor leftMotor(leftMotorPwmPin, true);
-// motor rightMotor(rightMotorPwmPin, false);
+// motor leftMotor(PWM1, true);
+// motor rightMotor(PWM0, false);
 
-MotorWithEncoder leftMotor(leftMotorPwmPin, encoderLeftA, encoderLeftB, true);
-MotorWithEncoder rightMotor(rightMotorPwmPin, encoderRightA, encoderRightB, false);
+MotorWithEncoder leftMotor(PWM1, ENC1A, ENC1B, true);
+MotorWithEncoder rightMotor(PWM0, ENC0A, ENC0B, false);
 DifferentialDrive drivetrain(leftMotor, rightMotor, 0.025);
 
 void configureCan();
@@ -91,13 +91,13 @@ void setup() {
 
   drivetrain.setup();
 
-  pinMode(encoderRightA, INPUT);
-  pinMode(encoderRightB, INPUT);
-  pinMode(encoderLeftA, INPUT);
-  pinMode(encoderLeftB, INPUT);
+  pinMode(ENC0A, INPUT);
+  pinMode(ENC0B, INPUT);
+  pinMode(ENC1A, INPUT);
+  pinMode(ENC1B, INPUT);
 
-  attachInterrupt(encoderLeftA, updateLeft, CHANGE);
-  attachInterrupt(encoderRightA, updateRight, CHANGE);
+  attachInterrupt(ENC1A, updateLeft, CHANGE);
+  attachInterrupt(ENC0A, updateRight, CHANGE);
 
   motor_update_timer.start();
 }
@@ -106,9 +106,9 @@ void setup1(){
   delay(50);
   configureCan();
 
-  pinMode(LED0, OUTPUT);
-  pinMode(CANLED, OUTPUT);
-  pinMode(estopPin, INPUT);
+  pinMode(LED1, OUTPUT);
+  pinMode(LED2, OUTPUT);
+  pinMode(ESTOP, INPUT);
 
   conbus.addReadOnlyRegister(0x00, drivetrain.getUpdatePeriod());
   conbus.addRegister(0x01, drivetrain.getPulsesPerRadian());
