@@ -16,12 +16,17 @@ set(msg_files
   "msg/SystemState.msg"
   "msg/DeviceState.msg"
   "msg/ConfigurationInstruction.msg"
+  "msg/ConfigUpdated.msg"
   "msg/PerformanceResult.msg"
 )
 
 set(srv_files
+  "srv/GenericService.srv"
   "srv/SetSystemState.srv"
   "srv/SetDeviceState.srv"
+  "srv/UpdateDeviceState.srv"
+  "srv/UpdateConfig.srv"
+  "srv/UpdateSystemState.srv"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}

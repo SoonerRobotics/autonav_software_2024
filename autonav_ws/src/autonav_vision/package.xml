@@ -15,7 +15,7 @@
   <depend>geometry_msgs</depend>
   <depend>sensor_msgs</depend>
   <depend>autonav_msgs</depend>
-  <depend>scr_core</depend>
+  <depend>scr</depend>
   <depend>cv_bridge</depend>
   <depend>image_transport</depend>
 

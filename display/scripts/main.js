@@ -51,22 +51,26 @@ $(document).ready(function () {
         };
 
         websocket.onmessage = function (event) {
-            const obj = JSON.parse(event.data);
-            const { op, topic } = obj;
-
-            if (op == "data") {
-                onTopicData(topic, obj);
-            }
-
-            if (op == "get_nodes_callback") {
-                for (let i = 0; i < obj.nodes.length; i++) {
-                    const node = obj.nodes[i];
-                    send({
-                        op: "configuration",
-                        device: node,
-                        opcode: 4,
-                        iterator: iterate()
-                    });
+            const messages = event.data.split("\n");
+            for (const message of messages)
+            {
+                const obj = JSON.parse(message);
+                const { op, topic } = obj;
+    
+                if (op == "data") {
+                    onTopicData(topic, obj);
+                }
+    
+                if (op == "get_nodes_callback") {
+                    for (let i = 0; i < obj.nodes.length; i++) {
+                        const node = obj.nodes[i];
+                        send({
+                            op: "configuration",
+                            device: node,
+                            opcode: 4,
+                            iterator: iterate()
+                        });
+                    }
                 }
             }
         };

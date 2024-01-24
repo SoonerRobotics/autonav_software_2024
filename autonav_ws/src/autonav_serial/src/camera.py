@@ -1,66 +1,70 @@
 #!/usr/bin/env python3
 
+from types import SimpleNamespace
 import rclpy
 import time
 import threading
 import cv2
 from sensor_msgs.msg import CompressedImage
 from cv_bridge import CvBridge
-from scr_core.node import Node
-from scr_core.state import DeviceStateEnum, SystemStateEnum
+from scr.node import Node
+from scr.states import DeviceStateEnum, SystemStateEnum
 import os
-
-REFRESH_RATE = "refresh_rate"
-OUTPUT_WIDTH = "output_width"
-OUTPUT_HEIGHT = "output_height"
-CAMERA_INDEX = "camera_index"
+import json
 
 bridge = CvBridge()
+
+
+class CameraNodeConfig:
+    def __init__(self):
+        self.refresh_rate = 8
+        self.output_width = 640
+        self.output_height = 480
+        self.camera_index = 0
+        self.scan_rate = 1.0
 
 
 class CameraNode(Node):
     def __init__(self):
         super().__init__("autonav_serial_camera")
+        self.camera_publisher = self.create_publisher(CompressedImage, "/autonav/camera/compressed", 20)
+        self.camera_thread = threading.Thread(target=self.camera_worker)
+        self.camera_thread.daemon = True
 
-    def configure(self):
-        self.config.setInt(REFRESH_RATE, 8)
-        self.config.setInt(OUTPUT_WIDTH, 640)
-        self.config.setInt(OUTPUT_HEIGHT, 480)
-        self.config.setInt(CAMERA_INDEX, 0)
+    def init(self):
+        self.get_logger().info("Initializing camera node...")
+        self.camera_thread.start()
 
-        self.cameraPublisher = self.create_publisher(CompressedImage, "/autonav/camera/compressed", 20)
-        self.cameraThread = threading.Thread(target=self.cameraWorker)
-        self.cameraThread.daemon = True
-        self.cameraThread.start()
+    def config_updated(self, jsonObject):
+        self.config = json.loads(json.dumps(jsonObject), object_hook=lambda d: SimpleNamespace(**d))
+        self.log(json.dumps(self.config.__dict__))
 
-    def transition(self, old, updated):
-        return
+    def get_default_config(self):
+        return CameraNodeConfig()
 
-    def cameraWorker(self):
+    def camera_worker(self):
         capture = None
-        while rclpy.ok() and self.getSystemState().state != SystemStateEnum.SHUTDOWN:
+        while rclpy.ok() and self.system_state != SystemStateEnum.SHUTDOWN:
             try:
-                if not os.path.exists("/dev/video" + str(self.config.getInt(CAMERA_INDEX))):
-                    time.sleep(1.5)
-                    self.log("Could not find camera /dev/video" + str(self.config.getInt(CAMERA_INDEX)))
+                if not os.path.exists("/dev/video" + str(self.config.camera_index)):
+                    time.sleep(self.config.scan_rate)
                     continue
 
                 capture = cv2.VideoCapture(0)
                 if capture is None or not capture.isOpened():
-                    self.log("Could not open camera /dev/video" + str(self.config.getInt(CAMERA_INDEX)))
-                    time.sleep(1.5)
+                    time.sleep(self.config.scan_rate)
                     continue
 
-                capture.set(cv2.CAP_PROP_FRAME_WIDTH, self.config.getInt(OUTPUT_WIDTH))
-                capture.set(cv2.CAP_PROP_FRAME_HEIGHT, self.config.getInt(OUTPUT_HEIGHT))
-                self.setDeviceState(DeviceStateEnum.OPERATING)
+                capture.set(cv2.CAP_PROP_FRAME_WIDTH, self.config.output_width)
+                capture.set(cv2.CAP_PROP_FRAME_HEIGHT, self.config.output_height)
+                self.set_device_state(DeviceStateEnum.OPERATING)
             except:
-                self.setDeviceState(DeviceStateEnum.STANDBY)
-                time.sleep(1.5)
+                self.set_device_state(DeviceStateEnum.STANDBY)
+                time.sleep(self.config.scan_rate)
                 continue
 
             while rclpy.ok() and self.getSystemState().state != SystemStateEnum.SHUTDOWN:
-                if self.getDeviceState() != DeviceStateEnum.OPERATING:
+                if self.device_state != DeviceStateEnum.OPERATING:
                     continue
 
                 try:
@@ -70,19 +74,20 @@ class CameraNode(Node):
                         capture.release()
                         capture = None
 
-                    self.setDeviceState(DeviceStateEnum.STANDBY)
+                    self.set_device_state(DeviceStateEnum.STANDBY)
                     break
 
                 if not ret or frame is None:
                     continue
 
-                self.cameraPublisher.publish(bridge.cv2_to_compressed_imgmsg(frame))
-                time.sleep(1.0 / self.config.getInt(REFRESH_RATE))
+                self.camera_publisher.publish(bridge.cv2_to_compressed_imgmsg(frame))
+                time.sleep(1.0 / self.config.refresh_rate)
 
 
 def main():
     rclpy.init()
-    rclpy.spin(CameraNode())
+    node = CameraNode()
+    Node.run_node(node)
     rclpy.shutdown()
 
 
