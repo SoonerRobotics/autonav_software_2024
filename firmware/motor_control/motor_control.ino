@@ -164,11 +164,11 @@ void loop1(){
   }
 }
 void configureCan() {
-  SPI1.setSCK(MCP2515_SCK);
-  SPI1.setTX(MCP2515_MOSI);
-  SPI1.setRX(MCP2515_MISO);
-  SPI1.setCS(MCP2515_CS);
-  SPI1.begin();
+  SPI0.setSCK(MCP2515_SCK);
+  SPI0.setTX(MCP2515_MOSI);
+  SPI0.setRX(MCP2515_MISO);
+  SPI0.setCS(MCP2515_CS);
+  SPI0.begin();
 
 
   Serial.println("Configure ACAN2515");
@@ -195,7 +195,7 @@ void onCanRecieve() {
 
   switch (frame.id) {
     case 10:
-      motorCommand = *(MotorCommand*)(frame.data);     //Noah made me cry. I dont know what they did but I dont like it one bit - Jorge
+      motorCommand = *(MotorCommand*)(frame.data);
 
       desired_forward_velocity = (float)motorCommand.setpoint_forward_velocity / SPEED_SCALE_FACTOR;
       desired_angular_velocity = (float)motorCommand.setpoint_angular_velocity / SPEED_SCALE_FACTOR;
