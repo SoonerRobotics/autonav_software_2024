@@ -8,6 +8,9 @@
 #include "autonav_msgs/msg/motor_feedback.hpp"
 #include "autonav_msgs/msg/gps_feedback.hpp"
 #include "autonav_msgs/msg/position.hpp"
+#include "autonav_msgs/msg/imu_data.hpp"
+#include "scr/states.hpp"
+#include "scr_msgs/msg/system_state.hpp"
 
 #define _USE_MATH_DEFINES
 
@@ -20,6 +23,22 @@ ParticleFilter particle_filter{latitudeLength, longitudeLength};
 autonav_msgs::msg::GPSFeedback first_gps;
 autonav_msgs::msg::GPSFeedback last_gps;
 bool first_gps_received = false;
+
+void FiltersNode::on_IMU_received(autonav_msgs::msg::IMUData IMU_msg) {
+    this->last_IMU_received = IMU_msg;
+}
+
+double FiltersNode::get_real_heading(float heading) {
+    if (heading < 0) {
+        heading = 360 + -heading;
+    }
+
+    heading += this->degreeOffset;
+    return heading;
+}
+
+void FiltersNode::on_reset() {
+}
 
 void FiltersNode::on_GPS_received(const autonav_msgs::msg::GPSFeedback gps_message) {
     if (gps_message.gps_fix == 0 &&  gps_message.is_locked == false) {
