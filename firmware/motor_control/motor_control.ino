@@ -4,8 +4,8 @@
 #include "differential_drive.h"
 #include "motor_with_encoder.h"
 #include "common.h"
-#include <CONBus.h> 
-#include <CANBusDriver.h>
+#include "CONBus.h" 
+#include "CANBusDriver.h"
 
 //LED
 static int LED1 = 22;
@@ -34,12 +34,12 @@ static int MCP2515_MISO = 16;
 static int MCP2515_CS = 17;
 static int MCP2515_SCK = 18;
 static int MCP2515_MOSI = 19;
-static int MCP215_INT = 20;
+static int MCP2515_INT = 20;
 
 //Quartz oscillator - 8MHz
-static uint23_t QUARTZFREQUENCY = 8UL * 1000UL * 1000UL
+static uint32_t QUARTZ_FREQUENCY = 8UL * 1000UL * 1000UL;
 
-ACAN2515 can(MCP2515_CS, SPI0, MCP2515_INT);
+ACAN2515 can(MCP2515_CS, SPI, MCP2515_INT);
 
 TickTwo motor_update_timer(setMotorUpdateFlag, 25);
 
@@ -87,7 +87,11 @@ float desired_forward_velocity;
 float desired_angular_velocity;
 
 void setup() {
-  delay(50);
+  Serial.begin(9600);
+  while(!Serial){
+    delay(50);
+  }
+  Serial.println("Serial Connected");
 
   drivetrain.setup();
 
@@ -100,14 +104,18 @@ void setup() {
   attachInterrupt(ENC0A, updateRight, CHANGE);
 
   motor_update_timer.start();
-}
-void setup1(){
-  Serial.begin(9600);
+
+  //setup1
   delay(50);
   configureCan();
 
   pinMode(LED1, OUTPUT);
   pinMode(LED2, OUTPUT);
+  digitalWrite(LED1, HIGH);
+  digitalWrite(LED2, HIGH);
+  delay(1000);
+  digitalWrite(LED1, LOW);
+  digitalWrite(LED2, LOW);
   pinMode(ESTOP, INPUT);
 
   conbus.addReadOnlyRegister(0x00, drivetrain.getUpdatePeriod());
@@ -135,7 +143,9 @@ void setup1(){
 
   conbus.addRegister(0x50, &motor_updates_between_deltaodom);
 }
+
 void loop() {
+
   updateTimers();
   if (MOTOR_UPDATE_FLAG) {
 
@@ -144,9 +154,8 @@ void loop() {
 
     MOTOR_UPDATE_FLAG = false;
   }
-}
-void loop1(){
 
+  //loop1
   if (motor_updates_in_deltaodom >= motor_updates_between_deltaodom) {
     motor_updates_in_deltaodom = 0;
     sendCanOdomMsgOut();
@@ -162,13 +171,15 @@ void loop1(){
       conbus_can.popReply();
     }
   }
+
 }
+
 void configureCan() {
-  SPI0.setSCK(MCP2515_SCK);
-  SPI0.setTX(MCP2515_MOSI);
-  SPI0.setRX(MCP2515_MISO);
-  SPI0.setCS(MCP2515_CS);
-  SPI0.begin();
+  SPI.setSCK(MCP2515_SCK);
+  SPI.setTX(MCP2515_MOSI);
+  SPI.setRX(MCP2515_MISO);
+  SPI.setCS(MCP2515_CS);
+  SPI.begin();
 
 
   Serial.println("Configure ACAN2515");
@@ -176,10 +187,11 @@ void configureCan() {
   settings.mRequestedMode = ACAN2515Settings::NormalMode ; // Select Normal mode
   const uint16_t errorCode = can.begin(settings, onCanRecieve );
   if (errorCode == 0) {
+    Serial.println("CAN Configured");
   }
   else{
     Serial.print("Error: ");
-    Serial.print(errorCode);
+    Serial.println(errorCode);
   }
 }
 void onCanRecieve() {
