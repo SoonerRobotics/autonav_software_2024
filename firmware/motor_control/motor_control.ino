@@ -205,7 +205,7 @@ void onCanRecieve() {
 
   conbus_can.readCanMessage(frame.id, frame.data);
 
-  switch (frame.id) {
+  switch (frame.id) {  
     case 10:
       motorCommand = *(MotorCommand*)(frame.data);
 
@@ -228,6 +228,7 @@ void onCanRecieve() {
       drivetrain.setOutput(desired_forward_velocity, desired_angular_velocity);
       break;
   }
+  
 }
 
 PIDSetpoints pid_setpoints;
