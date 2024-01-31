@@ -53,18 +53,20 @@ MATRIX = cv2.getPerspectiveTransform(dest_pts, src_pts)
 
 # and here's the constants for region of disinterest
 # vertices according to MS paint and a frame I grabbed from Scrabby (now with some tuning from running in Scrabby)
-region_of_disinterest_vertices = [(10, 479), (319, 390), (630, 479)] # triangle shape | (x, y) | bottom left, top, bottom right I think
+region_of_disinterest_vertices = [(50, 479), (250, 390), (400  , 390), (590, 479)] # triangle shape | (x, y) | bottom left, top, bottom right I think
 region_of_disinterest = np.array([region_of_disinterest_vertices], np.int32)
 
 
 # for erode/dilate/blur operations
 # 0 for rectangle, 1 for cross, 2 for ellipse
 EROSION_SHAPE = 2
-KERNEL_SIZE = 3
+DILATE_SHAPE = 0
+ERODE_SIZE = 4
+DILATE_SIZE = 2
 
 # the actual kernel creating using OpenCV magic
-kernel = cv2.getStructuringElement(EROSION_SHAPE, (KERNEL_SIZE, KERNEL_SIZE))
- 
+erodeKernel = cv2.getStructuringElement(EROSION_SHAPE, (ERODE_SIZE, ERODE_SIZE))
+dilateKernel = cv2.getStructuringElement(DILATE_SHAPE, (DILATE_SIZE, DILATE_SIZE))
 
 class ImageTransformer(Node):
     def __init__(self):
@@ -117,8 +119,8 @@ class ImageTransformer(Node):
         image = cv2.resize(image, (256, 256))
 
         # actually run the CNN on the image
-        mask_ = self.model.predict(np.array([image, image], dtype=np.float32))[0]
-        # mask_ = tf.squeeze(self.model(tf.expand_dims(image, axis=0)), axis=0) #TODO get this line to work so we're not doing some weird [image, image][0] list stuff
+        mask_ = self.model(np.expand_dims(image, axis=0)) # alright so I think this works now
+        mask_ = np.squeeze(mask_, axis=0)
 
         # rotate the image 90 degrees back to how it was
         mask = cv2.transpose(mask_ * 255.0)
@@ -129,13 +131,13 @@ class ImageTransformer(Node):
 
         # Apply region of disinterest and flattening
         # I don't really know how it does this but it does it
-        cv_image = self.regionOfDisinterest(cv_image, region_of_disinterest)
+        mask = self.regionOfDisinterest(mask, region_of_disinterest)
         
         # erode the mask a little bit to remove artefacts and small bits that aren't actually there
-        mask = cv2.erode(mask, kernel)
+        mask = cv2.erode(mask, erodeKernel)
 
         # dilate it back up to make up for lost information
-        mask = cv2.dilate(mask, kernel)
+        mask = cv2.dilate(mask, dilateKernel)
 
 
         # get our top-down view so we can make our map
