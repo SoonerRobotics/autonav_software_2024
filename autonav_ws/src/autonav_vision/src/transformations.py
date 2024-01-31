@@ -40,13 +40,17 @@ class ImageTransformerConfig:
 
 
 class ImageTransformer(Node):
-    def __init__(self):
-        super().__init__("autonav_vision_transformer")
+    def __init__(self, direction = str):
+        self.direction = direction
+        super().__init__(f"autonav_vision_transformer_{direction}")
+
+    def directionify(self, topic):
+        return f"{topic}/{self.direction}"
 
     def init(self):
-        self.cameraSubscriber = self.create_subscription(CompressedImage, "/autonav/camera/compressed", self.onImageReceived, 1)
-        self.rawMapPublisher = self.create_publisher(OccupancyGrid, "/autonav/cfg_space/raw", 1)
-        self.filteredImagePublisher = self.create_publisher(CompressedImage, "/autonav/cfg_space/raw/image", 1)
+        self.cameraSubscriber = self.create_subscription(CompressedImage, self.directionify("/autonav/camera/compressed"), self.onImageReceived, 1)
+        self.rawMapPublisher = self.create_publisher(OccupancyGrid, self.directionify("/autonav/cfg_space/raw"), 1)
+        self.filteredImagePublisher = self.create_publisher(CompressedImage, self.directionify("/autonav/cfg_space/raw/image"), 1)
 
         self.set_device_state(DeviceStateEnum.OPERATING)
 
@@ -132,8 +136,9 @@ class ImageTransformer(Node):
 
 def main():
     rclpy.init()
-    node = ImageTransformer()
-    Node.run_node(node)
+    node_left = ImageTransformer(direction = "left")
+    node_right = ImageTransformer(direction = "right")
+    Node.run_node(node_left, node_right)
     rclpy.shutdown()
 
 

@@ -256,7 +256,7 @@ class Node(ROSNode):
         self.performance_publisher.publish(Float64(data=elapsed_time))
         del self.perf_measurements[name]
 
-    def run_node(node):
+    def run_node(*node: ROSNode):
         """
         Runs the node with the correct ROS parameters and specifications
 
@@ -264,9 +264,10 @@ class Node(ROSNode):
         """
 
         executor = MultiThreadedExecutor()
-        executor.add_node(node)
+        for n in node:
+            executor.add_node(n)
         executor.spin()
-        executor.remove_node(node)
+        executor.shutdown()
 
     def log(self, message: str):
         rclpy.logging.get_logger("scr." + self.identifier).info(message)

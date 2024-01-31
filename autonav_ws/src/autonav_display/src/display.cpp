@@ -26,12 +26,13 @@ public:
     void init() override
     {
         // Setup timer
-        broadcast_timer = this->create_wall_timer(std::chrono::milliseconds(250), std::bind(&DisplayNode::broadcast_timer_callback, this));
+        broadcast_timer = this->create_wall_timer(std::chrono::milliseconds(200), std::bind(&DisplayNode::broadcast_timer_callback, this));
 
         // Setup subscriptions
         device_state_subscription = this->create_subscription<scr_msgs::msg::DeviceState>(SCR::Constants::Topics::DEVICE_STATE, 10, std::bind(&DisplayNode::device_state_callback, this, std::placeholders::_1));
         system_state_subscription = this->create_subscription<scr_msgs::msg::SystemState>(SCR::Constants::Topics::SYSTEM_STATE, 10, std::bind(&DisplayNode::system_state_callback, this, std::placeholders::_1));
-        camera_raw_subscription = this->create_subscription<sensor_msgs::msg::CompressedImage>("/autonav/camera/compressed", 10, std::bind(&DisplayNode::camera_raw_callback, this, std::placeholders::_1));
+        camera_raw_subscription_left = this->create_subscription<sensor_msgs::msg::CompressedImage>("/autonav/camera/compressed/left", 10, std::bind(&DisplayNode::camera_raw_callback_left, this, std::placeholders::_1));
+        camera_raw_subscription_right = this->create_subscription<sensor_msgs::msg::CompressedImage>("/autonav/camera/compressed/right", 10, std::bind(&DisplayNode::camera_raw_callback_right, this, std::placeholders::_1));
 
         // Setup server logging
         m_server.set_access_channels(websocketpp::log::alevel::all);
@@ -183,7 +184,7 @@ public:
         broadcast_data("/scr/state/system", data);
     }
 
-    void camera_raw_callback(const sensor_msgs::msg::CompressedImage::SharedPtr msg)
+    void camera_raw_callback_left(const sensor_msgs::msg::CompressedImage::SharedPtr msg)
     {
         auto bytes = msg->data;
         auto bytesString = std::string(bytes.begin(), bytes.end());
@@ -192,7 +193,19 @@ public:
         json data = {
             {"data", base64_encoded},
             {"format", msg->format}};
-        broadcast_data("/autonav/camera/compressed", data);
+        broadcast_data("/autonav/camera/compressed/left", data);
+    }
+
+    void camera_raw_callback_right(const sensor_msgs::msg::CompressedImage::SharedPtr msg)
+    {
+        auto bytes = msg->data;
+        auto bytesString = std::string(bytes.begin(), bytes.end());
+        auto base64_encoded = macaron::Base64::Encode(bytesString);
+
+        json data = {
+            {"data", base64_encoded},
+            {"format", msg->format}};
+        broadcast_data("/autonav/camera/compressed/right", data);
     }
 
     // Generic callbacks
@@ -232,7 +245,8 @@ private:
     rclcpp::Subscription<scr_msgs::msg::SystemState>::SharedPtr system_state_subscription;
 
     // Images
-    rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr camera_raw_subscription;
+    rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr camera_raw_subscription_left;
+    rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr camera_raw_subscription_right;
 
 public:
     std::thread m_server_thread;

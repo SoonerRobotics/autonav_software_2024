@@ -240,16 +240,27 @@ namespace SCR
         perf_measurements.erase(name);
     }
 
-    void Node::run_node(std::shared_ptr<Node> node)
+    void Node::run_node(std::shared_ptr<Node> nodes)
+    {
+        run_node(std::vector<std::shared_ptr<Node>>{nodes});
+    }
+
+    void Node::run_node(std::vector<std::shared_ptr<Node>> nodes)
     {
         // Create a multi-threaded executor
         rclcpp::executors::MultiThreadedExecutor executor;
-        executor.add_node(node);
+        for (auto node : nodes)
+        {
+            executor.add_node(node);
+        }
 
         // Run the executor
         executor.spin();
 
         // Shutdown
-        executor.remove_node(node);
+        for (auto node : nodes)
+        {
+            executor.remove_node(node);
+        }
     }
 }
