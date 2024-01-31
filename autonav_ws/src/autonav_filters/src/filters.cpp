@@ -1,16 +1,10 @@
-#include <chrono>
-#include <functional>
-#include <memory>
-#include <string>
-
 #include "autonav_filters/filters.hpp"
-#include "rclcpp/rclcpp.hpp"
 #include "autonav_msgs/msg/motor_feedback.hpp"
 #include "autonav_msgs/msg/gps_feedback.hpp"
 #include "autonav_msgs/msg/position.hpp"
 #include "autonav_msgs/msg/imu_data.hpp"
-#include "scr/states.hpp"
-#include "scr_msgs/msg/system_state.hpp"
+// #include "scr/states.hpp"
+// #include "scr_msgs/msg/system_state.hpp"
 
 #define _USE_MATH_DEFINES
 
@@ -24,20 +18,19 @@ autonav_msgs::msg::GPSFeedback first_gps;
 autonav_msgs::msg::GPSFeedback last_gps;
 bool first_gps_received = false;
 
-void FiltersNode::on_IMU_received(autonav_msgs::msg::IMUData IMU_msg) {
-    this->last_IMU_received = IMU_msg;
-}
+// void FiltersNode::system_state_transition(scr_msgs::msg::SystemState old, scr_msgs::msg::SystemState updated) {
+//     if ((old.state != SCR::SystemState::AUTONOMOUS) && (updated.state == SCR::SystemState::AUTONOMOUS)) {
+//         this->on_reset();
+//     }
 
-double FiltersNode::get_real_heading(float heading) {
-    if (heading < 0) {
-        heading = 360 + -heading;
-    }
-
-    heading += this->degreeOffset;
-    return heading;
-}
+//     if ((old.mobility == false) and updated.mobility == true) {
+//         this->on_reset();
+//     }
+// }
 
 void FiltersNode::on_reset() {
+    // if you're going to seed the pf with the IMU it would go here
+    this->particle_filter.init_particles();
 }
 
 void FiltersNode::on_GPS_received(const autonav_msgs::msg::GPSFeedback gps_message) {

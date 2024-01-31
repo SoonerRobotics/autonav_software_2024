@@ -1,7 +1,5 @@
-#include <chrono>
-#include <functional>
-#include <memory>
-#include <string>
+#pragma once
+
 
 #include "scr/node.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -9,7 +7,10 @@
 #include "autonav_msgs/msg/gps_feedback.hpp"
 #include "autonav_msgs/msg/position.hpp"
 #include "autonav_msgs/msg/imu_data.hpp"
+//#include "scr/states.hpp"
 
+#include <chrono>
+#include <functional>
 #include "autonav_filters/particle_filter.hpp"
 
 #define _USE_MATH_DEFINES
@@ -29,6 +30,7 @@ class FiltersNode : public SCR::Node {
             // publishers
             positionPublisher = this->create_publisher<autonav_msgs::msg::Position>("/autonav/position", 20);
             
+            // this->set_device_state(SCR::DeviceState::OPERATING);
             this->on_reset();
         }
 
@@ -44,13 +46,9 @@ class FiltersNode : public SCR::Node {
         bool first_imu_received = false;
         autonav_msgs::msg::IMUData last_IMU_received;
 
-        void on_IMU_received(const autonav_msgs::msg::IMUData IMU_msg);
-
-        double get_real_heading(float heading);
-
         void on_reset();
 
-        void system_state_transition();
+        // void system_state_transition(scr_msgs::msg::SystemState old, scr_msgs::msg::SystemState updated);
         
         void on_GPS_received(const autonav_msgs::msg::GPSFeedback gps_message);
 
