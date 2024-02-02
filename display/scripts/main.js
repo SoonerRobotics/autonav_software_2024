@@ -561,14 +561,14 @@ $(document).ready(function () {
         }
 
         if (topic == "/autonav/camera/compressed/left") {
-            // Set to 
+            console.log("Updating left: " + topic);
             const imgElement = document.getElementById("target_raw_camera_left");
             imgElement.src = `data:image/jpeg;base64,${msg.data}`;
             return;
         }
 
         if (topic == "/autonav/camera/compressed/right") {
-            // Set to 
+            console.log("Updating right: " + topic);
             const imgElement = document.getElementById("target_raw_camera_right");
             imgElement.src = `data:image/jpeg;base64,${msg.data}`;
             return;

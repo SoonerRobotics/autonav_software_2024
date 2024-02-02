@@ -144,7 +144,6 @@ class Node(ROSNode):
         Called when the configuration is updated.
         """
 
-        self.get_logger().warn("Config updated method not overridden: config_updated(json)")
         pass
 
     def get_default_config(self):

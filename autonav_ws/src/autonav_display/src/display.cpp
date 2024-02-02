@@ -26,7 +26,7 @@ public:
     void init() override
     {
         // Setup timer
-        broadcast_timer = this->create_wall_timer(std::chrono::milliseconds(200), std::bind(&DisplayNode::broadcast_timer_callback, this));
+        broadcast_timer = this->create_wall_timer(std::chrono::milliseconds(50), std::bind(&DisplayNode::broadcast_timer_callback, this));
 
         // Setup subscriptions
         device_state_subscription = this->create_subscription<scr_msgs::msg::DeviceState>(SCR::Constants::Topics::DEVICE_STATE, 10, std::bind(&DisplayNode::device_state_callback, this, std::placeholders::_1));
