@@ -35,7 +35,7 @@ class ImageTransformerConfig:
         self.upper_val = 210
         self.blur_weight = 5
         self.blur_iterations = 3
-        self.rod_offset = 130
+        self.rod_offset = 40
         self.map_res = 80
 
 
@@ -72,16 +72,16 @@ class ImageTransformer(Node):
         return masked_image
 
     def flattenImage(self, img):
-        top_left = (int)(img.shape[1] * 0.26), (int)(img.shape[0])
-        top_right = (int)(img.shape[1] - img.shape[1] * 0.26), (int)(img.shape[0])
+        top_left = (int)(img.shape[1] * 0.18), (int)(img.shape[0])
+        top_right = (int)(img.shape[1] - img.shape[1] * 0.18), (int)(img.shape[0])
         bottom_left = 0, 0
         bottom_right = (int)(img.shape[1]), 0
 
         src_pts = np.float32([[top_left], [top_right], [bottom_left], [bottom_right]])
-        dest_pts = np.float32([[0, 480], [640, 480], [0, 0], [640, 0]])
+        dest_pts = np.float32([[0, 640], [480, 640], [0, 0], [480, 0]])
 
         matrix = cv2.getPerspectiveTransform(dest_pts, src_pts)
-        output = cv2.warpPerspective(img, matrix, (640, 480))
+        output = cv2.warpPerspective(img, matrix, (480, 640))
         return output
 
     def publishOccupancyMap(self, img):
@@ -109,11 +109,18 @@ class ImageTransformer(Node):
         # Apply region of disinterest and flattening
         height = img.shape[0]
         width = img.shape[1]
-        region_of_disinterest_vertices = [
-            (0, height),
-            (width / 2, height / 2 + self.config.rod_offset),
-            (width, height)
-        ]
+        if self.direction == "left":
+            region_of_disinterest_vertices = [
+                (width, height),
+                (width, height - (height / 1.5)),
+                (width / 2.3, height)
+            ]
+        else:
+            region_of_disinterest_vertices = [
+                (0, height),
+                (0, height - (height / 1.5)),
+                (width / 1.5, height)
+            ]
 
         # Apply region of disinterest and flattening
         mask = self.regionOfDisinterest(mask, np.array([region_of_disinterest_vertices], np.int32))

@@ -574,8 +574,14 @@ $(document).ready(function () {
             return;
         }
 
-        if (topic == "/autonav/cfg_space/raw/image") {
-            const imgElement = document.getElementById("target_filtered_camera");
+        if (topic == "/autonav/cfg_space/raw/image/left") {
+            const imgElement = document.getElementById("target_filtered_camera_left");
+            imgElement.src = `data:image/jpeg;base64,${msg.data}`;
+            return;
+        }
+
+        if (topic == "/autonav/cfg_space/raw/image/right") {
+            const imgElement = document.getElementById("target_filtered_camera_right");
             imgElement.src = `data:image/jpeg;base64,${msg.data}`;
             return;
         }
