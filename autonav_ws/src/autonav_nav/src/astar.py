@@ -62,10 +62,13 @@ simulation_waypoints = [
 ]
 
 
-def hexToRgb(color: str):
-    if color[0] == "#":
-        color = color[1:]
-    return [int(color[0:2], 16), int(color[2:4], 16), int(color[4:6], 16)]
+# convert string hexadecimal color (ex #AA05CF) to RGB tuple (ex (255, 100, 75))
+def hexToRgb(color: str) -> tuple:
+    # remove the leading # if it's there
+    color = color.removeprefix("#")
+
+    # return [int(channel, 16) for channel in color[::2]] # this doesn't work
+    return [int(color[idx:idx+1], 16) for idx in range(0, len(color), 2)]
 
 
 def toSafetyLights(autonomous: bool, eco: bool, mode: int, brightness: int, color: str) -> SafetyLights:
