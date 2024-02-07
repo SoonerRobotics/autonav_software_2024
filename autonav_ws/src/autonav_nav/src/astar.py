@@ -73,14 +73,14 @@ def hexToRgb(color: str) -> tuple:
 
 def toSafetyLights(autonomous: bool, eco: bool, mode: int, brightness: int, color: str) -> SafetyLights:
     pkg = SafetyLights()
+    
     pkg.mode = mode
     pkg.autonomous = autonomous
     pkg.eco = eco
     pkg.brightness = brightness
-    colorr = hexToRgb(color)
-    pkg.red = colorr[0]
-    pkg.green = colorr[1]
-    pkg.blue = colorr[2]
+
+    pkg.red, pkg.green, pkg.blue = hexToRgb(color)
+
     return pkg
 
 
