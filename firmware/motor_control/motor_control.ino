@@ -88,9 +88,10 @@ float desired_angular_velocity;
 
 void setup() {
   Serial.begin(9600);
-  while(!Serial){
-    delay(50);
-  }
+  //while(!Serial){
+    //delay(50);
+  //}
+  delay(50);
   Serial.println("Serial Connected");
 
   drivetrain.setup();
@@ -181,7 +182,6 @@ void configureCan() {
   SPI.setCS(MCP2515_CS);
   SPI.begin();
 
-
   Serial.println("Configure ACAN2515");
   ACAN2515Settings settings(QUARTZ_FREQUENCY, 100UL * 1000UL);  // CAN bit rate 100 kb/s
   settings.mRequestedMode = ACAN2515Settings::NormalMode ; // Select Normal mode
@@ -205,12 +205,15 @@ void onCanRecieve() {
 
   conbus_can.readCanMessage(frame.id, frame.data);
 
+  printCanMsg(frame);
+
   switch (frame.id) {  
     case 10:
       motorCommand = *(MotorCommand*)(frame.data);
 
       desired_forward_velocity = (float)motorCommand.setpoint_forward_velocity / SPEED_SCALE_FACTOR;
       desired_angular_velocity = (float)motorCommand.setpoint_angular_velocity / SPEED_SCALE_FACTOR;
+
 
       if (useObstacleAvoidance && isDetectingObstacle && desired_forward_velocity > 0) {
         desired_forward_velocity = 0;
