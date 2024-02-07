@@ -24,6 +24,7 @@ CV_BRIDGE = cv_bridge.CvBridge()
 
 # STARTING_PT = (42.6681268, -83.218887)
 
+# there's gotta be a better way to store these, right? like, idk, csv file?
 competition_waypoints = [
     # Start Nomans, Frist Ramp, Middle Ramp, End Ramp, End Nomans
     [(42.6682837222, -83.2193403028), (42.6681206444, -83.2193606083), (42.66809863885, -83.2193606083), (42.6680766333, -83.2193606083),
@@ -71,9 +72,10 @@ def hexToRgb(color: str) -> tuple:
     return [int(color[idx:idx+1], 16) for idx in range(0, len(color), 2)]
 
 
+# create a safetylights message from given parameters
 def toSafetyLights(autonomous: bool, eco: bool, mode: int, brightness: int, color: str) -> SafetyLights:
     pkg = SafetyLights()
-    
+
     pkg.mode = mode
     pkg.autonomous = autonomous
     pkg.eco = eco
@@ -84,48 +86,52 @@ def toSafetyLights(autonomous: bool, eco: bool, mode: int, brightness: int, colo
     return pkg
 
 
-class AStarNodeConfig:
-    def __init__(self):
-        self.waypointPopDistance = 1.1
-        self.waypointDirection = 0
-        self.useOnlyWaypoints = False
-        self.waypointDelay = 17.5
+# class AStarNodeConfig:
+#     def __init__(self):
+#         self.waypointPopDistance = 1.1
+#         self.waypointDirection = 0
+#         self.useOnlyWaypoints = False
+#         self.waypointDelay = 17.5
 
 
 class AStarNode(Node):
     def __init__(self):
         super().__init__("autonav_nav_astar")
 
+        # reset the node
         self.onReset()
-        self.latitudeLength = self.declare_parameter(
-            "latitude_length", 111086.2).get_parameter_value().double_value
-        self.longitudeLength = self.declare_parameter(
-            "longitude_length", 81978.2).get_parameter_value().double_value
-        self.config = AStarNodeConfig()
 
+        #TODO figure out what this does
+        self.latitudeLength = self.declare_parameter("latitude_length", 111086.2).get_parameter_value().double_value
+        self.longitudeLength = self.declare_parameter("longitude_length", 81978.2).get_parameter_value().double_value
+        # self.config = AStarNodeConfig()
+
+    # initialize the node (not called directly by us)
     def init(self):
+        # === subscribers ===
         self.configSpaceSubscriber = self.create_subscription(OccupancyGrid, "/autonav/cfg_space/expanded", self.onConfigSpaceReceived, 20)
         self.poseSubscriber = self.create_subscription(Position, "/autonav/position", self.onPoseReceived, 20)
         self.imuSubscriber = self.create_subscription(IMUData, "/autonav/imu", self.onImuReceived, 20)
+
+        # === publishers ===
         self.debugPublisher = self.create_publisher(PathingDebug, "/autonav/debug/astar", 20)
         self.pathPublisher = self.create_publisher(Path, "/autonav/path", 20)
         self.safetyLightsPublisher = self.create_publisher(SafetyLights, "/autonav/SafetyLights", 20)
         self.pathDebugImagePublisher = self.create_publisher(CompressedImage, "/autonav/debug/astar/image", 20)
+
+        # callback timer
         self.mapTimer = self.create_timer(0.1, self.createPath)
 
+        #TODO figure out what this does
         self.resetWhen = -1.0
 
+        # once all subs and pubs are set up we are good to go
         self.set_device_state(DeviceStateEnum.OPERATING)
+    
 
-    def getAngleDifference(self, to_angle, from_angle):
-        delta = to_angle - from_angle
-        delta = (delta + math.pi) % (2 * math.pi) - math.pi
-        return delta
-
-    def onImuReceived(self, msg: IMUData):
-        self.imu = msg
-
+    # === miscellaneous callbacks ===
     def onReset(self):
+        #TODO rewrite
         self.imu = None
         self.lastPath = None
         self.position = None
@@ -135,19 +141,32 @@ class AStarNode(Node):
         self.waypoints = []
         self.waypointTime = 0.0
 
+    #TODO
+    def transition(self, old: SystemState, updated: SystemState):
+        pass
+
+    # === sensor callbacks ===
+    def onImuReceived(self, msg: IMUData):
+        self.imu = msg
+
+    def onPoseReceived(self, msg: Position):
+        self.position = msg
+    
+
+    # === publisher callbacks ===
+    #TODO what does this do?
+    # def getAngleDifference(self, to_angle, from_angle):
+    #     delta = to_angle - from_angle
+    #     delta = (delta + math.pi) % (2 * math.pi) - math.pi
+    #     return delta
+
+
+    #TODO rewrite
     def getWaypointsForDirection(self):
         direction_index = self.config.waypointDirection
         return simulation_waypoints[direction_index] if self.system_mode == SystemModeEnum.SIMULATION else competition_waypoints[direction_index] if self.system_mode == SystemModeEnum.COMPETITION else practice_waypoints[direction_index]
 
-    def transition(self, old: SystemState, updated: SystemState):
-        if updated.state == SystemStateEnum.AUTONOMOUS and updated.mobility and len(self.waypoints) == 0:
-            self.waypointTime = time.time() + self.config.waypointDelay
 
-        if updated.state != SystemStateEnum.AUTONOMOUS and self.device_state == DeviceStateEnum.OPERATING:
-            self.onReset()
-
-    def onPoseReceived(self, msg: Position):
-        self.position = msg
 
     def createPath(self):
         if self.position is None or self.costMap is None:
