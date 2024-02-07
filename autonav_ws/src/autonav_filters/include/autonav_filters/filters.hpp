@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include "scr/node.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "autonav_msgs/msg/motor_feedback.hpp"

@@ -50,8 +50,10 @@ namespace SCR
         SCR::SystemMode newMode = static_cast<SCR::SystemMode>(msg.mode);
         SCR::SystemMode oldMode = static_cast<SCR::SystemMode>(oldState.mode);
 
-        RCLCPP_WARN(this->get_logger(), "SYSTEM STATE CHANGE: %s -> %s", SCR::toString(oldStateEnum).c_str(), SCR::toString(newStateEnum).c_str());
-        RCLCPP_WARN(this->get_logger(), "SYSTEM MODE CHANGE: %s -> %s", SCR::toString(oldMode).c_str(), SCR::toString(newMode).c_str());
+        //RCLCPP_WARN(this->get_logger(), "SYSTEM STATE CHANGE: %s -> %s", SCR::toString(oldStateEnum).c_str(), SCR::toString(newStateEnum).c_str());
+        //RCLCPP_WARN(this->get_logger(), "SYSTEM MODE CHANGE: %s -> %s", SCR::toString(oldMode).c_str(), SCR::toString(newMode).c_str());
+        RCLCPP_WARN(this->get_logger(), "SYSTEM STATE CHANGE: DISABLED SYSTEM STATE TOSTRING -> DISABLED SYSTEM STATE TOSTRING");
+        RCLCPP_WARN(this->get_logger(), "SYSTEM MODE CHANGE: DISABLED SYSTEM STATE TOSTRING -> DISABLED SYSTEM STATE TOSTRING");
         RCLCPP_WARN(this->get_logger(), "MOBILITY CHANGE: %d -> %d", oldState.mobility, msg.mobility);
 
         system_state_transition(oldState, msg);
@@ -76,7 +78,8 @@ namespace SCR
         }
 
         device_state = static_cast<SCR::DeviceState>(msg.state);
-        RCLCPP_INFO(this->get_logger(), "Received Topic: Device state changed to %s", SCR::toString(device_state).c_str());
+        //RCLCPP_INFO(this->get_logger(), "Received Topic: Device state changed to %s", SCR::toString(device_state).c_str());
+        RCLCPP_INFO(this->get_logger(), "Received Topic: Device state changed to DISABLED DEVICE STATE TOSTRING");
 
         if (device_state == SCR::DeviceState::BOOTING)
         {
@@ -166,7 +169,8 @@ namespace SCR
         auto result = result_future.get();
         if (!result)
         {
-            RCLCPP_ERROR(this->get_logger(), "Failed to set device state to: %s", SCR::toString(state).c_str());
+            //RCLCPP_ERROR(this->get_logger(), "Failed to set device state to: %s", SCR::toString(state).c_str());
+            RCLCPP_ERROR(this->get_logger(), "Failed to set device state to: DISABLED DEVICE STATE TOSTRING");
         }
     }
 

@@ -12,7 +12,7 @@
     <node pkg="autonav_display" exec="broadcast.py" />
     <node pkg="autonav_vision" exec="transformations.py" />
     <node pkg="autonav_vision" exec="expandify"/>
-    <node pkg="autonav_filters" exec="filters.cpp">
+    <node pkg="autonav_filters" exec="filters_node.cpp">
         <param name="latitude_length" value="111086.2" />
         <param name="longitude_length" value="81978.2" />
         <param name="default_filter" value="0" />
