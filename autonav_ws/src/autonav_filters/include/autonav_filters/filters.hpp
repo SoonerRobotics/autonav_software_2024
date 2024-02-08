@@ -18,7 +18,7 @@ using namespace std::chrono_literals;
 
 class FiltersNode : public SCR::Node {
     public:
-        FiltersNode() : SCR::Node("autonav_filters"), count_(0)
+        FiltersNode() : SCR::Node("autonav_filters_pf"), count_(0)
         {
             // subscriptions
             gps_subscription = this->create_subscription<autonav_msgs::msg::GPSFeedback>("/autonav_GPS", 
@@ -44,6 +44,14 @@ class FiltersNode : public SCR::Node {
         bool first_gps_received = false;
         bool first_imu_received = false;
         autonav_msgs::msg::IMUData last_IMU_received;
+
+        void init() override;
+
+        void system_state_transition(scr_msgs::msg::SystemState old, scr_msgs::msg::SystemState updated) override;
+
+        void config_updated(json config) override;
+
+        json get_default_config() override;
 
         void on_reset();
 

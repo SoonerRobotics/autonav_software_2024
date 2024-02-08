@@ -11,12 +11,30 @@
 using namespace std::chrono_literals;
 
 //particle filter
-double latitudeLength = 111086.2;
-double longitudeLength = 81978.2;
-ParticleFilter particle_filter{latitudeLength, longitudeLength};
-autonav_msgs::msg::GPSFeedback first_gps;
-autonav_msgs::msg::GPSFeedback last_gps;
-bool first_gps_received = false;
+
+void FiltersNode::init() {
+    double latitudeLength = 111086.2;
+    double longitudeLength = 81978.2;
+    ParticleFilter particle_filter{latitudeLength, longitudeLength};
+    autonav_msgs::msg::GPSFeedback first_gps;
+    autonav_msgs::msg::GPSFeedback last_gps;
+    bool first_gps_received = false;
+
+    this->on_reset();
+};
+
+void FiltersNode::system_state_transition(scr_msgs::msg::SystemState old, scr_msgs::msg::SystemState updated) {
+    
+};
+
+void FiltersNode::config_updated(json config) {
+
+};
+
+json FiltersNode::get_default_config() {
+
+};
+
 
 // void FiltersNode::system_state_transition(scr_msgs::msg::SystemState old, scr_msgs::msg::SystemState updated) {
 //     if ((old.state != SCR::SystemState::AUTONOMOUS) && (updated.state == SCR::SystemState::AUTONOMOUS)) {
