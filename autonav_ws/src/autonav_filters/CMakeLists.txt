@@ -59,6 +59,7 @@ install(TARGETS
  install(PROGRAMS
    # add programs in format:
    #/path_to_program/program.py
+   src/filters.py
    DESTINATION lib/${PROJECT_NAME}
   )
 
