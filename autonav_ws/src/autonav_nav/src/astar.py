@@ -131,7 +131,8 @@ class AStar:
             # if our current node is the goal node, then we've reached it
             if current_node == goal_node:
                 # reached the goal node
-                pass #TODO
+                return self.reconstruct_path(goal_node)
+                
         
             # check all the neighbors of the node
             neighbors = self.get_neighbors(current_node)
