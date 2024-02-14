@@ -16,7 +16,7 @@ struct GraphNode {
     double h_cost;
     double f_cost;
 
-    GraphNode *parent;
+    GraphNode* parent;
 };
 
 
@@ -36,19 +36,19 @@ private:
     std::vector<std::vector<GraphNode>> map;
 
     // main actual search function
-    std::vector<std::vector<GraphNode>> search(GraphNode start, GraphNode goal);
+    std::vector<std::vector<GraphNode>> Search(GraphNode start, GraphNode goal);
 
     // helper function to get the minecraft crafting table neighbors
-    std::vector<GraphNode> get_neighbors(GraphNode node);
+    std::vector<GraphNode> GetNeighbors(GraphNode node);
 
     // traverse the nodes backwards to the start and return that
-    std::vector<GraphNode> reconstruct_path(GraphNode goal);
+    std::vector<GraphNode> ReconstructPath(GraphNode goal);
 
     // helper function to update a node's information
-    void update_node(GraphNode node, double g_cost, double h_cost, GraphNode current);
+    void UpdateNode(GraphNode node, double g_cost, double h_cost, GraphNode current);
 
     // our heuristic (h_cost), literally just distance formula
-    double distance_formula(GraphNode current, GraphNode goal);
+    double DistanceFormula(GraphNode current, GraphNode goal);
 
 
     size_t count_;
