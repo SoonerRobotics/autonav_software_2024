@@ -1,5 +1,9 @@
 #pragma once
 
+#include <math.h>
+#include <vector>
+#include <algorithm>
+
 #include "rclcpp/rclcpp.hpp"
 #include "scr/node.hpp"
 #include "geometry_msgs/msg/pose.hpp"
@@ -32,8 +36,8 @@ private:
     // have been searched list
     std::vector<GraphNode> closed;
     
-    // full map grid thingamajig
-    std::vector<std::vector<GraphNode>> map;
+    // full map grid thingamajig (0 is traversable/open, 1 is an obstacle)
+    std::vector<std::vector<int>> map;
 
     // main actual search function
     std::vector<std::vector<GraphNode>> Search(GraphNode start, GraphNode goal);
@@ -52,4 +56,7 @@ private:
 
 
     size_t count_;
+    int MAX_X; //TODO assign these values (or figure out how to calculate them automagically)
+    int MAX_Y;
+    GraphNode start_node; //TODO initialize this one with wherever the heck we're starting at
 };
