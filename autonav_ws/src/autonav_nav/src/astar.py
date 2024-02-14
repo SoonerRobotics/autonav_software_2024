@@ -90,6 +90,7 @@ def toSafetyLights(autonomous: bool, eco: bool, mode: int, brightness: int, colo
 #         self.waypointDelay = 17.5
 
 
+# note: the non-wikipedia references are wrong. dead wrong. code bad. this doesn't work. don't trust it.
 # reference: https://llego.dev/posts/implementing-the-a-search-algorithm-python/ and https://en.wikipedia.org/wiki/A*_search_algorithm and https://stackabuse.com/courses/graphs-in-python-theory-and-implementation/lessons/a-star-search-algorithm/
 # class to represent a node in a graph for doing A* things
 class GraphNode:
@@ -156,6 +157,7 @@ class AStar:
                         self.update_node(neighbor, g_cost, h_cost, current_node)
                 else:
                     self.update_node(neighbor, g_cost, h_cost, current_node)
+                # so yeah I just noticed we never expand frontier. that might be a problem. this code is wrong.
         
         return None # if we haven't returned anything by now, there isn't a path then
 
