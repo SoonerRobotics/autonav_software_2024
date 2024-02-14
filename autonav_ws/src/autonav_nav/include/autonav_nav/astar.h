@@ -2,6 +2,23 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "scr/node.hpp"
+#include "geometry_msgs/msg/pose.hpp"
+#include "nav_msgs/msg/map_meta_data.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
+#include "sensor_msgs/msg/image.hpp"
+#include "cv_bridge/cv_bridge.h"
+
+struct GraphNode {
+    int x;
+    int y;
+
+    double g_cost;
+    double h_cost;
+    double f_cost;
+
+    GraphNode *parent;
+};
+
 
 class AStarNode : public SCR::Node {
 public:
@@ -35,15 +52,4 @@ private:
 
 
     size_t count_;
-}
-
-struct GraphNode {
-    int x;
-    int y;
-
-    double g_cost;
-    double h_cost;
-    double f_cost;
-
-    GraphNode *parent;
-}
+};
