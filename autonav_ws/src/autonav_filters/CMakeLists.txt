@@ -60,6 +60,8 @@ install(TARGETS
    # add programs in format:
    #/path_to_program/program.py
    src/filters.py
+   src/particlefilter.py
+   src/deadrekt.py
    DESTINATION lib/${PROJECT_NAME}
   )
 
