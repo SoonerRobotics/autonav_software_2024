@@ -27,6 +27,10 @@ struct GraphNode {
     bool operator < (const GraphNode& other) const {
         return (f_cost < other.f_cost);
     }
+
+    bool operator == (const GraphNode& other) const {
+        return (x == other.x && y == other.y);
+    }
 };
 
 

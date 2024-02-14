@@ -29,7 +29,7 @@ std::vector<GraphNode> AStarNode::Search(GraphNode start, GraphNode goal) {
 
         // get the first node (the one with the lowest cost)
         currentNode = frontier.at(0);
-        frontier.erase(0);
+        frontier.erase(frontier.begin()); // screw C++ https://stackoverflow.com/questions/875103/how-do-i-erase-an-element-from-stdvector-by-index
 
         // add the current node to the list of closed nodes
         closed.push_back(currentNode);
