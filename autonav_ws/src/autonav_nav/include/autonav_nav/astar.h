@@ -21,6 +21,12 @@ struct GraphNode {
     double f_cost;
 
     GraphNode* parent;
+
+    // define the less_than operator so we can use std::sort on the list
+    // https://stackoverflow.com/questions/1380463/sorting-a-vector-of-custom-objects
+    bool operator < (const GraphNode& other) const {
+        return (f_cost < other.f_cost);
+    }
 };
 
 
@@ -40,7 +46,7 @@ private:
     std::vector<std::vector<int>> map;
 
     // main actual search function
-    std::vector<std::vector<GraphNode>> Search(GraphNode start, GraphNode goal);
+    std::vector<GraphNode> Search(GraphNode start, GraphNode goal);
 
     // helper function to get the minecraft crafting table neighbors
     std::vector<GraphNode> GetNeighbors(GraphNode node);

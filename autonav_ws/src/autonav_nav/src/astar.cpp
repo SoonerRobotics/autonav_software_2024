@@ -6,8 +6,79 @@
 // std::vector<double> frontier;
 // std::vector<double> closed;
 // std::vector<std::vector<GraphNode>> map;
+// also TODO make the file reading code so we can a list of waypoints and stuff
+//TODO make smellification or whatever goal-finding heuristic algorithm thingy
+//TODO use reserve() to not have to constantly resize all our vectors 
 
-//TODO search()
+// hand references:
+//https://en.cppreference.com/w/cpp/container/vector
+//https://en.cppreference.com/w/cpp/language/pointer
+//https://llego.dev/posts/implementing-the-a-search-algorithm-python/
+//https://cplusplus.com/reference/cmath/
+//https://stackoverflow.com/questions/8877448/how-do-i-reverse-a-c-vector
+
+// main actual search function (based off of https://llego.dev/posts/implementing-the-a-search-algorithm-python/ except the python code is wrong so it's only based off of)
+std::vector<GraphNode> AStarNode::Search(GraphNode start, GraphNode goal) {
+    GraphNode currentNode;
+    frontier.push_back(start); // the start node will be the first to be expanded
+
+    // while there are still nodes in the open list (frontier)
+    while (frontier.size() > 0) {
+        // sort the list to get the node with the lowest f_cost first
+        std::sort(frontier.begin(), frontier.end());
+
+        // get the first node (the one with the lowest cost)
+        currentNode = frontier.at(0);
+        frontier.erase(0);
+
+        // add the current node to the list of closed nodes
+        closed.push_back(currentNode);
+
+        // if the curent node is the goal node, then we've reached our goal
+        if (currentNode.x == goal.x && currentNode.y == goal.y) {
+            // return the finished path so we can traverse it
+            return ReconstructPath(goal);
+        }
+
+        // otherwise, get all the neighboring nodes
+        std::vector<GraphNode> neighbors = GetNeighbors(currentNode);
+
+        // for each neighbor
+        for (GraphNode node : neighbors) {
+            // if it's been visited (part of the closed list)
+            // https://stackoverflow.com/questions/571394/how-to-find-out-if-an-item-is-present-in-a-stdvector
+            if (std::find(closed.begin(), closed.end(), node) != closed.begin()) {
+                // then skip
+                continue;
+            }
+
+            // otherwise, calculate the costs
+            double g_cost = currentNode.g_cost + 1; // cost to move there is 1 more than the current node we're checking the neighbors of
+            double h_cost = DistanceFormula(node, goal); // heuristic is how far from the goal it is
+            double f_cost = g_cost + h_cost;
+
+            // if the neighbor we're checking is in the open list
+            if (std::find(frontier.begin(), frontier.end(), node) != frontier.begin()) {
+                // and if our new f_cost is less than its old f_cost
+                if (f_cost < node.f_cost) {
+                    // then update it
+                    UpdateNode(node, g_cost, h_cost, currentNode);
+                }
+            // otherwise,
+            } else {
+                // update it because it hasn't been checked yet
+                UpdateNode(node, g_cost, h_cost, currentNode);
+
+                // and add it to the list of open nodes
+                frontier.push_back(node);
+            }
+        }
+    }
+
+    // if we've made it this far without finding a path, there is no path, so return null or something idk
+    std::vector<GraphNode> ret;
+    return ret;
+}
 
 
 // helper function to get the minecraft crafting table neighbors
