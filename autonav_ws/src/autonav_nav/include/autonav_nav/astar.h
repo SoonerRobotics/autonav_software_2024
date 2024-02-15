@@ -39,6 +39,8 @@ public:
     AStarNode() : Node("astar_fast"), count_(0) {
         //TODO
     }
+
+    void init() override;
 private:
     // open list
     std::vector<GraphNode> frontier;

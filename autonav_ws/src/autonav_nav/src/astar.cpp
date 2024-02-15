@@ -8,7 +8,148 @@
 // std::vector<std::vector<GraphNode>> map;
 // also TODO make the file reading code so we can a list of waypoints and stuff
 //TODO make smellification or whatever goal-finding heuristic algorithm thingy
-//TODO use reserve() to not have to constantly resize all our vectors 
+//TODO use reserve() to not have to constantly resize all our vectors
+SCR::Node::AstarNode() : SCR::Node("astar_fast") {
+}
+
+AStarNode::init() {
+    map = nav_msgs::msg::MapMetaData();
+    // TODO do this?
+    // map.width = 100;
+    // map.height = 100;
+    // map.resolution = 0.1;
+    // map.origin = geometry_msgs::msg::Pose();
+    // map.origin.position.x = -10.0;
+    // map.origin.position.y = -10.0;
+
+
+    // left/right filtered subscribers
+    leftExpandedSubscriber = create_subscription<nav_msgs::msg::OccupancyGrid>("/autonav/cfg_space/expanded/left", this.onLeftReceived, 20);
+    rightExpandedSubscriber = create_subscription<nav_msgs::msg::OccupancyGrid>("/autonav/cfg_space/expanded/right", this.onLeftReceived, 20);
+    
+    // localization data subscribers
+    poseSubscriber = create_subscription<nav_msgs::msg::Position>("/autonav/position", this.onPoseReceived, 20);
+    imuSubscriber = create_subscription<nav_msgs::msg::IMUData>("/autonav/imu", this.onImuReceived, 20);
+    // raw_map_subscriber = create_subscription<nav_msgs::msg::OccupancyGrid>(directionify("/autonav/cfg_space/raw"), 20, std::bind(&ExpandifyNode::onConfigSpaceReceived, this, std::placeholders::_1));
+
+    // === publishers ===
+    pathPublisher = create_publisher<nav_msgs::msg::Path>("/autonav/path", 20);
+    //TODO path publisher, safety lights publisher, debug publisher, debug image publisher
+
+    //TODO callback timer
+
+    // we've set everything up so now we're operating
+    set_device_state(SCR::DeviceState::OPERATING);
+}
+
+    void config_updated(json newConfig) override
+    {
+        config = newConfig.template get<ExpandifyConfig>();
+    }
+
+    json get_default_config() override
+    {
+        ExpandifyConfig newConfig;
+        newConfig.vertical_fov = 2.75;
+        newConfig.horizontal_fov = 3;
+        newConfig.map_res = 80.0f;
+        return newConfig;
+    }
+
+    void system_state_transition(scr_msgs::msg::SystemState old, scr_msgs::msg::SystemState updated) override
+    {
+        if (updated.state == SCR::SystemState::AUTONOMOUS && device_state == SCR::DeviceState::READY)
+        {
+            set_device_state(SCR::DeviceState::OPERATING);
+        }
+
+        if (updated.state != SCR::SystemState::AUTONOMOUS && device_state == SCR::DeviceState::OPERATING)
+        {
+            set_device_state(SCR::DeviceState::READY);
+        }
+    }
+
+    void onConfigSpaceReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr cfg)
+    {
+        if (device_state != SCR::DeviceState::OPERATING || system_state != SCR::SystemState::AUTONOMOUS)
+        {
+            return;
+        }
+
+        std::vector<int8_t> cfg_space = std::vector<int8_t>(config.map_res * config.map_res);
+        std::fill(cfg_space.begin(), cfg_space.end(), 0);
+
+        for (int x = 0; x < config.map_res; x++)
+        {
+            for (int y = 1; y < config.map_res; y++)
+            {
+                if (cfg->data.at(x + y * config.map_res) > 0)
+                {
+                    for (Circle &circle : circles)
+                    {
+                        auto idx = (x + circle.x) + config.map_res * (y + circle.y);
+                        auto expr_x = (x + circle.x) < config.map_res && (x + circle.x) >= 0;
+                        auto expr_y = (y + circle.y) < config.map_res && (y + circle.y) >= 0;
+                        if (expr_x && expr_y)
+                        {
+                            auto val = cfg_space.at(idx);
+                            auto linear = 100 - ((circle.radius - noGoRange) / (maxRange - noGoRange) * 100);
+
+                            if (circle.radius <= noGoRange)
+                            {
+                                cfg_space.at(idx) = 100;
+                            }
+                            else if (cfg_space.at(idx) <= 100 && val <= linear)
+                            {
+                                cfg_space.at(idx) = int(linear);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        auto newSpace = nav_msgs::msg::OccupancyGrid();
+        newSpace.info = map;
+        newSpace.data = cfg_space;
+        expanded_map_publisher->publish(newSpace);
+
+        cv::Mat image = cv::Mat(config.map_res, config.map_res, CV_8UC1, cfg_space.data());
+        cv::cvtColor(image, image, cv::COLOR_GRAY2BGR);
+        cv::resize(image, image, cv::Size(800, 800), 0, 0, cv::INTER_NEAREST);
+
+        auto compressed = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", image).toCompressedImageMsg();
+        compressed->header.stamp = this->now();
+        compressed->header.frame_id = "map";
+        compressed->format = "jpeg";
+        debug_publisher->publish(*compressed);
+    }
+
+private:
+    rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr raw_map_subscriber;
+    rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr expanded_map_publisher;
+    rclcpp::Publisher<sensor_msgs::msg::CompressedImage>::SharedPtr debug_publisher;
+
+    nav_msgs::msg::MapMetaData map;
+    std::string direction;
+
+    float maxRange = 0.65;
+    float noGoPercent = 0.70;
+    int noGoRange = 0;
+    std::vector<Circle> circles;
+    ExpandifyConfig config;
+};
+
+int main(int argc, char *argv[])
+{
+    rclcpp::init(argc, argv);
+    auto left_node = std::make_shared<ExpandifyNode>("left");
+    auto right_node = std::make_shared<ExpandifyNode>("right");
+    auto nodes = std::vector<std::shared_ptr<SCR::Node>>{left_node, right_node};
+    SCR::Node::run_node(nodes);
+    rclcpp::shutdown();
+    return 0;
+}
 
 // hand references:
 //https://en.cppreference.com/w/cpp/container/vector
