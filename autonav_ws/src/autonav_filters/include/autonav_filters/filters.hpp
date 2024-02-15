@@ -21,9 +21,9 @@ class FiltersNode : public SCR::Node {
         FiltersNode() : SCR::Node("autonav_filters_pf"), count_(0)
         {
             // subscriptions
-            gps_subscription = this->create_subscription<autonav_msgs::msg::GPSFeedback>("/autonav_GPS", 
+            gps_subscription = this->create_subscription<autonav_msgs::msg::GPSFeedback>("/autonav/gps", 
             20, std::bind(&FiltersNode::on_GPS_received, this, std::placeholders::_1));
-            motor_subscription = this->create_subscription<autonav_msgs::msg::MotorFeedback>("/autonav_MotorFeedback", 
+            motor_subscription = this->create_subscription<autonav_msgs::msg::MotorFeedback>("/autonav/MotorFeedback", 
             20, std::bind(&FiltersNode::on_MotorFeedback_received, this, std::placeholders::_1));
 
             // publishers
@@ -42,6 +42,7 @@ class FiltersNode : public SCR::Node {
         autonav_msgs::msg::GPSFeedback first_gps;
         autonav_msgs::msg::GPSFeedback last_gps;
         bool first_gps_received = false;
+        bool last_gps_assigned = false;
         bool first_imu_received = false;
         autonav_msgs::msg::IMUData last_IMU_received;
 

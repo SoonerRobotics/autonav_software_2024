@@ -46,7 +46,7 @@ class FiltersNode(Node):
 
     def init(self):
         self.create_subscription(GPSFeedback, "/autonav/gps", self.onGPSReceived, 20)
-        self.create_subscription(IMUData, "/autonav/imu", self.onIMUReceived, 20);
+        self.create_subscription(IMUData, "/autonav/imu", self.onIMUReceived, 20)
         self.create_subscription(MotorFeedback, "/autonav/MotorFeedback", self.onMotorFeedbackReceived, 20)
         self.positionPublisher = self.create_publisher(Position, "/autonav/position", 20)
 
@@ -78,6 +78,7 @@ class FiltersNode(Node):
             self.onReset()
             
     def onGPSReceived(self, msg: GPSFeedback):
+        #self.get_logger().info("received gps")
         if msg.gps_fix == 0 and msg.is_locked == False:
             return
         
@@ -89,17 +90,18 @@ class FiltersNode(Node):
         filterType = self.config.filterType
         if filterType == FilterType.PARTICLE_FILTER:
             self.pf.gps(msg)
-        elif filterType == FilterType.DEAD_RECKONING:
+        '''elif filterType == FilterType.DEAD_RECKONING:
             self.reckoning.gps(msg)
-
+        '''
     def onMotorFeedbackReceived(self, msg: MotorFeedback):
+        #self.get_logger().info("received motorfeedback")
         filterType = self.config.filterType
         averages = None
         if filterType == FilterType.PARTICLE_FILTER:
             averages = self.pf.feedback(msg)
-        if filterType == FilterType.DEAD_RECKONING:
+        '''if filterType == FilterType.DEAD_RECKONING:
             averages = self.reckoning.feedback(msg)
-            
+        '''    
         if averages is None:
             return
             
@@ -116,9 +118,13 @@ class FiltersNode(Node):
             position.longitude = gps_y
 
         if self.system_mode == SystemModeEnum.SIMULATION and self.lastGps is not None:
-            position.latitude = self.lastGps.latitude
-            position.longitude = self.lastGps.longitude
+            #position.latitude = self.lastGps.latitude
+            #position.longitude = self.lastGps.longitude
+            print("do nothing")
         
+        self.get_logger().info(f"averages 0: {averages[0]}, averages 1: {averages[1]}, averages 2: {averages[2]}")
+        #self.get_logger().info(f"publishing position x: {position.x}, y: {position.y}, {position.theta}")
+        #self.get_logger().info(f"position latitude: {position.latitude}, longitude {position.longitude}")
         self.positionPublisher.publish(position)
 
 

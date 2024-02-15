@@ -2,6 +2,8 @@
 
 #include <random>
 #include <iostream>
+#include <ostream>
+#include <fstream>
 #include <chrono>
 #include <time.h>
 #include <iomanip>
@@ -9,6 +11,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
+#include "rclcpp/rclcpp.hpp"
 #include "autonav_msgs/msg/motor_feedback.hpp"
 #include "autonav_msgs/msg/gps_feedback.hpp"
 
@@ -110,6 +113,17 @@ class ParticleFilter {
             std::vector<double> gps_vector = {gps_x, gps_y};
             //printf("gps_x: %f \n", gps_x);
             //printf("gps_y: %f \n", gps_y);
+            printf("gps_vector in particle_filter header: x %f, y: %f\n", gps_vector[0], gps_vector[1]);
+            std::ofstream gps_log_file;
+            gps_log_file.open("/home/tony/Documents/gps_log_file.txt", std::ios::app);
+            if (gps_log_file.is_open()) {
+                printf("gps log file open");
+            }
+            else {
+                printf("log file not open");
+            }
+            gps_log_file << gps_vector[0] << ", " << gps_vector[1] << std::endl;
+            gps_log_file.close();
             return gps_vector;
         }
 

@@ -116,17 +116,17 @@ TEST(ParticleFilterTests, complete_test) {
     rapidcsv::Document motor_feedback_sheet("/home/tony/autonav_software_2024/autonav_ws/src/autonav_filters/tests/ENTRY_FEEDBACK.csv");
     rapidcsv::Document gps_feedback_sheet("/home/tony/autonav_software_2024/autonav_ws/src/autonav_filters/tests/ENTRY_GPS.csv");
 
-    std::vector<float> delta_xs = motor_feedback_sheet.GetColumn<float>(2);
-    std::vector<float> delta_ys = motor_feedback_sheet.GetColumn<float>(3);
-    std::vector<float> delta_thetas = motor_feedback_sheet.GetColumn<float>(4);
+    std::vector<double> delta_xs = motor_feedback_sheet.GetColumn<double>(2);
+    std::vector<double> delta_ys = motor_feedback_sheet.GetColumn<double>(3);
+    std::vector<double> delta_thetas = motor_feedback_sheet.GetColumn<double>(4);
 
-    std::vector<float> latitudes = gps_feedback_sheet.GetColumn<float>(2);
-    std::vector<float> longitudes = gps_feedback_sheet.GetColumn<float>(3);
-    std::vector<float> altitudes = gps_feedback_sheet.GetColumn<float>(4);
-    std::vector<float> gps_fix = gps_feedback_sheet.GetColumn<float>(5);
+    std::vector<double> latitudes = gps_feedback_sheet.GetColumn<double>(2);
+    std::vector<double> longitudes = gps_feedback_sheet.GetColumn<double>(3);
+    std::vector<double> altitudes = gps_feedback_sheet.GetColumn<double>(4);
+    std::vector<double> gps_fix = gps_feedback_sheet.GetColumn<double>(5);
     std::vector<std::string> is_locked_str = gps_feedback_sheet.GetColumn<std::string>(6);
     std::vector<bool> is_locked;
-    std::vector<float> satellites = gps_feedback_sheet.GetColumn<float>(7);
+    std::vector<double> satellites = gps_feedback_sheet.GetColumn<double>(7);
 
     for (std::string s : is_locked_str) {
         is_locked.push_back(csv_utils::to_bool(s));

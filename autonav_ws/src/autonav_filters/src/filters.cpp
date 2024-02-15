@@ -52,6 +52,7 @@ void FiltersNode::on_reset() {
 }
 
 void FiltersNode::on_GPS_received(const autonav_msgs::msg::GPSFeedback gps_message) {
+    RCLCPP_INFO(this->get_logger(), "received gps");
     if (gps_message.gps_fix == 0 &&  gps_message.is_locked == false) {
         return;
     }
@@ -61,11 +62,13 @@ void FiltersNode::on_GPS_received(const autonav_msgs::msg::GPSFeedback gps_messa
     }
 
     this->last_gps = gps_message;
+    this->last_gps_assigned = true;
 
     this->particle_filter.gps(gps_message);
     
 }
 void FiltersNode::on_MotorFeedback_received(const autonav_msgs::msg::MotorFeedback motorFeedback_message) {
+    RCLCPP_INFO(this->get_logger(), "received motorfeedback %d", 5);
     std::vector<double> averages;
     averages = this->particle_filter.feedback(motorFeedback_message);
 
@@ -86,6 +89,13 @@ void FiltersNode::on_MotorFeedback_received(const autonav_msgs::msg::MotorFeedba
         position.longitude = gps_y;
     }
 
+    if (this->last_gps_assigned = true) {
+        //position.latitude = this->last_gps.latitude;
+        //position.longitude = this->last_gps.longitude;
+    }
+    RCLCPP_INFO(this->get_logger(), "average 0: %f, average 1: %f, average 2: %f", averages[0], averages[1], averages[2]);
+    //RCLCPP_INFO(this->get_logger(), "publishing position x: %f, y: %f, theta: %f", position.x, position.y, position.theta);
+    //RCLCPP_INFO(this->get_logger(), "position latitude: %f, longitude: %f", position.latitude, position.longitude);
     positionPublisher->publish(position);
 }
 
