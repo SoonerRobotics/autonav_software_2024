@@ -9,8 +9,13 @@
 #include "geometry_msgs/msg/pose.hpp"
 #include "nav_msgs/msg/map_meta_data.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
+#include "nav_msgs/msg/path.hpp"
 #include "sensor_msgs/msg/image.hpp"
 #include "cv_bridge/cv_bridge.h"
+#include "autonav_msgs/msg/motor_input.hpp"
+#include "autonav_msgs/msg/gps_feedback.hpp"
+#include "autonav_msgs/msg/imu_data.hpp"
+
 
 struct GraphNode {
     int x;
@@ -36,18 +41,16 @@ struct GraphNode {
 
 class AStarNode : public SCR::Node {
 public:
-    AStarNode() : Node("astar_fast"), count_(0) {
-        //TODO
-    }
+    AStarNode();
 
     void init() override;
 private:
     // === ros things ===
     // subcribers
-    rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr leftExpandedSubscriber;
-    rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr rightExpandedSubscriber;
-    rclcpp::Subscription<autonav_messages::msg::Position>::SharedPtr poseSubscriber;
-    rclcpp::Subscription<nav_msgs::msg::IMUData>::SharedPtr imuSubscriber;
+    rclcpp::Subscription<nav_msgs::msg::OccupancyGrid> leftExpandedSubscriber;
+    rclcpp::Subscription<nav_msgs::msg::OccupancyGrid> rightExpandedSubscriber;
+    rclcpp::Subscription<geometry_msgs::msg::Pose> poseSubscriber;
+    rclcpp::Subscription<autonav_msgs::msg::IMUData> imuSubscriber;
 
     // publishers
     rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pathPublisher;
@@ -55,8 +58,8 @@ private:
     // callbacks
     void onLeftReceived(const nav_msgs::msg::OccupancyGrid grid_msg);
     void onRightReceived(const nav_msgs::msg::OccupancyGrid grid_msg);
-    void onPoseReceived(const autonav_messages::msg::Position pos_msg);
-    void onImuReceived(const nav_msgs::msg::IMUData imu_msg);
+    void onPoseReceived(const geometry_msgs::msg::Pose pos_msg);
+    void onImuReceived(const autonav_msgs::msg::IMUData imu_msg);
 
     //TODO publisher callback/timer/whatnot
 
