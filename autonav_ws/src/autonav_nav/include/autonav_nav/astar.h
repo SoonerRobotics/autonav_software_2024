@@ -54,17 +54,20 @@ private:
     rclcpp::Subscription<autonav_msgs::msg::IMUData>::SharedPtr imuSubscriber;
 
     // message containers
-    std::shared_ptr<geometry_msgs::msg::Pose> position;
-    std::shared_ptr<autonav_msgs::msg::IMUData> imu;
+    geometry_msgs::msg::Pose position;
+    autonav_msgs::msg::IMUData imu;
 
     // publishers
     rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pathPublisher;
+    //TODO path publisher, safety lights publisher, debug publisher, debug image publisher
+    //TODO callback timer
+
 
     // callbacks
-    void onLeftReceived(const nav_msgs::msg::OccupancyGrid grid_msg);
-    void onRightReceived(const nav_msgs::msg::OccupancyGrid grid_msg);
-    void onPoseReceived(const geometry_msgs::msg::Pose pos_msg);
-    void onImuReceived(const autonav_msgs::msg::IMUData imu_msg);
+    void onLeftReceived(nav_msgs::msg::OccupancyGrid grid_msg);
+    void onRightReceived(nav_msgs::msg::OccupancyGrid grid_msg);
+    void onPoseReceived(geometry_msgs::msg::Pose pos_msg);
+    void onImuReceived(autonav_msgs::msg::IMUData imu_msg);
 
     //TODO publisher callback/timer/whatnot
 
@@ -73,15 +76,6 @@ private:
 
 
     // === a* things ===
-    // open list
-    std::vector<GraphNode> frontier;
-
-    // have been searched list
-    std::vector<GraphNode> closed;
-    
-    // full map grid thingamajig (0 is traversable/open, 1 is an obstacle)
-    std::vector<std::vector<int>> map;
-
     // main actual search function
     std::vector<GraphNode> Search(GraphNode start, GraphNode goal);
 
@@ -98,8 +92,23 @@ private:
     double DistanceFormula(GraphNode current, GraphNode goal);
 
 
+
+    // open list
+    std::vector<GraphNode> frontier;
+
+    // have been searched list
+    std::vector<GraphNode> closed;
+    
+    // full map grid thingamajig (0 is traversable/open, 1 is an obstacle)
+    std::vector<std::vector<int>> map;
+
     size_t count_;
     int MAX_X; //TODO assign these values (or figure out how to calculate them automagically)
     int MAX_Y;
     GraphNode start_node; //TODO initialize this one with wherever the heck we're starting at
+    // === /a* things ===
+
+
+    // === misc ===
+
 };

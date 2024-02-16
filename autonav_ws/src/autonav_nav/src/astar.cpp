@@ -6,23 +6,13 @@
 
 void AStarNode::init() {
     //TODO
-    // std::vector<double> frontier;
-    // std::vector<double> closed;
     // std::vector<std::vector<GraphNode>> map;
-    // also TODO make the file reading code so we can a list of waypoints and stuff
+    //TODO make the file reading code so we can a list of waypoints and stuff
     //TODO make smellification or whatever goal-finding heuristic algorithm thingy
-    //TODO use reserve() to not have to constantly resize all our vectors
     //TODO write actual subscriber methods and whatnot
 
-    // TODO do this?
-    // map = nav_msgs::msg::MapMetaData();
-    // map.width = 100;
-    // map.height = 100;
-    // map.resolution = 0.1;
-    // map.origin = geometry_msgs::msg::Pose();
-    // map.origin.position.x = -10.0;
-    // map.origin.position.y = -10.0;
-    frontier = std::vector<double>();
+    frontier.reserve(100);
+    closed.reserve(100);
 
 
     // left/right filtered subscribers
@@ -44,42 +34,25 @@ void AStarNode::init() {
     set_device_state(SCR::DeviceState::OPERATING);
 }
 
-void AStarNode::onLeftReceived(const nav_msgs::msg::OccupancyGrid grid_msg) {
+void AStarNode::onLeftReceived(nav_msgs::msg::OccupancyGrid grid_msg) {
     //TODO do we want a onGridReceived() and bind both?
 }
 
-void AStarNode::onRightReceived(const nav_msgs::msg::OccupancyGrid grid_msg) {
+void AStarNode::onRightReceived(nav_msgs::msg::OccupancyGrid grid_msg) {
     //TODO maybe we make this a duplicate of the other one?
 }
 
-void AStarNode::onPoseReceived(const geometry_msgs::msg::Pose pos_msg) {
-    this.position = pos_msg;
+void AStarNode::onPoseReceived(geometry_msgs::msg::Pose pos_msg) {
+    // copy the data over or something idk
+    this->position = pos_msg;
 }
 
 //TODO figure out some kinda use for this?
-void AStarNode::onImuReceived(const autonav_msgs::msg::IMUData imu_msg) {
-    this.imu = imu_msg;
+void AStarNode::onImuReceived(autonav_msgs::msg::IMUData imu_msg) {
+    this->imu = imu_msg;
 }
 
 
-
-//TODO
-// void AStarNode::config_updated(json newConfig) override {
-//     config = newConfig.template get<ExpandifyConfig>();
-// }
-
-
-// void AStarNode::system_state_transition(scr_msgs::msg::SystemState old, scr_msgs::msg::SystemState updated) override {
-//     if (updated.state == SCR::SystemState::AUTONOMOUS && device_state == SCR::DeviceState::READY)
-//     {
-//         set_device_state(SCR::DeviceState::OPERATING);
-//     }
-
-//     if (updated.state != SCR::SystemState::AUTONOMOUS && device_state == SCR::DeviceState::OPERATING)
-//     {
-//         set_device_state(SCR::DeviceState::READY);
-//     }
-// }
 
 // handy references:
 //https://en.cppreference.com/w/cpp/container/vector
