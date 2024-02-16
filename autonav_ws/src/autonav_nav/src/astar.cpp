@@ -26,9 +26,12 @@ void AStarNode::init() {
 
     // === publishers ===
     pathPublisher = this->create_publisher<nav_msgs::msg::Path>("/autonav/path", 20);
-    //TODO path publisher, safety lights publisher, debug publisher, debug image publisher
+    safetyPublisher = this->create_publisher<autonav_msgs::msg::SafetyLights>("/autonav/SafetyLights", 20);
+    debugPublisher = this->create_publisher<autonav_msgs::msg::PathingDebug>("/autonav/debug/astar", 20);
+    pathDebugImagePublisher = this->create_publisher<sensor_msgs::msg::Image>("/autonav/debug/astar/image", 20);
 
-    //TODO callback timer
+    //TODO callback timers
+    //TODO publisher methods or something
 
     // we've set everything up so now we're operating
     set_device_state(SCR::DeviceState::OPERATING);
@@ -37,6 +40,7 @@ void AStarNode::init() {
 void AStarNode::onLeftReceived(nav_msgs::msg::OccupancyGrid grid_msg) {
     numLeft++;
 
+    //TODO do some processing to convert this to a usable format
     leftGrid = grid_msg;
 }
 
@@ -76,12 +80,71 @@ void AStarNode::DoAStar() {
     start.h_cost = DistanceFormula(start, goal);
     start.f_cost = start.g_cost + start.h_cost;
 
+    // update the map with the left grid data (x < half width)
+    for (int x = 0; x < (int)(MAX_X/2); x++) {
+        for (int y = 0; y < MAX_Y; y++) {
+            map[y][x] = leftGrid.data[y][x];
+        }
+    }
+
+    // update the map with the right grid data (x > half width)
+    for (int x = (int)(MAX_X/2); x < MAX_X; x++) {
+        for (int y = 0; y < MAX_Y; y++) {
+            map[y][x] = rightGrid.data[y][x - (int)(MAX_X/2)];
+        }
+    }
+
     // perform A*
+    //TODO make this return a list of Poses or something we can ROSify
     auto path = AStarNode::Search(start, goal);
 
-    // publish results
-    this->pathPublisher.publish(path);
+    // only publish if we found a path
+    if (path.size() > 0) {
+        // publish results
+        auto pathMsg = nav_msgs::msg::Path();
+        pathMsg.header = std_msgs::msg::Header(); //TODO add actual header data or something
+        pathMsg.poses = {geometry_msgs::msg::Pose()}; //TODO this is geometry_msgs/PoseStamped[]
+        // and PoseStamped is just Header header, Pose pose
+        // and Pose is just Point position, Quaternion orientation
+        // and Point is just x, y, z; and Quaternion is just x, y, z, w
+
+        this->pathPublisher->publish(pathMsg);
+
+
+
+        // draw the cost map onto a debug image
+        auto image = cv::Mat(MAX_X, MAX_Y, CV_8UC1, data); //TODO define data and double check size
+
+        // fill it with 0s to start
+        // std::fill(cvimg.begin(), cvimg.end()), 0;
+
+        for (int x = 0; x < MAX_X; x++) {
+            for (int y = 0; y < MAX_Y; y++) {
+                // at the pixel at (x, y), draw the presence of an obstacle or not (*255 will make 1 into pure white)
+                iamge[x][y] = map[x][y] * 255;
+            }
+        }
+
+        cv::cvtColor(image, image, cv::COLOR_GRAY2BGR);
+        cv::resize(image, image, cv::Size(MAX_X, MAX_Y), 0, 0, cv::INTER_NEAREST);
+
+        auto compressed = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", image).toCompressedImageMsg();
+        compressed->header.stamp = this->now();
+        compressed->header.frame_id = "map";
+        compressed->format = "jpeg";
+        debug_publisher->publish(*compressed);
+        
+        /**
+        for pp in path: //TODO draw the points along the path in blue
+            cv2.circle(cvimg, (pp[0], pp[1]), 1, (0, 255, 0), 1)
+        */
+        
+        this->pathDebugImagePublisher->publish(*compressed);
+    }
 }
+
+
+
 
 
 
