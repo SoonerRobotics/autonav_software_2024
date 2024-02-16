@@ -56,6 +56,8 @@ private:
     // message containers
     geometry_msgs::msg::Pose position;
     autonav_msgs::msg::IMUData imu;
+    nav_msgs::msg::OccupancyGrid leftGrid;
+    nav_msgs::msg::OccupancyGrid rightGrid;
 
     // publishers
     rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pathPublisher;
@@ -66,6 +68,9 @@ private:
     // callbacks
     void onLeftReceived(nav_msgs::msg::OccupancyGrid grid_msg);
     void onRightReceived(nav_msgs::msg::OccupancyGrid grid_msg);
+    int numLeft = 0;
+    int numRight = 0;
+    
     void onPoseReceived(geometry_msgs::msg::Pose pos_msg);
     void onImuReceived(autonav_msgs::msg::IMUData imu_msg);
 
@@ -90,6 +95,9 @@ private:
 
     // our heuristic (h_cost), literally just distance formula
     double DistanceFormula(GraphNode current, GraphNode goal);
+
+    // big function to call all the other functions
+    void DoAStar();
 
 
 

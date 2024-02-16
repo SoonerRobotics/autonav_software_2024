@@ -35,11 +35,19 @@ void AStarNode::init() {
 }
 
 void AStarNode::onLeftReceived(nav_msgs::msg::OccupancyGrid grid_msg) {
-    //TODO do we want a onGridReceived() and bind both?
+    numLeft++;
+
+    leftGrid = grid_msg;
 }
 
 void AStarNode::onRightReceived(nav_msgs::msg::OccupancyGrid grid_msg) {
-    //TODO maybe we make this a duplicate of the other one?
+    numRight++;
+
+    rightGrid = grid_msg;
+
+    if (numRight == numLeft) {
+        this->DoAStar();
+    }
 }
 
 void AStarNode::onPoseReceived(geometry_msgs::msg::Pose pos_msg) {
@@ -50,6 +58,29 @@ void AStarNode::onPoseReceived(geometry_msgs::msg::Pose pos_msg) {
 //TODO figure out some kinda use for this?
 void AStarNode::onImuReceived(autonav_msgs::msg::IMUData imu_msg) {
     this->imu = imu_msg;
+}
+
+
+void AStarNode::DoAStar() {
+    // define our goal node
+    //TODO do smellification and make sure our goal is reachable
+    GraphNode goal;
+    goal.x = MAX_X/2;
+    goal.y = 0; // just go straight down the middle for now pretty much
+
+    // make the starting node
+    GraphNode start;
+    start.x = MAX_X/2; // start in the middle
+    start.y = MAX_Y; // start at the bottom, because arrays and indexing
+    start.g_cost = 0;
+    start.h_cost = DistanceFormula(start, goal);
+    start.f_cost = start.g_cost + start.h_cost;
+
+    // perform A*
+    auto path = AStarNode::Search(start, goal);
+
+    // publish results
+    this->pathPublisher.publish(path);
 }
 
 
