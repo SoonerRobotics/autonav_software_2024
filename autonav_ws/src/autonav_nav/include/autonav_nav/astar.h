@@ -53,6 +53,10 @@ private:
     rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr poseSubscriber;
     rclcpp::Subscription<autonav_msgs::msg::IMUData>::SharedPtr imuSubscriber;
 
+    // message containers
+    std::shared_ptr<geometry_msgs::msg::Pose> position;
+    std::shared_ptr<autonav_msgs::msg::IMUData> imu;
+
     // publishers
     rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pathPublisher;
 
