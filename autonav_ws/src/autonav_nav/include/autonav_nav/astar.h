@@ -15,6 +15,8 @@
 #include "autonav_msgs/msg/motor_input.hpp"
 #include "autonav_msgs/msg/gps_feedback.hpp"
 #include "autonav_msgs/msg/imu_data.hpp"
+#include "autonav_msgs/msg/pathing_debug.hpp"
+#include "autonav_msgs/msg/safety_lights.hpp"
 
 
 struct GraphNode {
@@ -61,8 +63,11 @@ private:
 
     // publishers
     rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pathPublisher;
-    //TODO path publisher, safety lights publisher, debug publisher, debug image publisher
-    //TODO callback timer
+    rclcpp::Publisher<autonav_msgs::msg::SafetyLights>::SharedPtr safetyPublisher;
+    rclcpp::Publisher<autonav_msgs::msg::PathingDebug>::SharedPtr debugPublisher;
+    rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr pathDebugImagePublisher;
+    //TODO callback timers
+    //TODO publisher methods or something
 
 
     // callbacks
