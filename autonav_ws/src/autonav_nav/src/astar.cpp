@@ -25,7 +25,7 @@ AStarNode::init() {
 
     // left/right filtered subscribers
     leftExpandedSubscriber = create_subscription<nav_msgs::msg::OccupancyGrid>("/autonav/cfg_space/expanded/left", this.onLeftReceived, 20);
-    rightExpandedSubscriber = create_subscription<nav_msgs::msg::OccupancyGrid>("/autonav/cfg_space/expanded/right", this.onLeftReceived, 20);
+    rightExpandedSubscriber = create_subscription<nav_msgs::msg::OccupancyGrid>("/autonav/cfg_space/expanded/right", this.onRightReceived, 20);
     
     // localization data subscribers
     poseSubscriber = create_subscription<nav_msgs::msg::Position>("/autonav/position", this.onPoseReceived, 20);

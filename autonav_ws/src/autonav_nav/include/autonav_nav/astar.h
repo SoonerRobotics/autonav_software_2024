@@ -42,6 +42,29 @@ public:
 
     void init() override;
 private:
+    // === ros things ===
+    // subcribers
+    rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr leftExpandedSubscriber;
+    rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr rightExpandedSubscriber;
+    rclcpp::Subscription<autonav_messages::msg::Position>::SharedPtr poseSubscriber;
+    rclcpp::Subscription<nav_msgs::msg::IMUData>::SharedPtr imuSubscriber;
+
+    // publishers
+    rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pathPublisher;
+
+    // callbacks
+    void onLeftReceived(const nav_msgs::msg::OccupancyGrid grid_msg);
+    void onRightReceived(const nav_msgs::msg::OccupancyGrid grid_msg);
+    void onPoseReceived(const autonav_messages::msg::Position pos_msg);
+    void onImuReceived(const nav_msgs::msg::IMUData imu_msg);
+
+    //TODO publisher callback/timer/whatnot
+
+    // === /end ros things ===
+
+
+
+    // === a* things ===
     // open list
     std::vector<GraphNode> frontier;
 
