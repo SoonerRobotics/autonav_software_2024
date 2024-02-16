@@ -41,16 +41,17 @@ struct GraphNode {
 
 class AStarNode : public SCR::Node {
 public:
-    AStarNode();
+    AStarNode() : SCR::Node("astar_fast") {}
+    ~AStarNode() {};
 
     void init() override;
 private:
     // === ros things ===
     // subcribers
-    rclcpp::Subscription<nav_msgs::msg::OccupancyGrid> leftExpandedSubscriber;
-    rclcpp::Subscription<nav_msgs::msg::OccupancyGrid> rightExpandedSubscriber;
-    rclcpp::Subscription<geometry_msgs::msg::Pose> poseSubscriber;
-    rclcpp::Subscription<autonav_msgs::msg::IMUData> imuSubscriber;
+    rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr leftExpandedSubscriber;
+    rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr rightExpandedSubscriber;
+    rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr poseSubscriber;
+    rclcpp::Subscription<autonav_msgs::msg::IMUData>::SharedPtr imuSubscriber;
 
     // publishers
     rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pathPublisher;

@@ -9,10 +9,8 @@
 // also TODO make the file reading code so we can a list of waypoints and stuff
 //TODO make smellification or whatever goal-finding heuristic algorithm thingy
 //TODO use reserve() to not have to constantly resize all our vectors
+//TODO write actual subscriber methods and whatnot
 
-AstarNode AStarNode::AstarNode() : SCR::Node("astar_fast") {
-    //TODO constructor or something
-}
 
 void AStarNode::init() {
     // TODO do this?
@@ -26,12 +24,12 @@ void AStarNode::init() {
 
 
     // left/right filtered subscribers
-    leftExpandedSubscriber = this->create_subscription<nav_msgs::msg::OccupancyGrid>("/autonav/cfg_space/expanded/left", std::bind(&AStarNode::onLeftReceived, this, std::placeholders::_1), 20);
-    rightExpandedSubscriber = this->create_subscription<nav_msgs::msg::OccupancyGrid>("/autonav/cfg_space/expanded/right", std::bind(&AStarNode::onRightReceived, this, std::placeholders::_1), 20);
+    leftExpandedSubscriber = this->create_subscription<nav_msgs::msg::OccupancyGrid>("/autonav/cfg_space/expanded/left", 20, std::bind(&AStarNode::onLeftReceived, this, std::placeholders::_1));
+    rightExpandedSubscriber = this->create_subscription<nav_msgs::msg::OccupancyGrid>("/autonav/cfg_space/expanded/right", 20, std::bind(&AStarNode::onRightReceived, this, std::placeholders::_1));
     
     // localization data subscribers
-    poseSubscriber = this->create_subscription<nav_msgs::msg::Position>("/autonav/position", std::bind(&AStarNode::onPoseReceived, this, std::placeholders::_1), 20);
-    imuSubscriber = this->create_subscription<autonav_msgs::msg::IMUData>("/autonav/imu", std::bind(&AStarNode::onImuReceived, this, std::placeholders::_1), 20);
+    poseSubscriber = this->create_subscription<geometry_msgs::msg::Pose>("/autonav/position", 20, std::bind(&AStarNode::onPoseReceived, this, std::placeholders::_1));
+    imuSubscriber = this->create_subscription<autonav_msgs::msg::IMUData>("/autonav/imu", 20, std::bind(&AStarNode::onImuReceived, this, std::placeholders::_1));
     // raw_map_subscriber = create_subscription<nav_msgs::msg::OccupancyGrid>(directionify("/autonav/cfg_space/raw"), 20, std::bind(&ExpandifyNode::onConfigSpaceReceived, this, std::placeholders::_1));
 
     // === publishers ===
