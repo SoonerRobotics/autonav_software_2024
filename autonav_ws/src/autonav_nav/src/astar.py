@@ -40,7 +40,8 @@ practice_waypoints = [
 ]
 
 simulation_waypoints = [
-    [(35.19505, -97.43823),(35.19492, -97.43824),(35.19485, -97.43824),(35.19471, -97.43823)]
+    [(35.19505, -97.43823),(35.19492, -97.43824),(35.19485, -97.43824),(35.19471, -97.43823)], # Facing North
+    [(35.19471, -97.43823),(35.19492, -97.43824),(35.19485, -97.43824),(35.19505, -97.43823)], # Facing South
 ]
 
 
@@ -68,19 +69,17 @@ class AStarNodeConfig:
         self.waypointPopDistance = 1.1
         self.waypointDirection = 0
         self.useOnlyWaypoints = False
-        self.waypointDelay = 17.5
+        self.waypointDelay = 10
 
 
 class AStarNode(Node):
     def __init__(self):
         super().__init__("autonav_nav_astar")
 
-        self.onReset()
-        self.latitudeLength = self.declare_parameter(
-            "latitude_length", 111086.2).get_parameter_value().double_value
-        self.longitudeLength = self.declare_parameter(
-            "longitude_length", 81978.2).get_parameter_value().double_value
+        self.latitudeLength = self.declare_parameter("latitude_length", 111086.2).get_parameter_value().double_value
+        self.longitudeLength = self.declare_parameter("longitude_length", 81978.2).get_parameter_value().double_value
         self.config = AStarNodeConfig()
+        self.onReset()
 
     def init(self):
         self.configSpaceSubscriber = self.create_subscription(OccupancyGrid, "/autonav/cfg_space/expanded", self.onConfigSpaceReceived, 20)
@@ -93,7 +92,7 @@ class AStarNode(Node):
         self.mapTimer = self.create_timer(0.1, self.createPath)
 
         self.resetWhen = -1.0
-
+        self.waypointTime = time.time() + self.config.waypointDelay
         self.set_device_state(DeviceStateEnum.OPERATING)
 
     def getAngleDifference(self, to_angle, from_angle):
@@ -112,10 +111,20 @@ class AStarNode(Node):
         self.costMap = None
         self.bestPosition = (0, 0)
         self.waypoints = []
-        self.waypointTime = 0.0
+        self.waypointTime = self.config.waypointDelay + time.time()
 
     def getWaypointsForDirection(self):
-        direction_index = self.config.waypointDirection
+        # Get out current heading and estimate within 180 degrees which direction we are facing (north or south, 0 and 1 respectively)
+        heading = self.position.theta
+        direction_index = 0
+        heading_degrees = abs(heading * 180 / math.pi)
+        self.get_logger().info(f"Heading: {heading_degrees}")
+        if heading_degrees > 120 and heading_degrees < 240:
+            direction_index = 1
+            self.get_logger().info("Facing South")
+        else:
+            self.get_logger().info("Facing North")
+
         return simulation_waypoints[direction_index] if self.system_mode == SystemModeEnum.SIMULATION else competition_waypoints[direction_index] if self.system_mode == SystemModeEnum.COMPETITION else practice_waypoints[direction_index]
 
     def transition(self, old: SystemState, updated: SystemState):
