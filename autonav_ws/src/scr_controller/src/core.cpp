@@ -40,8 +40,10 @@ public:
         services.device_state = this->create_service<scr_msgs::srv::UpdateDeviceState>(SCR::Constants::Services::DEVICE_STATE, std::bind(&CoreNode::on_device_state_called, this, std::placeholders::_1, std::placeholders::_2));
         services.config_update = this->create_service<scr_msgs::srv::UpdateConfig>(SCR::Constants::Services::CONFIG_UPDATE, std::bind(&CoreNode::on_config_update_called, this, std::placeholders::_1, std::placeholders::_2));
 
-        state = SCR::SystemState::DISABLED;
-        mode = SCR::SystemMode::COMPETITION;
+        // Load the initial system state from the parameters
+        mode = static_cast<SCR::SystemMode>(this->declare_parameter<int>("mode", static_cast<int>(SCR::SystemMode::COMPETITION)));
+        state = static_cast<SCR::SystemState>(this->declare_parameter<int>("state", static_cast<int>(SCR::SystemState::DISABLED)));
+        mobility = this->declare_parameter<bool>("mobility", false);
     }
 
 private:

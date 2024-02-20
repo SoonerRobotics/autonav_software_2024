@@ -11,5 +11,5 @@
     </node>
     <node pkg="autonav_vision" exec="transformations.py" />
     <node pkg="autonav_vision" exec="expandify" />
-    <node pkg="autonav_display" exec="display" />
+    <node pkg="autonav_display" exec="display.py" />
 </launch>
