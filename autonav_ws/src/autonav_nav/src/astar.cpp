@@ -15,9 +15,8 @@ void AStarNode::init() {
     closed.reserve(100);
 
 
-    // left/right filtered subscribers
-    leftExpandedSubscriber = this->create_subscription<nav_msgs::msg::OccupancyGrid>("/autonav/cfg_space/expanded/left", 20, std::bind(&AStarNode::onLeftReceived, this, std::placeholders::_1));
-    rightExpandedSubscriber = this->create_subscription<nav_msgs::msg::OccupancyGrid>("/autonav/cfg_space/expanded/right", 20, std::bind(&AStarNode::onRightReceived, this, std::placeholders::_1));
+    // filtered subscriber
+    expandedSubscriber = this->create_subscription<nav_msgs::msg::OccupancyGrid>("/autonav/cfg_space/expanded/", 20, std::bind(&AStarNode::onConfigSpaceReceived, this, std::placeholders::_1));
     
     // localization data subscribers
     poseSubscriber = this->create_subscription<geometry_msgs::msg::Pose>("/autonav/position", 20, std::bind(&AStarNode::onPoseReceived, this, std::placeholders::_1));
@@ -28,7 +27,7 @@ void AStarNode::init() {
     pathPublisher = this->create_publisher<nav_msgs::msg::Path>("/autonav/path", 20);
     safetyPublisher = this->create_publisher<autonav_msgs::msg::SafetyLights>("/autonav/SafetyLights", 20);
     debugPublisher = this->create_publisher<autonav_msgs::msg::PathingDebug>("/autonav/debug/astar", 20);
-    pathDebugImagePublisher = this->create_publisher<sensor_msgs::msg::Image>("/autonav/debug/astar/image", 20);
+    pathDebugImagePublisher = this->create_publisher<sensor_msgs::msg::CompressedImage>("/autonav/debug/astar/image", 20);
 
     //TODO callback timers
     //TODO publisher methods or something
@@ -37,21 +36,11 @@ void AStarNode::init() {
     set_device_state(SCR::DeviceState::OPERATING);
 }
 
-void AStarNode::onLeftReceived(nav_msgs::msg::OccupancyGrid grid_msg) {
-    numLeft++;
 
-    //TODO do some processing to convert this to a usable format
-    leftGrid = grid_msg;
-}
+void AStarNode::onConfigSpaceReceived(nav_msgs::msg::OccupancyGrid grid_msg) {
+    grid = grid_msg;
 
-void AStarNode::onRightReceived(nav_msgs::msg::OccupancyGrid grid_msg) {
-    numRight++;
-
-    rightGrid = grid_msg;
-
-    if (numRight == numLeft) {
-        this->DoAStar();
-    }
+    this->DoAStar();
 }
 
 void AStarNode::onPoseReceived(geometry_msgs::msg::Pose pos_msg) {
@@ -80,17 +69,11 @@ void AStarNode::DoAStar() {
     start.h_cost = DistanceFormula(start, goal);
     start.f_cost = start.g_cost + start.h_cost;
 
-    // update the map with the left grid data (x < half width)
-    for (int x = 0; x < (int)(MAX_X/2); x++) {
+    // update the map with the grid data
+    for (int x = 0; x < MAX_X; x++) {
         for (int y = 0; y < MAX_Y; y++) {
-            map[y][x] = leftGrid.data[y][x];
-        }
-    }
-
-    // update the map with the right grid data (x > half width)
-    for (int x = (int)(MAX_X/2); x < MAX_X; x++) {
-        for (int y = 0; y < MAX_Y; y++) {
-            map[y][x] = rightGrid.data[y][x - (int)(MAX_X/2)];
+            // 1D array
+            map[y][x] = grid.data[y+x];
         }
     }
 
@@ -103,14 +86,24 @@ void AStarNode::DoAStar() {
         // publish results
         auto pathMsg = nav_msgs::msg::Path();
         pathMsg.header = std_msgs::msg::Header(); //TODO add actual header data or something
-        pathMsg.poses = {geometry_msgs::msg::Pose()}; //TODO this is geometry_msgs/PoseStamped[]
+        pathMsg.poses = {geometry_msgs::msg::PoseStamped()}; //TODO this is geometry_msgs/PoseStamped[]
         // and PoseStamped is just Header header, Pose pose
         // and Pose is just Point position, Quaternion orientation
         // and Point is just x, y, z; and Quaternion is just x, y, z, w
 
         this->pathPublisher->publish(pathMsg);
 
+        std::size_t totalsize = 0;
+        for (int x = 0; x < map.size(); x++) {
+            totalsize += map[x].size();
+        }
 
+        auto data = new int[totalsize]();
+        for (int y = 0; y < map.size(); y++) {
+            for (int x = 0; x < map[y].size(); x++) {
+                data[y*MAX_X + x] = map[y][x];
+            }
+        }
 
         // draw the cost map onto a debug image
         auto image = cv::Mat(MAX_X, MAX_Y, CV_8UC1, data); //TODO define data and double check size
@@ -121,9 +114,13 @@ void AStarNode::DoAStar() {
         for (int x = 0; x < MAX_X; x++) {
             for (int y = 0; y < MAX_Y; y++) {
                 // at the pixel at (x, y), draw the presence of an obstacle or not (*255 will make 1 into pure white)
-                iamge[x][y] = map[x][y] * 255;
+                image[x][y] = map[x][y] * 255;
             }
         }
+        /**
+        for pp in path: //TODO draw the points along the path in blue
+            cv2.circle(cvimg, (pp[0], pp[1]), 1, (0, 255, 0), 1)
+        */
 
         cv::cvtColor(image, image, cv::COLOR_GRAY2BGR);
         cv::resize(image, image, cv::Size(MAX_X, MAX_Y), 0, 0, cv::INTER_NEAREST);
@@ -132,14 +129,10 @@ void AStarNode::DoAStar() {
         compressed->header.stamp = this->now();
         compressed->header.frame_id = "map";
         compressed->format = "jpeg";
-        debug_publisher->publish(*compressed);
-        
-        /**
-        for pp in path: //TODO draw the points along the path in blue
-            cv2.circle(cvimg, (pp[0], pp[1]), 1, (0, 255, 0), 1)
-        */
         
         this->pathDebugImagePublisher->publish(*compressed);
+
+        delete[] data;
     }
 }
 

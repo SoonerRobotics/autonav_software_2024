@@ -17,6 +17,7 @@
 #include "autonav_msgs/msg/imu_data.hpp"
 #include "autonav_msgs/msg/pathing_debug.hpp"
 #include "autonav_msgs/msg/safety_lights.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 
 
 struct GraphNode {
@@ -50,31 +51,26 @@ public:
 private:
     // === ros things ===
     // subcribers
-    rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr leftExpandedSubscriber;
-    rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr rightExpandedSubscriber;
+    rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr expandedSubscriber;
     rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr poseSubscriber;
     rclcpp::Subscription<autonav_msgs::msg::IMUData>::SharedPtr imuSubscriber;
 
     // message containers
     geometry_msgs::msg::Pose position;
     autonav_msgs::msg::IMUData imu;
-    nav_msgs::msg::OccupancyGrid leftGrid;
-    nav_msgs::msg::OccupancyGrid rightGrid;
+    nav_msgs::msg::OccupancyGrid grid;
 
     // publishers
     rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pathPublisher;
     rclcpp::Publisher<autonav_msgs::msg::SafetyLights>::SharedPtr safetyPublisher;
     rclcpp::Publisher<autonav_msgs::msg::PathingDebug>::SharedPtr debugPublisher;
-    rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr pathDebugImagePublisher;
+    rclcpp::Publisher<sensor_msgs::msg::CompressedImage>::SharedPtr pathDebugImagePublisher;
     //TODO callback timers
     //TODO publisher methods or something
 
 
     // callbacks
-    void onLeftReceived(nav_msgs::msg::OccupancyGrid grid_msg);
-    void onRightReceived(nav_msgs::msg::OccupancyGrid grid_msg);
-    int numLeft = 0;
-    int numRight = 0;
+    void onConfigSpaceReceived(nav_msgs::msg::OccupancyGrid grid_msg);
     
     void onPoseReceived(geometry_msgs::msg::Pose pos_msg);
     void onImuReceived(autonav_msgs::msg::IMUData imu_msg);
