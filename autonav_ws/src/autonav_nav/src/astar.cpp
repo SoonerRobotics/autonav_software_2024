@@ -2,6 +2,7 @@
 #include "scr/node.hpp"
 #include "autonav_nav/astar.h"
 
+#define PI 3.1415926535897932384626433
 
 
 void AStarNode::init() {
@@ -9,7 +10,7 @@ void AStarNode::init() {
     // std::vector<std::vector<GraphNode>> map;
     //TODO make the file reading code so we can a list of waypoints and stuff
     //TODO make smellification or whatever goal-finding heuristic algorithm thingy
-    //TODO write actual subscriber methods and whatnot
+    //TODO safety ligths publisher
 
     frontier.reserve(100);
     closed.reserve(100);
@@ -28,9 +29,6 @@ void AStarNode::init() {
     safetyPublisher = this->create_publisher<autonav_msgs::msg::SafetyLights>("/autonav/SafetyLights", 20);
     debugPublisher = this->create_publisher<autonav_msgs::msg::PathingDebug>("/autonav/debug/astar", 20);
     pathDebugImagePublisher = this->create_publisher<sensor_msgs::msg::CompressedImage>("/autonav/debug/astar/image", 20);
-
-    //TODO callback timers
-    //TODO publisher methods or something
 
     // we've set everything up so now we're operating
     set_device_state(SCR::DeviceState::OPERATING);
@@ -57,9 +55,7 @@ void AStarNode::onImuReceived(autonav_msgs::msg::IMUData imu_msg) {
 void AStarNode::DoAStar() {
     // define our goal node
     //TODO do smellification and make sure our goal is reachable
-    GraphNode goal;
-    goal.x = MAX_X/2;
-    goal.y = 0; // just go straight down the middle for now pretty much
+    GraphNode goal = this->Smellification();
 
     // make the starting node
     GraphNode start;
@@ -79,12 +75,11 @@ void AStarNode::DoAStar() {
 
     // perform A*
     //TODO make this return a list of Poses or something we can ROSify
-    auto path = AStarNode::Search(start, goal);
+    auto pathMsg = AStarNode::ToPath(AStarNode::Search(start, goal));
 
     // only publish if we found a path
-    if (path.size() > 0) {
+    if (pathMsg.poses.size() > 0) {
         // publish results
-        auto pathMsg = nav_msgs::msg::Path();
         pathMsg.header = std_msgs::msg::Header(); //TODO add actual header data or something
         pathMsg.poses = {geometry_msgs::msg::PoseStamped()}; //TODO this is geometry_msgs/PoseStamped[]
         // and PoseStamped is just Header header, Pose pose
@@ -156,6 +151,7 @@ std::vector<GraphNode> AStarNode::Search(GraphNode start, GraphNode goal) {
     // while there are still nodes in the open list (frontier)
     while (frontier.size() > 0) {
         // sort the list to get the node with the lowest f_cost first
+        //TODO priority queue sorted linked list according to Noah
         std::sort(frontier.begin(), frontier.end());
 
         // get the first node (the one with the lowest cost)
@@ -219,6 +215,11 @@ std::vector<GraphNode> AStarNode::GetNeighbors(GraphNode node) {
     // neighbors are just the surrounding nodes
     for (int x = -1; x < 1; x++) {
         for (int y = -1; y < 1; y++) {
+            // don't return ourself
+            if (x == 0 && y == 0) {
+                continue;
+            }
+
             int neighbor_x = node.x + x;
             int neighbor_y = node.y + y;
 
@@ -276,4 +277,84 @@ void AStarNode::UpdateNode(GraphNode node, double g_cost, double h_cost, GraphNo
     node.f_cost = g_cost + h_cost;
 
     node.parent = &current;
+}
+
+nav_msgs::msg::Path ToPath(std::vector<GraphNode> nodes) {
+    nav_msgs::msg::Path pathMsg;
+    pathMsg.header = std_msgs::msg::Header(); //TODO add actual header data or something
+    pathMsg.poses = {};
+
+    for (GraphNode node : nodes) {
+        // and PoseStamped is just Header header, Pose pose
+        // and Pose is just Point position, Quaternion orientation
+        // and Point is just x, y, z; and Quaternion is just x, y, z, w
+
+        // make the poseStamped
+        auto poseStamped = geometry_msgs::msg::PoseStamped();
+
+        // add the header
+        poseStamped.header = std_msgs::msg::Header(); //TODO actual header data
+
+        // make the Pose part of the PoseStamped
+        geometry_msgs::msg::Pose pose;
+
+        // make the Point part of the Pose
+        geometry_msgs::msg::Point point;
+
+        // the actual bit that's important
+        point.x = node.x;
+        point.y = node.y;
+
+        // put things where they need to be
+        pose.position = point;
+        poseStamped.pose = pose;
+
+        pathMsg.poses.push_back(poseStamped); //TODO I don't think you can do this
+    }
+}
+
+// smelly algorithm (bias towards center, away from obstacles, away from lanes, towards goal heading) to identify a goal node
+GraphNode AStarNode::Smellification() {
+    int depth = 0;
+    smellyFrontier = frontier;
+    double cost = 0;
+    double bestCost = 0;
+    GraphNode bestPos;
+    bestPos.x = (int)(MAX_X/2); //FIXME I have no idea what coordinates go where
+    bestPos.y = 0; //??????
+
+    while (depth < MAX_DEPTH && smellyFrontier.size() > 0) {
+        //TODO smellification idk
+        for (int i = 0; i < smellyFrontier.size(); i++) {
+            auto node = smellyFrontier[i];
+            cost = (SMELLY_Y - node.y) * SMELLY_Y_COST  +  (depth * SMELLY_DEPTH_COST);
+
+            if (weHaveWaypoints) {
+                //TODO what the heck do the 40 and 80 and what even is this doing hello figure this out please
+                double heading_error = abs(getAngleDifference(this->heading + atan2(40 - node.x, 80 - node.y), heading_to_gps)) * 180 / PI;
+                cost -= std::max(heading_error, (double)10);
+            }
+
+            // if the current cost is larger than our running best, then update that
+            if (cost > bestCost) {
+                bestCost = cost;
+                bestPos = node;
+            }
+
+            //TODO fix this
+            // frontier.remove(pos)
+            // explored.add(x + 80 * y)
+
+            // if y > 1 and grid_data[x + 80 * (y-1)] < 50 and x + 80 * (y-1) not in explored:
+            //     frontier.add((x, y - 1))
+
+            // if x < 79 and grid_data[x + 1 + 80 * y] < 50 and x + 1 + 80 * y not in explored:
+            //     frontier.add((x + 1, y))
+
+            // if x > 0 and grid_data[x - 1 + 80 * y] < 50 and x - 1 + 80 * y not in explored:
+            //     frontier.add((x - 1, y))
+        }
+
+        depth++;
+    }
 }

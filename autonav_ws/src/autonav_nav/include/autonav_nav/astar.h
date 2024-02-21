@@ -100,6 +100,12 @@ private:
     // big function to call all the other functions
     void DoAStar();
 
+    // convert the path to ROS Poses
+    nav_msgs::msg::Path ToPath(std::vector<GraphNode> nodes);
+
+    // get out goal node using the smelly algorithm (bias against obstacles and lanes, bias towards the middle)
+    GraphNode Smellification();
+
 
 
     // open list
@@ -115,9 +121,13 @@ private:
     int MAX_X; //TODO assign these values (or figure out how to calculate them automagically)
     int MAX_Y;
     GraphNode start_node; //TODO initialize this one with wherever the heck we're starting at
+
+    // smelly bits
+    std::vector<GraphNode> smellyFrontier;
+    double MAX_DEPTH = 50;
+    double SMELLY_Y = 80; //TODO this might need to be MAX_Y or something
+    double SMELLY_Y_COST = 1.3; //FIXME this is from last year
+    double SMELLY_DEPTH_COST = 2.2; //FIXME this is from last year
+
     // === /a* things ===
-
-
-    // === misc ===
-
 };
