@@ -114,6 +114,13 @@ class ParticleFilter {
             //printf("gps_x: %f \n", gps_x);
             //printf("gps_y: %f \n", gps_y);
             printf("gps_vector in particle_filter header: x %f, y: %f\n", gps_vector[0], gps_vector[1]);
+            std::string individual_particles_string = "";
+
+            for (Particle particle : this->particles) {
+                individual_particles_string = individual_particles_string + std::to_string(particle.x) + 
+                ", " + std::to_string(particle.x) + ", ";
+            }
+            
             std::ofstream gps_log_file;
             gps_log_file.open("/home/tony/Documents/gps_log_file.txt", std::ios::app);
             if (gps_log_file.is_open()) {
@@ -122,7 +129,7 @@ class ParticleFilter {
             else {
                 printf("log file not open");
             }
-            gps_log_file << gps_vector[0] << ", " << gps_vector[1] << std::endl;
+            gps_log_file << individual_particles_string << gps_vector[0] << ", " << gps_vector[1] << std::endl;
             gps_log_file.close();
             return gps_vector;
         }
@@ -209,7 +216,7 @@ class ParticleFilter {
         #pragma endregion Getters
 
     private:
-        static const int num_particles = 750;
+        static const int num_particles = 10;
         double gps_noise[1] = {0.45};
         double odom_noise[3] = {0.05, 0.05, 0.01};
         std::vector<Particle> particles;

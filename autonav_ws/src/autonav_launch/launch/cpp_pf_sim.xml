@@ -1,6 +1,10 @@
 <launch>
     <include file="$(find-pkg-share rosbridge_server)/launch/rosbridge_websocket_launch.xml" />
-    <node pkg="scr_controller" exec="core" />
+    <node pkg="scr_controller" exec="core">
+        <param name="mode" value="1" /> 
+        <param name="state" value="1" /> 
+        <param name="mobility" value="true" /> 
+    </node>
     <node pkg="scr_logging" exec="logging">
         <param name="log_to_console" value="true" />
     </node>
