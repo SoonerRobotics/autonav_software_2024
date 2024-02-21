@@ -6,7 +6,6 @@
 #include "autonav_msgs/msg/gps_feedback.hpp"
 #include "autonav_msgs/msg/position.hpp"
 #include "autonav_msgs/msg/imu_data.hpp"
-//#include "scr/states.hpp"
 
 #include <chrono>
 #include <functional>
