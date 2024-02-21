@@ -268,5 +268,19 @@ class Node(ROSNode):
         executor.spin()
         executor.remove_node(node)
 
+    def run_nodes(nodes):
+        """
+        Runs the nodes with the correct ROS parameters and specifications
+
+        :param nodes: The nodes to run.
+        """
+
+        executor = MultiThreadedExecutor()
+        for node in nodes:
+            executor.add_node(node)
+        executor.spin()
+        for node in nodes:
+            executor.remove_node(node)
+
     def log(self, message: str):
         rclpy.logging.get_logger("scr." + self.identifier).info(message)

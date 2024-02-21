@@ -78,6 +78,10 @@ namespace SCR
         /// @param node 
         static void run_node(std::shared_ptr<Node> node);
 
+        /// @brief Runs the nodes with the correct ROS parameters and specifications
+        /// @param nodes
+        static void run_nodes(std::vector<std::shared_ptr<Node>> nodes);
+
     protected:
         /// @brief Called after a node is first discovered by the network. The device state will be set to BOOTING
         virtual void init() = 0;
