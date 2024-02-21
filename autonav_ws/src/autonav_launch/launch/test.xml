@@ -10,6 +10,7 @@
         <param name="default_type" value="1" />
     </node>
     <node pkg="autonav_vision" exec="transformations.py" />
+    <node pkg="autonav_vision" exec="combination.py" />
     <node pkg="autonav_vision" exec="expandify" />
     <node pkg="autonav_display" exec="display.py" />
 </launch>

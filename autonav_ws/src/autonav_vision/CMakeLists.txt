@@ -18,17 +18,12 @@ find_package(sensor_msgs REQUIRED)
 find_package(scr REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(image_transport REQUIRED)
-
-# Install Python executables
-install(PROGRAMS
-  src/transformations.py
-  DESTINATION lib/${PROJECT_NAME}
-)
  
 # Install Python programs
 install(PROGRAMS
   src/circumscriber.py
   src/transformations.py
+  src/combination.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

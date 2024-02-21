@@ -560,15 +560,34 @@ $(document).ready(function () {
             return;
         }
 
-        if (topic == "/autonav/camera/compressed") {
+        if (topic == "/autonav/camera/compressed/left") {
             // Set to 
-            const imgElement = document.getElementById("target_raw_camera");
+            const imgElement = document.getElementById("target_raw_camera_left");
             imgElement.src = `data:image/jpeg;base64,${msg.data}`;
             return;
         }
 
-        if (topic == "/autonav/cfg_space/raw/image") {
-            const imgElement = document.getElementById("target_filtered_camera");
+        if (topic == "/autonav/camera/compressed/right") {
+            // Set to 
+            const imgElement = document.getElementById("target_raw_camera_right");
+            imgElement.src = `data:image/jpeg;base64,${msg.data}`;
+            return;
+        }
+
+        if (topic == "/autonav/cfg_space/raw/image/left") {
+            const imgElement = document.getElementById("target_filtered_camera_left");
+            imgElement.src = `data:image/jpeg;base64,${msg.data}`;
+            return;
+        }
+
+        if (topic == "/autonav/cfg_space/raw/image/right") {
+            const imgElement = document.getElementById("target_filtered_camera_right");
+            imgElement.src = `data:image/jpeg;base64,${msg.data}`;
+            return;
+        }
+
+        if (topic == "/autonav/cfg_space/raw") {
+            const imgElement = document.getElementById("target_camera_raw");
             imgElement.src = `data:image/jpeg;base64,${msg.data}`;
             return;
         }
