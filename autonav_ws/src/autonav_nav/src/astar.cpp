@@ -74,18 +74,11 @@ void AStarNode::DoAStar() {
     }
 
     // perform A*
-    //TODO make this return a list of Poses or something we can ROSify
     auto pathMsg = AStarNode::ToPath(AStarNode::Search(start, goal));
 
     // only publish if we found a path
     if (pathMsg.poses.size() > 0) {
         // publish results
-        pathMsg.header = std_msgs::msg::Header(); //TODO add actual header data or something
-        pathMsg.poses = {geometry_msgs::msg::PoseStamped()}; //TODO this is geometry_msgs/PoseStamped[]
-        // and PoseStamped is just Header header, Pose pose
-        // and Pose is just Point position, Quaternion orientation
-        // and Point is just x, y, z; and Quaternion is just x, y, z, w
-
         this->pathPublisher->publish(pathMsg);
 
         std::size_t totalsize = 0;
@@ -229,7 +222,7 @@ std::vector<GraphNode> AStarNode::GetNeighbors(GraphNode node) {
 
                     // check if it's traversable (ie not an obstacle, so not == 1)
                     if (map[neighbor_x][neighbor_y] == 0) {
-                        GraphNode node; //TODO this doesn't work I don't think
+                        GraphNode node;
                         node.x = neighbor_x;
                         node.y = neighbor_y;
 
@@ -282,7 +275,7 @@ void AStarNode::UpdateNode(GraphNode node, double g_cost, double h_cost, GraphNo
 nav_msgs::msg::Path ToPath(std::vector<GraphNode> nodes) {
     nav_msgs::msg::Path pathMsg;
     pathMsg.header = std_msgs::msg::Header(); //TODO add actual header data or something
-    pathMsg.poses = {};
+    pathMsg.poses = new int[(MAX_X * MAX_Y) / 2]{}; // theoretical max path length is the entire map, but half of that seems reasonably safe
 
     for (GraphNode node : nodes) {
         // and PoseStamped is just Header header, Pose pose
@@ -322,12 +315,62 @@ GraphNode AStarNode::Smellification() {
     GraphNode bestPos;
     bestPos.x = (int)(MAX_X/2); //FIXME I have no idea what coordinates go where
     bestPos.y = 0; //??????
+    // smellification idk
 
+    // while we haven't hit the max depth and still have nodes to explore
     while (depth < MAX_DEPTH && smellyFrontier.size() > 0) {
-        //TODO smellification idk
+        // we should explore those nodes
         for (int i = 0; i < smellyFrontier.size(); i++) {
             auto node = smellyFrontier[i];
+
+            // cost is based on y coordinate and depth (favoring shorter paths)
             cost = (SMELLY_Y - node.y) * SMELLY_Y_COST  +  (depth * SMELLY_DEPTH_COST);
+
+    
+            //TODO document
+            if (size(waypoints) == 0  &&  time > waypointTime  &&  waypointTime != 0) {
+                this->waypoints = this->getWaypoints();
+                this->waypointTime = 0;
+            //TODO document
+            } else if (time < this->waypointTime  &&  sizs(waypoints) == 0) { 
+                PathingDebug pathingDebugMsg;
+                pathingDebugMsg.waypoints = {};
+                pathingDebug.time_until_use_waypoints = this->waypointTime - time;
+                this->debugPublisher->publish(pathingDebug);
+            }
+
+            //TODO document
+            if (this->resetWhen != -1  &&  time > this->resetWhen  &&  this->mobility) {
+                this->safetyLightsPublisher->publish(this->getSafetyLightsMsg(#FFFFFF));
+                this->resetWhen = -1;
+            }
+
+            //TODO document
+            if (size(waypoints) > 0) {
+                auto next_waypoint = this->waypoints[0];
+                auto heading_to_gps = math.atan2(west_to_gps, north_to_gps) % (2 * math.pi);
+
+                if (gpsDistanceFormula(next_waypoint, this->position) <= this->waypointPopDistance) {
+                    this->waypoints.pop(0);
+                    this->safetyLightsPublisher.pulish(this->getSafetyLightsMsg(#00FF00));
+                    this->resetWhen = time + 1.5;
+                }
+
+                PathingDebug debugMsg;
+                debugMsg.desired_heaing = heading_to_gps;
+                debugMsg.desired_latitude = next_waypoint[0];
+                debugMsg.desired_longitude = next_waypoint[1];
+                debugMsg.distance_to_destination = gpsDistanceFormula(next_waypoint, this->position);
+
+                auto waypoint1Darr = new int[];
+                for (int i = 0; i < this->waypoints.size(); i++) {
+                    wayopint1Darr.append(this->waypoints[0]);
+                    wayopint1Darr.append(this->waypoints[1]);
+                }
+                debugMsg.waypoints = waypoint1Darr;
+                this->debugPublisher->publish(debugMsg);
+            }
+            //=======================================================
 
             if (weHaveWaypoints) {
                 //TODO what the heck do the 40 and 80 and what even is this doing hello figure this out please
@@ -342,7 +385,7 @@ GraphNode AStarNode::Smellification() {
             }
 
             //TODO fix this
-            // frontier.remove(pos)
+            frontier.remove(pos);
             // explored.add(x + 80 * y)
 
             // if y > 1 and grid_data[x + 80 * (y-1)] < 50 and x + 80 * (y-1) not in explored:
@@ -357,4 +400,6 @@ GraphNode AStarNode::Smellification() {
 
         depth++;
     }
+
+    return bestPost;
 }
