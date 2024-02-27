@@ -6,11 +6,8 @@
 
 
 void AStarNode::init() {
-    //TODO
-    // std::vector<std::vector<GraphNode>> map;
+    //TODO std::vector<std::vector<GraphNode>> map;
     //TODO make the file reading code so we can a list of waypoints and stuff
-    //TODO make smellification or whatever goal-finding heuristic algorithm thingy
-    //TODO safety ligths publisher
 
     frontier.reserve(100);
     closed.reserve(100);
@@ -53,8 +50,7 @@ void AStarNode::onImuReceived(autonav_msgs::msg::IMUData imu_msg) {
 
 
 void AStarNode::DoAStar() {
-    // define our goal node
-    //TODO do smellification and make sure our goal is reachable
+    // find our goal node using smellification algorithm
     GraphNode goal = this->Smellification();
 
     // make the starting node
@@ -275,8 +271,9 @@ void AStarNode::UpdateNode(GraphNode node, double g_cost, double h_cost, GraphNo
 nav_msgs::msg::Path AStarNode::ToPath(std::vector<GraphNode> nodes) {
     nav_msgs::msg::Path pathMsg;
     pathMsg.header = std_msgs::msg::Header(); //TODO add actual header data or something
-    // pathMsg.poses = new int[(MAX_X * MAX_Y) / 2]{}; // theoretical max path length is the entire map, but half of that seems reasonably safe
-    pathMsg.poses = std::vector<geometry_msgs::msg::PoseStamped>(); // theoretical max path length is the entire map, but half of that seems reasonably safe
+
+    //TODO initialize this with a good default size
+    pathMsg.poses = std::vector<geometry_msgs::msg::PoseStamped>(); // wait this is a vector that's so sick
 
     for (GraphNode node : nodes) {
         // and PoseStamped is just Header header, Pose pose
@@ -303,15 +300,13 @@ nav_msgs::msg::Path AStarNode::ToPath(std::vector<GraphNode> nodes) {
         pose.position = point;
         poseStamped.pose = pose;
 
-        pathMsg.poses.push_back(poseStamped); //TODO I don't think you can do this
+        pathMsg.poses.push_back(poseStamped);
     }
+
+    return pathMsg;
 }
 
 // ======================================
-std::vector<std::vector<double>> AStarNode::GetWaypoints() {
-    return; //TODO write
-}
-
 // get a safety lights message from parameters
 autonav_msgs::msg::SafetyLights AStarNode::GetSafetyLightsMsg(int red, int green, int blue) {
     autonav_msgs::msg::SafetyLights msg;
@@ -330,7 +325,12 @@ autonav_msgs::msg::SafetyLights AStarNode::GetSafetyLightsMsg(int red, int green
     return msg;
 }
 
-// distance formula for GPS coordinates
+//TODO document
+std::vector<std::vector<double>> AStarNode::GetWaypoints() {
+    //TODO write
+}
+
+// distance formula for GPS coordinates ish
 double AStarNode::GpsDistanceFormula(std::vector<double> goal, geometry_msgs::msg::Pose currPosition) {
     return -1; //TODO write from Python
 }
@@ -383,11 +383,12 @@ GraphNode AStarNode::Smellification() {
             //TODO document and maybe make it a part of the if/else chain?
             if (waypoints.size() > 0) {
                 auto next_waypoint = this->waypoints[0];
-                auto heading_to_gps = math.atan2(west_to_gps, north_to_gps) % (2 * math.pi);
+                auto heading_to_gps = atan2(west_to_gps, north_to_gps) % (2 * PI);
 
-                if (GpsDistanceFormula(next_waypoint, this->position) <= this->waypointPopDistance) {
-                    this->waypoints.pop(0);
-                    this->safetyPublisher.publish(this->GetSafetyLightsMsg(0, 255, 0));
+                if (GpsDistanceFormula(next_waypoint, this->position) <= this->WAYPOINT_POP_DISTANCE) {
+                    this->waypoints.erase(this->waypoints.begin()); // pop the first waypoint
+
+                    this->safetyPublisher->publish(this->GetSafetyLightsMsg(0, 255, 0));
                     this->resetWhen = seconds + 1.5;
                 }
 
@@ -398,16 +399,15 @@ GraphNode AStarNode::Smellification() {
                 debugMsg.distance_to_destination = GpsDistanceFormula(next_waypoint, this->position);
 
                 // convert waypoints to 1d array
-                auto waypoint1Darr = new int[this->waypoints.size()*2];
+                auto waypoint1Darr = std::vector<double>(waypoints.size() * 2);
                 int j = 0;
                 for (int i = 0; i < this->waypoints.size(); i++) {
                     waypoint1Darr[j] = this->waypoints[i][0];
                     waypoint1Darr[j+1] = this->waypoints[i][1];
-                    j += 2
+                    j += 2;
                 }
                 debugMsg.waypoints = waypoint1Darr;
                 this->debugPublisher->publish(debugMsg);
-                delete waypoint1Darr;
             }
             //=======================================================
 
@@ -423,8 +423,11 @@ GraphNode AStarNode::Smellification() {
                 bestPos = node;
             }
 
+            // frontier.remove(pos);
+            // a.erase(std::find(a.begin(),a.end(),2));
+            frontier.erase(std::find(frontier.begin(), frontier.end(), pos));
+
             //TODO fix this
-            frontier.remove(pos);
             // explored.add(x + 80 * y)
 
             // if y > 1 and grid_data[x + 80 * (y-1)] < 50 and x + 80 * (y-1) not in explored:

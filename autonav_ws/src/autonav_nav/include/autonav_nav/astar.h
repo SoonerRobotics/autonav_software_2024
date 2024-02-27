@@ -139,6 +139,7 @@ private:
     std::vector<std::vector<double>> waypoints; // gps waypoints we PID to
     double waypointTime = -1;
     double resetWhen = -1;
+    double WAYPOINT_POP_DISTANCE = 1.1; //FIXME tune this is from last year
 
     double MAX_DEPTH = 50;
     double SMELLY_Y = 80; //TODO this might need to be MAX_Y or something
