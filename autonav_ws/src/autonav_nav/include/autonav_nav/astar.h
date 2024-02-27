@@ -3,6 +3,10 @@
 #include <math.h>
 #include <vector>
 #include <algorithm>
+#include <string>
+#include <iostream>
+#include <chrono>
+#include <ctime> 
 
 #include "rclcpp/rclcpp.hpp"
 #include "scr/node.hpp"
@@ -106,6 +110,14 @@ private:
     // get out goal node using the smelly algorithm (bias against obstacles and lanes, bias towards the middle)
     GraphNode Smellification();
 
+    // get us our waypoints
+    std::vector<std::vector<double>> GetWaypoints(); //TODO 
+
+    // return a safety lights message from RGB arguments
+    autonav_msgs::msg::SafetyLights GetSafetyLightsMsg(int red, int green, int blue);
+
+    double GpsDistanceFormula(std::vector<double> goal, geometry_msgs::msg::Pose currPosition);
+
 
 
     // open list
@@ -124,6 +136,10 @@ private:
 
     // smelly bits
     std::vector<GraphNode> smellyFrontier;
+    std::vector<std::vector<double>> waypoints; // gps waypoints we PID to
+    double waypointTime = -1;
+    double resetWhen = -1;
+
     double MAX_DEPTH = 50;
     double SMELLY_Y = 80; //TODO this might need to be MAX_Y or something
     double SMELLY_Y_COST = 1.3; //FIXME this is from last year

@@ -272,10 +272,11 @@ void AStarNode::UpdateNode(GraphNode node, double g_cost, double h_cost, GraphNo
     node.parent = &current;
 }
 
-nav_msgs::msg::Path ToPath(std::vector<GraphNode> nodes) {
+nav_msgs::msg::Path AStarNode::ToPath(std::vector<GraphNode> nodes) {
     nav_msgs::msg::Path pathMsg;
     pathMsg.header = std_msgs::msg::Header(); //TODO add actual header data or something
-    pathMsg.poses = new int[(MAX_X * MAX_Y) / 2]{}; // theoretical max path length is the entire map, but half of that seems reasonably safe
+    // pathMsg.poses = new int[(MAX_X * MAX_Y) / 2]{}; // theoretical max path length is the entire map, but half of that seems reasonably safe
+    pathMsg.poses = std::vector<geometry_msgs::msg::PoseStamped>(); // theoretical max path length is the entire map, but half of that seems reasonably safe
 
     for (GraphNode node : nodes) {
         // and PoseStamped is just Header header, Pose pose
@@ -306,6 +307,36 @@ nav_msgs::msg::Path ToPath(std::vector<GraphNode> nodes) {
     }
 }
 
+// ======================================
+std::vector<std::vector<double>> AStarNode::GetWaypoints() {
+    return; //TODO write
+}
+
+// get a safety lights message from parameters
+autonav_msgs::msg::SafetyLights AStarNode::GetSafetyLightsMsg(int red, int green, int blue) {
+    autonav_msgs::msg::SafetyLights msg;
+
+    // FIXME default config values used here, but at some point we might want to be able to change them
+    msg.mode = 0;
+    msg.autonomous = true;
+    msg.eco = false;
+    msg.brightness = 255;
+
+    // actual important color bits
+    msg.red = red;
+    msg.green = green;
+    msg.blue = blue;
+
+    return msg;
+}
+
+// distance formula for GPS coordinates
+double AStarNode::GpsDistanceFormula(std::vector<double> goal, geometry_msgs::msg::Pose currPosition) {
+    return -1; //TODO write from Python
+}
+
+//TODO file code for CSV waypoints
+
 // smelly algorithm (bias towards center, away from obstacles, away from lanes, towards goal heading) to identify a goal node
 GraphNode AStarNode::Smellification() {
     int depth = 0;
@@ -326,53 +357,61 @@ GraphNode AStarNode::Smellification() {
             // cost is based on y coordinate and depth (favoring shorter paths)
             cost = (SMELLY_Y - node.y) * SMELLY_Y_COST  +  (depth * SMELLY_DEPTH_COST);
 
+            // get the current time
+            std::chrono::duration<double, std::chrono::seconds> seconds_ = std::chrono::system_clock::now(); // - 0
+            double seconds = seconds_.count();
+
     
             //TODO document
-            if (size(waypoints) == 0  &&  time > waypointTime  &&  waypointTime != 0) {
-                this->waypoints = this->getWaypoints();
+            if (size(waypoints) == 0  &&  seconds > waypointTime  &&  waypointTime != 0) {
+                this->waypoints = this->GetWaypoints();
                 this->waypointTime = 0;
             //TODO document
-            } else if (time < this->waypointTime  &&  sizs(waypoints) == 0) { 
-                PathingDebug pathingDebugMsg;
+            } else if (seconds < this->waypointTime  &&  this->waypoints.size() == 0) { 
+                autonav_msgs::msg::PathingDebug pathingDebugMsg;
                 pathingDebugMsg.waypoints = {};
-                pathingDebug.time_until_use_waypoints = this->waypointTime - time;
-                this->debugPublisher->publish(pathingDebug);
+                pathingDebugMsg.time_until_use_waypoints = this->waypointTime - seconds;
+                this->debugPublisher->publish(pathingDebugMsg);
             }
 
-            //TODO document
-            if (this->resetWhen != -1  &&  time > this->resetWhen  &&  this->mobility) {
-                this->safetyLightsPublisher->publish(this->getSafetyLightsMsg(#FFFFFF));
+            //TODO document and maybe move up?
+            if (this->resetWhen != -1  &&  seconds > this->resetWhen  &&  this->mobility) {
+                this->safetyPublisher->publish(this->GetSafetyLightsMsg(255, 255, 255));
                 this->resetWhen = -1;
             }
 
-            //TODO document
-            if (size(waypoints) > 0) {
+            //TODO document and maybe make it a part of the if/else chain?
+            if (waypoints.size() > 0) {
                 auto next_waypoint = this->waypoints[0];
                 auto heading_to_gps = math.atan2(west_to_gps, north_to_gps) % (2 * math.pi);
 
-                if (gpsDistanceFormula(next_waypoint, this->position) <= this->waypointPopDistance) {
+                if (GpsDistanceFormula(next_waypoint, this->position) <= this->waypointPopDistance) {
                     this->waypoints.pop(0);
-                    this->safetyLightsPublisher.pulish(this->getSafetyLightsMsg(#00FF00));
-                    this->resetWhen = time + 1.5;
+                    this->safetyPublisher.publish(this->GetSafetyLightsMsg(0, 255, 0));
+                    this->resetWhen = seconds + 1.5;
                 }
 
-                PathingDebug debugMsg;
-                debugMsg.desired_heaing = heading_to_gps;
+                autonav_msgs::msg::PathingDebug debugMsg;
+                debugMsg.desired_heading = heading_to_gps;
                 debugMsg.desired_latitude = next_waypoint[0];
                 debugMsg.desired_longitude = next_waypoint[1];
-                debugMsg.distance_to_destination = gpsDistanceFormula(next_waypoint, this->position);
+                debugMsg.distance_to_destination = GpsDistanceFormula(next_waypoint, this->position);
 
-                auto waypoint1Darr = new int[];
+                // convert waypoints to 1d array
+                auto waypoint1Darr = new int[this->waypoints.size()*2];
+                int j = 0;
                 for (int i = 0; i < this->waypoints.size(); i++) {
-                    wayopint1Darr.append(this->waypoints[0]);
-                    wayopint1Darr.append(this->waypoints[1]);
+                    waypoint1Darr[j] = this->waypoints[i][0];
+                    waypoint1Darr[j+1] = this->waypoints[i][1];
+                    j += 2
                 }
                 debugMsg.waypoints = waypoint1Darr;
                 this->debugPublisher->publish(debugMsg);
+                delete waypoint1Darr;
             }
             //=======================================================
 
-            if (weHaveWaypoints) {
+            if (this->waypoints.size() > 0) {
                 //TODO what the heck do the 40 and 80 and what even is this doing hello figure this out please
                 double heading_error = abs(getAngleDifference(this->heading + atan2(40 - node.x, 80 - node.y), heading_to_gps)) * 180 / PI;
                 cost -= std::max(heading_error, (double)10);
@@ -401,5 +440,5 @@ GraphNode AStarNode::Smellification() {
         depth++;
     }
 
-    return bestPost;
+    return bestPos;
 }
