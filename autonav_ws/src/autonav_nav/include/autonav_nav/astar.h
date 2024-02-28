@@ -22,6 +22,7 @@
 #include "autonav_msgs/msg/pathing_debug.hpp"
 #include "autonav_msgs/msg/safety_lights.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "scr/json.hpp"
 
 
 struct GraphNode {
@@ -52,6 +53,9 @@ public:
     ~AStarNode() {};
 
     void init() override;
+    void system_state_transition(scr_msgs::msg::SystemState old, scr_msgs::msg::SystemState updated) override;
+    void config_updated(json config) override;
+    json get_default_config() override;
 private:
     // === ros things ===
     // subcribers
@@ -61,6 +65,7 @@ private:
 
     // message containers
     geometry_msgs::msg::Pose position;
+    std::vector<double> gps_position; // for smellification algorithm
     autonav_msgs::msg::IMUData imu;
     nav_msgs::msg::OccupancyGrid grid;
 
@@ -111,14 +116,18 @@ private:
     GraphNode Smellification();
 
     // get us our waypoints
-    std::vector<std::vector<double>> GetWaypoints(); //TODO 
+    std::vector<std::vector<double>> GetWaypoints();
 
     // return a safety lights message from RGB arguments
     autonav_msgs::msg::SafetyLights GetSafetyLightsMsg(int red, int green, int blue);
 
-    double GpsDistanceFormula(std::vector<double> goal, geometry_msgs::msg::Pose currPosition);
+    // get distance between two GPS points (using custom in-house formula that I don't know what it does)
+    double GpsDistanceFormula(std::vector<double> goal, std::vector<double> currPose);
 
+    // get difference between two angles
+    double GetAngleDifference(double angle1, double angle2); //TODO write
 
+    // ======== fields ========
 
     // open list
     std::vector<GraphNode> frontier;
@@ -135,16 +144,18 @@ private:
     GraphNode start_node; //TODO initialize this one with wherever the heck we're starting at
 
     // smelly bits
-    std::vector<GraphNode> smellyFrontier;
+    std::vector<GraphNode> smellyFrontier; // store our frontier for breadth-first searching for a goal node
     std::vector<std::vector<double>> waypoints; // gps waypoints we PID to
-    double waypointTime = -1;
-    double resetWhen = -1;
+    double waypointTime = -1; // time we hit a waypoint or something
+    double resetWhen = -1; // when to reset safety lights color
     double WAYPOINT_POP_DISTANCE = 1.1; //FIXME tune this is from last year
 
-    double MAX_DEPTH = 50;
+    double MAX_DEPTH = 50; // max depth for the breadth-first search
     double SMELLY_Y = 80; //TODO this might need to be MAX_Y or something
     double SMELLY_Y_COST = 1.3; //FIXME this is from last year
     double SMELLY_DEPTH_COST = 2.2; //FIXME this is from last year
+    double LATITUDE_LENGTH = 111086.2;
+    double LONGITUDE_LENGTH = 81978.2;
 
     // === /a* things ===
 };

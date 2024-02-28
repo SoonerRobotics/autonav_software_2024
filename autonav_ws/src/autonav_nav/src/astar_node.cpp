@@ -1,5 +1,5 @@
 #include "rclcpp/rclcpp.hpp"
-#include "astar.h"
+#include "autonav_nav/astar.h"
 
 int main(int argc, char *argv[]) {
     rclcpp::init(argc, argv);

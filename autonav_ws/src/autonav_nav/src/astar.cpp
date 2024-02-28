@@ -4,6 +4,7 @@
 
 #define PI 3.1415926535897932384626433
 
+//todo count: 24 + 3 fixmes = 27
 
 void AStarNode::init() {
     //TODO std::vector<std::vector<GraphNode>> map;
@@ -31,6 +32,19 @@ void AStarNode::init() {
     set_device_state(SCR::DeviceState::OPERATING);
 }
 
+void AStarNode::system_state_transition(scr_msgs::msg::SystemState old, scr_msgs::msg::SystemState updated) {
+    //TODO write
+}
+
+void AStarNode::config_updated(json config) {
+    //TODO write
+}
+
+json AStarNode::get_default_config() {
+    //TODO write
+}
+
+
 
 void AStarNode::onConfigSpaceReceived(nav_msgs::msg::OccupancyGrid grid_msg) {
     grid = grid_msg;
@@ -41,6 +55,10 @@ void AStarNode::onConfigSpaceReceived(nav_msgs::msg::OccupancyGrid grid_msg) {
 void AStarNode::onPoseReceived(geometry_msgs::msg::Pose pos_msg) {
     // copy the data over or something idk
     this->position = pos_msg;
+
+    // feed data to GPS position vector or something 
+    this->gps_position[0] = pos_msg.position.x;
+    this->gps_position[1] = pos_msg.position.y;
 }
 
 //TODO figure out some kinda use for this?
@@ -98,7 +116,8 @@ void AStarNode::DoAStar() {
         for (int x = 0; x < MAX_X; x++) {
             for (int y = 0; y < MAX_Y; y++) {
                 // at the pixel at (x, y), draw the presence of an obstacle or not (*255 will make 1 into pure white)
-                image[x][y] = map[x][y] * 255;
+                // image[x][y] = map[x][y] * 255;
+                image.at<uchar>(y, x) = 128; // per https://docs.opencv.org/3.4/d5/d98/tutorial_mat_operations.html
             }
         }
         /**
@@ -202,6 +221,7 @@ std::vector<GraphNode> AStarNode::GetNeighbors(GraphNode node) {
     std::vector<GraphNode> neighbors;
 
     // neighbors are just the surrounding nodes
+    //TODO make this only 1 for loop so the compiler can unwrap it
     for (int x = -1; x < 1; x++) {
         for (int y = -1; y < 1; y++) {
             // don't return ourself
@@ -326,16 +346,25 @@ autonav_msgs::msg::SafetyLights AStarNode::GetSafetyLightsMsg(int red, int green
 }
 
 //TODO document
+//TODO file code for CSV waypoints
 std::vector<std::vector<double>> AStarNode::GetWaypoints() {
     //TODO write
 }
 
-// distance formula for GPS coordinates ish
-double AStarNode::GpsDistanceFormula(std::vector<double> goal, geometry_msgs::msg::Pose currPosition) {
-    return -1; //TODO write from Python
+// get distance from GPS coordinates
+double AStarNode::GpsDistanceFormula(std::vector<double> goal, std::vector<double> currPose) {
+    // calculate lat and lon offsets
+    auto north_to_gps = (goal[0] - currPose[0]) * this->LATITUDE_LENGTH;
+    auto west_to_gps = (currPose[1] - goal[1]) * this->LONGITUDE_LENGTH;
+
+    // square each and add them together
+    return (north_to_gps*north_to_gps) + (west_to_gps*west_to_gps);
 }
 
-//TODO file code for CSV waypoints
+double AStarNode::GetAngleDifference(double angle1, double angle2) {
+    return -1; //TODO write this
+}
+
 
 // smelly algorithm (bias towards center, away from obstacles, away from lanes, towards goal heading) to identify a goal node
 GraphNode AStarNode::Smellification() {
@@ -346,8 +375,68 @@ GraphNode AStarNode::Smellification() {
     GraphNode bestPos;
     bestPos.x = (int)(MAX_X/2); //FIXME I have no idea what coordinates go where
     bestPos.y = 0; //??????
-    // smellification idk
+    double heading_to_gps = 0;
 
+    // get the current time
+    double timeNow = std::chrono::duration<double>(std::chrono::system_clock::now().time_since_epoch()).count();
+
+    //TODO document
+    if (this->waypoints.size() == 0  &&  timeNow > waypointTime  &&  waypointTime != 0) {
+        this->waypoints = this->GetWaypoints();
+        this->waypointTime = 0;
+    //TODO document
+    } else if (timeNow < this->waypointTime  &&  this->waypoints.size() == 0) { 
+        autonav_msgs::msg::PathingDebug pathingDebugMsg;
+        pathingDebugMsg.waypoints = {};
+        pathingDebugMsg.time_until_use_waypoints = this->waypointTime - timeNow;
+        this->debugPublisher->publish(pathingDebugMsg);
+    }
+
+    //TODO document and maybe move up?
+    if (this->resetWhen != -1  &&  timeNow > this->resetWhen  &&  this->mobility) {
+        this->safetyPublisher->publish(this->GetSafetyLightsMsg(255, 255, 255));
+        this->resetWhen = -1;
+    }
+
+    //TODO document and maybe make it a part of the if/else chain?
+    if (waypoints.size() > 0) {
+        //FIXME this code is just straight copied pasted from the Python file
+        auto next_waypoint = this->waypoints[0];
+        auto north_to_gps = (next_waypoint[0] - this->gps_position[0]) * this->LATITUDE_LENGTH;
+        auto west_to_gps = (this->gps_position[1] - next_waypoint[1]) * this->LONGITUDE_LENGTH; 
+
+        heading_to_gps = fmod(atan2(west_to_gps, north_to_gps), (2 * PI));
+
+        // ========
+        if (GpsDistanceFormula(next_waypoint, this->gps_position) <= this->WAYPOINT_POP_DISTANCE) {
+            this->waypoints.erase(this->waypoints.begin()); // pop the first waypoint
+
+            this->safetyPublisher->publish(this->GetSafetyLightsMsg(0, 255, 0));
+            this->resetWhen = timeNow + 1.5;
+        }
+
+        autonav_msgs::msg::PathingDebug debugMsg;
+        debugMsg.desired_heading = heading_to_gps;
+        debugMsg.desired_latitude = next_waypoint[0];
+        debugMsg.desired_longitude = next_waypoint[1];
+        debugMsg.distance_to_destination = GpsDistanceFormula(next_waypoint, this->gps_position);
+
+        // convert waypoints to 1d array
+        auto waypoint1Darr = std::vector<double>(waypoints.size() * 2);
+        int j = 0;
+        for (int i = 0; i < this->waypoints.size(); i++) {
+            waypoint1Darr[j] = this->waypoints[i][0];
+            waypoint1Darr[j+1] = this->waypoints[i][1];
+            j += 2;
+        }
+        debugMsg.waypoints = waypoint1Darr;
+        this->debugPublisher->publish(debugMsg);
+    }
+    //=======================================================
+
+
+
+    // smellification idk
     // while we haven't hit the max depth and still have nodes to explore
     while (depth < MAX_DEPTH && smellyFrontier.size() > 0) {
         // we should explore those nodes
@@ -357,63 +446,10 @@ GraphNode AStarNode::Smellification() {
             // cost is based on y coordinate and depth (favoring shorter paths)
             cost = (SMELLY_Y - node.y) * SMELLY_Y_COST  +  (depth * SMELLY_DEPTH_COST);
 
-            // get the current time
-            std::chrono::duration<double, std::chrono::seconds> seconds_ = std::chrono::system_clock::now(); // - 0
-            double seconds = seconds_.count();
-
-    
-            //TODO document
-            if (size(waypoints) == 0  &&  seconds > waypointTime  &&  waypointTime != 0) {
-                this->waypoints = this->GetWaypoints();
-                this->waypointTime = 0;
-            //TODO document
-            } else if (seconds < this->waypointTime  &&  this->waypoints.size() == 0) { 
-                autonav_msgs::msg::PathingDebug pathingDebugMsg;
-                pathingDebugMsg.waypoints = {};
-                pathingDebugMsg.time_until_use_waypoints = this->waypointTime - seconds;
-                this->debugPublisher->publish(pathingDebugMsg);
-            }
-
-            //TODO document and maybe move up?
-            if (this->resetWhen != -1  &&  seconds > this->resetWhen  &&  this->mobility) {
-                this->safetyPublisher->publish(this->GetSafetyLightsMsg(255, 255, 255));
-                this->resetWhen = -1;
-            }
-
-            //TODO document and maybe make it a part of the if/else chain?
-            if (waypoints.size() > 0) {
-                auto next_waypoint = this->waypoints[0];
-                auto heading_to_gps = atan2(west_to_gps, north_to_gps) % (2 * PI);
-
-                if (GpsDistanceFormula(next_waypoint, this->position) <= this->WAYPOINT_POP_DISTANCE) {
-                    this->waypoints.erase(this->waypoints.begin()); // pop the first waypoint
-
-                    this->safetyPublisher->publish(this->GetSafetyLightsMsg(0, 255, 0));
-                    this->resetWhen = seconds + 1.5;
-                }
-
-                autonav_msgs::msg::PathingDebug debugMsg;
-                debugMsg.desired_heading = heading_to_gps;
-                debugMsg.desired_latitude = next_waypoint[0];
-                debugMsg.desired_longitude = next_waypoint[1];
-                debugMsg.distance_to_destination = GpsDistanceFormula(next_waypoint, this->position);
-
-                // convert waypoints to 1d array
-                auto waypoint1Darr = std::vector<double>(waypoints.size() * 2);
-                int j = 0;
-                for (int i = 0; i < this->waypoints.size(); i++) {
-                    waypoint1Darr[j] = this->waypoints[i][0];
-                    waypoint1Darr[j+1] = this->waypoints[i][1];
-                    j += 2;
-                }
-                debugMsg.waypoints = waypoint1Darr;
-                this->debugPublisher->publish(debugMsg);
-            }
-            //=======================================================
-
             if (this->waypoints.size() > 0) {
                 //TODO what the heck do the 40 and 80 and what even is this doing hello figure this out please
-                double heading_error = abs(getAngleDifference(this->heading + atan2(40 - node.x, 80 - node.y), heading_to_gps)) * 180 / PI;
+                //TODO understand this line of code and leave a comment describing what it does
+                double heading_error = abs(GetAngleDifference(heading_to_gps + atan2(40 - node.x, 80 - node.y), heading_to_gps)) * 180 / PI;
                 cost -= std::max(heading_error, (double)10);
             }
 
@@ -423,9 +459,9 @@ GraphNode AStarNode::Smellification() {
                 bestPos = node;
             }
 
-            // frontier.remove(pos);
-            // a.erase(std::find(a.begin(),a.end(),2));
-            frontier.erase(std::find(frontier.begin(), frontier.end(), pos));
+            // remove this node from the frontier because we've explored it
+            frontier.erase(std::find(frontier.begin(), frontier.end(), node));
+            // explored.push_back(node);
 
             //TODO fix this
             // explored.add(x + 80 * y)
