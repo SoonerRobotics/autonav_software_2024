@@ -4,16 +4,16 @@
 
 #define PI 3.1415926535897932384626433
 
-//todo count: 24 + 3 fixmes = 27
-
+// main initilization method (because we don't really have a constructor for reasons)
 void AStarNode::init() {
     //TODO std::vector<std::vector<GraphNode>> map;
     //TODO make the file reading code so we can a list of waypoints and stuff
 
+    // reserve space so we avoid constantly allocating and reallocating space
     frontier.reserve(100);
     closed.reserve(100);
 
-
+    // === subscribers ===
     // filtered subscriber
     expandedSubscriber = this->create_subscription<nav_msgs::msg::OccupancyGrid>("/autonav/cfg_space/expanded/", 20, std::bind(&AStarNode::onConfigSpaceReceived, this, std::placeholders::_1));
     
@@ -32,46 +32,47 @@ void AStarNode::init() {
     set_device_state(SCR::DeviceState::OPERATING);
 }
 
+// system state callback function
 void AStarNode::system_state_transition(scr_msgs::msg::SystemState old, scr_msgs::msg::SystemState updated) {
     //TODO write
 }
 
+// config update callback
 void AStarNode::config_updated(json config) {
     //TODO write
 }
 
+// return default config for initializing the display.html data
 json AStarNode::get_default_config() {
     //TODO write
 }
 
 
-
+// main callback
 void AStarNode::onConfigSpaceReceived(nav_msgs::msg::OccupancyGrid grid_msg) {
     grid = grid_msg;
 
+    // perform A* every time we get new data, we don't need to otherwise
     this->DoAStar();
 }
 
+// gps data callback
 void AStarNode::onPoseReceived(geometry_msgs::msg::Pose pos_msg) {
-    // copy the data over or something idk
     this->position = pos_msg;
-
-    // feed data to GPS position vector or something 
-    this->gps_position[0] = pos_msg.position.x;
-    this->gps_position[1] = pos_msg.position.y;
 }
 
-//TODO figure out some kinda use for this?
+// imu data callback
 void AStarNode::onImuReceived(autonav_msgs::msg::IMUData imu_msg) {
+    //TODO figure out some kinda use for this?
     this->imu = imu_msg;
 }
 
-
+// main function of the A* node but not really
 void AStarNode::DoAStar() {
     // find our goal node using smellification algorithm
     GraphNode goal = this->Smellification();
 
-    // make the starting node
+    // make the starting node (our initial position on the relative map)
     GraphNode start;
     start.x = MAX_X/2; // start in the middle
     start.y = MAX_Y; // start at the bottom, because arrays and indexing
@@ -82,7 +83,7 @@ void AStarNode::DoAStar() {
     // update the map with the grid data
     for (int x = 0; x < MAX_X; x++) {
         for (int y = 0; y < MAX_Y; y++) {
-            // 1D array
+            // grid is a 1D array, map is a 2D array
             map[y][x] = grid.data[y+x];
         }
     }
@@ -95,14 +96,17 @@ void AStarNode::DoAStar() {
         // publish results
         this->pathPublisher->publish(pathMsg);
 
+        // find the total size of the 2D array
         std::size_t totalsize = 0;
         for (int x = 0; x < map.size(); x++) {
             totalsize += map[x].size();
         }
 
+        // make a 1D array with that size (to make the CV Mat image)
         auto data = new int[totalsize]();
         for (int y = 0; y < map.size(); y++) {
             for (int x = 0; x < map[y].size(); x++) {
+                // one dimensionalize the 2D array
                 data[y*MAX_X + x] = map[y][x];
             }
         }
@@ -111,8 +115,9 @@ void AStarNode::DoAStar() {
         auto image = cv::Mat(MAX_X, MAX_Y, CV_8UC1, data); //TODO define data and double check size
 
         // fill it with 0s to start
-        // std::fill(cvimg.begin(), cvimg.end()), 0;
+        std::fill(cvimg.begin(), cvimg.end(), 0);
 
+        // loop through the image
         for (int x = 0; x < MAX_X; x++) {
             for (int y = 0; y < MAX_Y; y++) {
                 // at the pixel at (x, y), draw the presence of an obstacle or not (*255 will make 1 into pure white)
@@ -120,27 +125,25 @@ void AStarNode::DoAStar() {
                 image.at<uchar>(y, x) = 128; // per https://docs.opencv.org/3.4/d5/d98/tutorial_mat_operations.html
             }
         }
-        /**
-        for pp in path: //TODO draw the points along the path in blue
-            cv2.circle(cvimg, (pp[0], pp[1]), 1, (0, 255, 0), 1)
-        */
 
+        // convert it from grayscale and resize it
         cv::cvtColor(image, image, cv::COLOR_GRAY2BGR);
         cv::resize(image, image, cv::Size(MAX_X, MAX_Y), 0, 0, cv::INTER_NEAREST);
 
+        // make the actual ROS image
         auto compressed = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", image).toCompressedImageMsg();
         compressed->header.stamp = this->now();
         compressed->header.frame_id = "map";
         compressed->format = "jpeg";
-        
+
+
+        // publish the A* output as an image
         this->pathDebugImagePublisher->publish(*compressed);
 
+        // manual memory management because we have to use arrays for the message instead of vectors
         delete[] data;
     }
 }
-
-
-
 
 
 
@@ -216,39 +219,35 @@ std::vector<GraphNode> AStarNode::Search(GraphNode start, GraphNode goal) {
 }
 
 
-// helper function to get the minecraft crafting table neighbors
+// helper function to get the neighbors of the current node (excluding diagonals)
 std::vector<GraphNode> AStarNode::GetNeighbors(GraphNode node) {
     std::vector<GraphNode> neighbors;
 
-    // neighbors are just the surrounding nodes
-    //TODO make this only 1 for loop so the compiler can unwrap it
-    for (int x = -1; x < 1; x++) {
-        for (int y = -1; y < 1; y++) {
-            // don't return ourself
-            if (x == 0 && y == 0) {
-                continue;
-            }
+    std::vector<std::vector<double>> addresses = {{-1, 0}, {0, -1}, {1, 0}, {0, 1}}; // addresses of the 4 edge-adjacent neighbors
 
-            int neighbor_x = node.x + x;
-            int neighbor_y = node.y + y;
+    // loop through all the neighbors
+    for(int i = 0, i < addresses.size(); i++) {
+        int neighbor_x = node.x + addresses[i][0];
+        int neighbor_y = node.y + addresses[i][1];
 
-            // check if it's in bounds
-            if (0 < neighbor_x && neighbor_x < MAX_X) {
-                if (0 < neighbor_y && neighbor_y < MAX_Y) {
+        // check if it's in bounds
+        if (0 < neighbor_x && neighbor_x < MAX_X) {
+            if (0 < neighbor_y && neighbor_y < MAX_Y) {
 
-                    // check if it's traversable (ie not an obstacle, so not == 1)
-                    if (map[neighbor_x][neighbor_y] == 0) {
-                        GraphNode node;
-                        node.x = neighbor_x;
-                        node.y = neighbor_y;
+                // check if it's traversable (ie not an obstacle, so != 1)
+                if (map[neighbor_x][neighbor_y] == 0) {
+                    // make a new node to represent the neighbor
+                    GraphNode node;
+                    node.x = neighbor_x;
+                    node.y = neighbor_y;
 
-                        neighbors.push_back(node); // add it to the list
-                    }
+                    neighbors.push_back(node); // add it to the list
                 }
             }
         }
     }
 
+    // return the list
     return neighbors;
 }
 
@@ -259,6 +258,7 @@ double AStarNode::DistanceFormula(GraphNode current, GraphNode goal) {
 }
 
 
+// function to get the path from the goal to the start (traverses the pointers of each GraphNode)
 std::vector<GraphNode> AStarNode::ReconstructPath(GraphNode goal) {
     std::vector<GraphNode> path = {goal}; // the path starts at the goal node
     GraphNode current = goal; // and so we start at the goal node
@@ -281,13 +281,16 @@ std::vector<GraphNode> AStarNode::ReconstructPath(GraphNode goal) {
 
 // update a node with new information
 void AStarNode::UpdateNode(GraphNode node, double g_cost, double h_cost, GraphNode current) {
+    // pretty standard stuff
     node.g_cost = g_cost;
     node.h_cost = h_cost;
     node.f_cost = g_cost + h_cost;
 
+    // parent is a pointer to a GraphNode that is the parent of this node
     node.parent = &current;
 }
 
+// convert a list of nodes to a ROS Path message
 nav_msgs::msg::Path AStarNode::ToPath(std::vector<GraphNode> nodes) {
     nav_msgs::msg::Path pathMsg;
     pathMsg.header = std_msgs::msg::Header(); //TODO add actual header data or something
@@ -361,44 +364,54 @@ double AStarNode::GpsDistanceFormula(std::vector<double> goal, std::vector<doubl
     return (north_to_gps*north_to_gps) + (west_to_gps*west_to_gps);
 }
 
+// get the difference between two angles but like wrapped to 2PI
 double AStarNode::GetAngleDifference(double angle1, double angle2) {
-    return -1; //TODO write this
+    // FIXME literally just stolen from the python code I don't know what this does
+    auto delta = angle1 - angle2;
+    delta = fmod((delta + PI), (2 * PI) - PI);
+
+    return delta;
 }
 
 
 // smelly algorithm (bias towards center, away from obstacles, away from lanes, towards goal heading) to identify a goal node
 GraphNode AStarNode::Smellification() {
-    int depth = 0;
-    smellyFrontier = frontier;
+    smellyFrontier = frontier; //FIXME I don't think copying over the frontier is right
+    int depth = 0; // how deep we've searched so far
+    
+    // current and best costs for this search (not for A*)
     double cost = 0;
     double bestCost = 0;
     GraphNode bestPos;
-    bestPos.x = (int)(MAX_X/2); //FIXME I have no idea what coordinates go where
-    bestPos.y = 0; //??????
+    bestPos.x = (int)(MAX_X/2);
+    bestPos.y = MAX_Y;
     double heading_to_gps = 0;
 
     // get the current time
     double timeNow = std::chrono::duration<double>(std::chrono::system_clock::now().time_since_epoch()).count();
 
-    //TODO document
+    // if we don't have waypoints and it's time to use them
     if (this->waypoints.size() == 0  &&  timeNow > waypointTime  &&  waypointTime != 0) {
+        // then assign waypoints and start moving
         this->waypoints = this->GetWaypoints();
         this->waypointTime = 0;
-    //TODO document
-    } else if (timeNow < this->waypointTime  &&  this->waypoints.size() == 0) { 
+    // otherwise, if we don't have waypoints and it's not time to use them yet
+    } else if (timeNow < this->waypointTime  &&  this->waypoints.size() == 0) {
         autonav_msgs::msg::PathingDebug pathingDebugMsg;
         pathingDebugMsg.waypoints = {};
+
+        // let us know how long we have to wait before we start using waypoints 
         pathingDebugMsg.time_until_use_waypoints = this->waypointTime - timeNow;
         this->debugPublisher->publish(pathingDebugMsg);
     }
 
-    //TODO document and maybe move up?
+    // if we need to reset the color of the safety lights, do so
     if (this->resetWhen != -1  &&  timeNow > this->resetWhen  &&  this->mobility) {
         this->safetyPublisher->publish(this->GetSafetyLightsMsg(255, 255, 255));
         this->resetWhen = -1;
     }
 
-    //TODO document and maybe make it a part of the if/else chain?
+    // if we do, however, have waypionts
     if (waypoints.size() > 0) {
         //FIXME this code is just straight copied pasted from the Python file
         auto next_waypoint = this->waypoints[0];
@@ -407,21 +420,23 @@ GraphNode AStarNode::Smellification() {
 
         heading_to_gps = fmod(atan2(west_to_gps, north_to_gps), (2 * PI));
 
-        // ========
+        // if we've reached a waypoint
         if (GpsDistanceFormula(next_waypoint, this->gps_position) <= this->WAYPOINT_POP_DISTANCE) {
-            this->waypoints.erase(this->waypoints.begin()); // pop the first waypoint
+            this->waypoints.erase(this->waypoints.begin()); // remove it from the list
 
+            // and let everyone know we've reached it using the safety lights
             this->safetyPublisher->publish(this->GetSafetyLightsMsg(0, 255, 0));
             this->resetWhen = timeNow + 1.5;
         }
 
+        // debug information
         autonav_msgs::msg::PathingDebug debugMsg;
         debugMsg.desired_heading = heading_to_gps;
         debugMsg.desired_latitude = next_waypoint[0];
         debugMsg.desired_longitude = next_waypoint[1];
         debugMsg.distance_to_destination = GpsDistanceFormula(next_waypoint, this->gps_position);
 
-        // convert waypoints to 1d array
+        // convert waypoints ((x, y), (x, y)) to 1d array of (x, y, x, y) for ROS
         auto waypoint1Darr = std::vector<double>(waypoints.size() * 2);
         int j = 0;
         for (int i = 0; i < this->waypoints.size(); i++) {
@@ -430,6 +445,8 @@ GraphNode AStarNode::Smellification() {
             j += 2;
         }
         debugMsg.waypoints = waypoint1Darr;
+
+        // and publish it
         this->debugPublisher->publish(debugMsg);
     }
     //=======================================================
@@ -449,7 +466,7 @@ GraphNode AStarNode::Smellification() {
             if (this->waypoints.size() > 0) {
                 //TODO what the heck do the 40 and 80 and what even is this doing hello figure this out please
                 //TODO understand this line of code and leave a comment describing what it does
-                double heading_error = abs(GetAngleDifference(heading_to_gps + atan2(40 - node.x, 80 - node.y), heading_to_gps)) * 180 / PI;
+                double heading_error = abs(GetAngleDifference(heading_to_gps + atan2((MAX_X/2) - node.x, MAX_Y - node.y), heading_to_gps)) * 180 / PI;
                 cost -= std::max(heading_error, (double)10);
             }
 
