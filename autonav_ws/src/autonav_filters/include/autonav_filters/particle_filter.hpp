@@ -33,7 +33,7 @@ class Particle {
         }
 
         // constructor
-        Particle(double x = 0, double y = 0, double theta = 0, double weight = 0.000001) {
+        Particle(double x = 0, double y = 0, double theta = 0, double weight = 1) {
             this->x = x;
             this->y = y;
             this->theta = theta;
@@ -70,7 +70,9 @@ class ParticleFilter {
             double sum_weight = 0;
 
             for (int i = 0; i < this->particles.size(); i++) {
+                printf("%f, %f, %f\n\n", this->particles[i].x, this->particles[i].y, this->particles[i].theta);
                 this->particles[i].x += feedback.delta_x * 1.2 * cos(this->particles[i].theta) + feedback.delta_y * sin(this->particles[i].theta);
+                // particle.x += feedback.delta_x * 1.2 * math.cos(particle.theta) + feedback.delta_y * math.sin(particle.theta)
                 this->particles[i].y += feedback.delta_x * 1.2 * sin(this->particles[i].theta) + feedback.delta_y * cos(this->particles[i].theta);
                 this->particles[i].theta += feedback.delta_theta;
                 this->particles[i].theta = pymod(this->particles[i].theta, (2 * M_PI));
@@ -80,6 +82,9 @@ class ParticleFilter {
                 sum_theta_x += cos(this->particles[i].theta) * weight;
                 sum_theta_y += sin(this->particles[i].theta) * weight;
                 sum_weight += weight;
+
+                printf("%f, %f, %f, %f, %f\n\n", sum_x, sum_y, sum_theta_x, sum_theta_y, sum_weight);
+                printf("%d\n\n", i);
             }
 
             if (sum_weight < 0.000001) {
@@ -89,6 +94,8 @@ class ParticleFilter {
             double avg_x = sum_x / sum_weight;
             double avg_y = sum_y / sum_weight;
             double avg_theta = pymod(atan2(sum_theta_y / sum_weight, sum_theta_x / sum_weight), 2 * M_PI);
+
+            printf("%f, %f, %f\n\n", avg_x, avg_y, avg_theta);
 
             std::vector<double> feedback_vector = {avg_x, avg_y, avg_theta};
             return feedback_vector;
@@ -111,26 +118,27 @@ class ParticleFilter {
             resample();
 
             std::vector<double> gps_vector = {gps_x, gps_y};
-            //printf("gps_x: %f \n", gps_x);
-            //printf("gps_y: %f \n", gps_y);
-            printf("gps_vector in particle_filter header: x %f, y: %f\n", gps_vector[0], gps_vector[1]);
-            std::string individual_particles_string = "";
+            // //printf("gps_x: %f \n", gps_x);
+            // //printf("gps_y: %f \n", gps_y);
+            // printf("gps_vector in particle_filter header: x %f, y: %f\n", gps_vector[0], gps_vector[1]);
+            // std::string individual_particles_string = "";
 
-            for (Particle particle : this->particles) {
-                individual_particles_string = individual_particles_string + std::to_string(particle.x) + 
-                ", " + std::to_string(particle.x) + ", ";
-            }
+            // for (Particle particle : this->particles) {
+            //     individual_particles_string = individual_particles_string + std::to_string(particle.x) + 
+            //     ", " + std::to_string(particle.x) + ", ";
+            // }
             
-            std::ofstream gps_log_file;
-            gps_log_file.open("/home/tony/Documents/gps_log_file.txt", std::ios::app);
-            if (gps_log_file.is_open()) {
-                printf("gps log file open");
-            }
-            else {
-                printf("log file not open");
-            }
-            gps_log_file << individual_particles_string << gps_vector[0] << ", " << gps_vector[1] << std::endl;
-            gps_log_file.close();
+            // std::ofstream gps_log_file;
+            // gps_log_file.open("/home/tony/Documents/gps_log_file.txt", std::ios::app);
+            // if (gps_log_file.is_open()) {
+            //     printf("gps log file open");
+            // }
+            // else {
+            //     printf("log file not open");
+            // }
+            // gps_log_file << individual_particles_string << gps_vector[0] << ", " << gps_vector[1] << std::endl;
+            // gps_log_file.close();
+            
             return gps_vector;
         }
 
@@ -216,7 +224,7 @@ class ParticleFilter {
         #pragma endregion Getters
 
     private:
-        static const int num_particles = 10;
+        static const int num_particles = 2;
         double gps_noise[1] = {0.45};
         double odom_noise[3] = {0.05, 0.05, 0.01};
         std::vector<Particle> particles;
