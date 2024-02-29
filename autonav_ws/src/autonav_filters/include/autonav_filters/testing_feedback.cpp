@@ -26,5 +26,13 @@ int main() {
     double cosine_result = cos(2*M_PI);
     printf("%f\n", cosine_result);
 
+    // sum theta lol
+
+    double sum_theta_x = -7.771561172376096e-16;
+    double sum_theta_y = -6.286637876939949e-15;
+    double sum_weight = 2;
+    double avg_theta = pymod(atan2(sum_theta_y / sum_weight, sum_theta_x / sum_weight), 2 * M_PI);
+
+    printf("%f\n", avg_theta);
 
 }

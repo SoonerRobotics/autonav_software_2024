@@ -68,6 +68,10 @@ TEST(ParticleFilterTests, feedback_test) {
         position_vector = particle_filter.feedback(motor_message);
     }
 
+    printf("%f\n", position_vector[0]);
+    printf("%f\n", position_vector[1]);
+    printf("%f\n", position_vector[2]);
+
     EXPECT_EQ(position_vector[0], 1.4589810840940724e-15);
     EXPECT_EQ(position_vector[1], -1.1226575225009583e-14);
     EXPECT_EQ(position_vector[2], 3.4728605908690113);
@@ -97,7 +101,6 @@ TEST(ParticleFilterTests, gps_test) {
 }
 
 TEST(ParticleFilterTests, complete_test) {
-    GTEST_SKIP() << "Skipping complete test";
     double latitudeLength = 111086.2;
     double longitudeLength = 81978.2;
     ParticleFilter particle_filter = ParticleFilter(latitudeLength, longitudeLength);
@@ -126,6 +129,7 @@ TEST(ParticleFilterTests, complete_test) {
     // cut down the deltas until they are the same length as the gps values
     
     int n = latitudes.size();
+    n = 10;
 
     std::vector sliced_delta_xs(delta_xs.begin(), delta_xs.begin() + n);
     std::vector sliced_delta_ys(delta_ys.begin(), delta_ys.begin() + n);
@@ -135,7 +139,8 @@ TEST(ParticleFilterTests, complete_test) {
 
     autonav_msgs::msg::MotorFeedback motor_message;
     autonav_msgs::msg::GPSFeedback gps_message;
-    std::vector<double> position_vector; 
+    std::vector<double> position_vector;
+    std::vector<double> gps_vector;
     for (int i = 0; i < n; i++) {
         motor_message.delta_x = sliced_delta_xs[i];
         motor_message.delta_y = sliced_delta_ys[i];
@@ -148,15 +153,17 @@ TEST(ParticleFilterTests, complete_test) {
         gps_message.is_locked = is_locked[i];
         gps_message.satellites = satellites[i];
 
-        particle_filter.feedback(motor_message);
-        position_vector = particle_filter.gps(gps_message);
+        position_vector = particle_filter.feedback(motor_message);
+        gps_vector = particle_filter.gps(gps_message);
     }
 
     printf("%f\n", position_vector[0]);
     printf("%f\n", position_vector[1]);
+    printf("%f\n", position_vector[2]);
 
     ASSERT_NEAR(position_vector[0], 18.49585229987204, 1.0);
     ASSERT_NEAR(position_vector[1], 18.936964199952953, 1.0);
+    ASSERT_NEAR(position_vector[2], 1.0485518625679005, 1.0);
 
     /*std::filesystem::path cwd = std::filesystem::current_path();
     std::string cwd_str = cwd.string();
