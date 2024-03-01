@@ -4,6 +4,8 @@
 
 #define PI 3.1415926535897932384626433
 
+#define NOW std::chrono::duration<double>(std::chrono::system_clock::now().time_since_epoch()).count()
+
 // main initilization method (because we don't really have a constructor for reasons)
 void AStarNode::init() {
     //TODO std::vector<std::vector<GraphNode>> map;
@@ -30,6 +32,40 @@ void AStarNode::init() {
 
     // we've set everything up so now we're operating
     set_device_state(SCR::DeviceState::OPERATING);
+
+    // === read waypoints from file ===
+    waypointsFile.open(WAYPOINTS_FILENAME);
+
+    // loop through the lines in the file
+    std::string line;
+    if (waypointsFile.is_open()) {
+        while (getline(waypointsFile, line) ) {
+            // label, latitude, longitude = line.split(",")
+            // format is like label,lat,lon, right?
+            // so label is [0:first comma]
+            // latitude is [first comma:second to last comma] (because remember there's a trailing comma before the newline)
+            // longitude is [second to last comma:end of string-1] (so we don't catch that last comma at the end)
+            //TODO rewrite this as it is awful
+            std::string label = line.substr(0, line.find(",")); //https://cplusplus.com/reference/string/string/find/
+            double lat = std::stod(line.substr(line.find(","), line.substr(0, line.length()-1).rfind(","))); //https://cplusplus.com/reference/string/stod/
+            double lon = std::stod(line.substr(line.substr(0, line.length()-1).rfind(","), line.length()-1));
+
+            // if the vector doesn't exist yet in the dictionary, make it
+            // if (!waypoints[label]) {
+            //     waypoints[label] = std::vector<std::vector<double>>(5);
+            // }
+
+            // waypoints are stored like {"north":[(lat, lon), (lat, lon)]}
+            // with lat, lon in sequential order
+            waypointsDict[label].push_back({lat, lon});
+        }
+    }
+
+    waypointsFile.close();
+    // === /read waypoints ===
+
+    // go ahead and initialize our waypointTime
+    this->waypointTime = NOW + this->WAYPOINT_DELAY;
 }
 
 // system state callback function
@@ -113,9 +149,6 @@ void AStarNode::DoAStar() {
 
         // draw the cost map onto a debug image
         auto image = cv::Mat(MAX_X, MAX_Y, CV_8UC1, data); //TODO define data and double check size
-
-        // fill it with 0s to start
-        std::fill(cvimg.begin(), cvimg.end(), 0);
 
         // loop through the image
         for (int x = 0; x < MAX_X; x++) {
@@ -226,7 +259,7 @@ std::vector<GraphNode> AStarNode::GetNeighbors(GraphNode node) {
     std::vector<std::vector<double>> addresses = {{-1, 0}, {0, -1}, {1, 0}, {0, 1}}; // addresses of the 4 edge-adjacent neighbors
 
     // loop through all the neighbors
-    for(int i = 0, i < addresses.size(); i++) {
+    for(int i = 0; i < addresses.size(); i++) {
         int neighbor_x = node.x + addresses[i][0];
         int neighbor_y = node.y + addresses[i][1];
 
@@ -348,10 +381,42 @@ autonav_msgs::msg::SafetyLights AStarNode::GetSafetyLightsMsg(int red, int green
     return msg;
 }
 
-//TODO document
-//TODO file code for CSV waypoints
+// get the waypoints vector list thingy from the waypoints dictionary that stores all the waypoints we read from the file
 std::vector<std::vector<double>> AStarNode::GetWaypoints() {
-    //TODO write
+    /**
+    var yaw = atan2(2.0*(q.y*q.z + q.w*q.x), q.w*q.w - q.x*q.x - q.y*q.y + q.z*q.z);
+    https://stackoverflow.com/questions/5782658/extracting-yaw-from-a-quaternion answer #2
+    */
+    // Get our current heading and estimate within 180 degrees which direction we are facing (north or south, 0 and 1 respectively)
+    //NOTE this code is copied from the python A* file
+    // auto heading_degrees = abs(this->position.orientation * 180 / PI);
+    auto q = this->position.orientation;
+    auto heading_degrees = atan2(2.0*(q.y*q.z + q.w*q.x), q.w*q.w - q.x*q.x - q.y*q.y + q.z*q.z);
+    bool north = false;
+    
+    // if we're mostly facing towards 180 degrees, then it's probably North
+    if (120 < heading_degrees && heading_degrees < 240) {
+        north = true;
+    } else {
+        north = false;
+    }
+
+
+    if (this->system_mode == SCR::SystemMode::SIMULATION) {
+        // return simulation waypoints if we're in simulation
+        return this->waypointsDict["simulation1"];
+    } else if (this->system_mode == SCR::SystemMode::COMPETITION) {
+        // otherwise, if we're at competition, and we're facing north
+        if (north) {
+            // return the waypoints list for north
+            return this->waypointsDict["compNorth"];
+        } else {
+            // otherwise south
+            return this->waypointsDict["compSouth"];
+        }
+    } else {
+        return this->waypointsDict["practice"];
+    }
 }
 
 // get distance from GPS coordinates
@@ -388,7 +453,7 @@ GraphNode AStarNode::Smellification() {
     double heading_to_gps = 0;
 
     // get the current time
-    double timeNow = std::chrono::duration<double>(std::chrono::system_clock::now().time_since_epoch()).count();
+    double timeNow = NOW;
 
     // if we don't have waypoints and it's time to use them
     if (this->waypoints.size() == 0  &&  timeNow > waypointTime  &&  waypointTime != 0) {
@@ -411,7 +476,7 @@ GraphNode AStarNode::Smellification() {
         this->resetWhen = -1;
     }
 
-    // if we do, however, have waypionts
+    // if we do, however, have waypoints
     if (waypoints.size() > 0) {
         //FIXME this code is just straight copied pasted from the Python file
         auto next_waypoint = this->waypoints[0];

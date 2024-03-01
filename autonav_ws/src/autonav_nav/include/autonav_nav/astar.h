@@ -7,6 +7,8 @@
 #include <iostream>
 #include <chrono>
 #include <ctime> 
+#include <fstream>
+#include <unordered_map>
 
 #include "rclcpp/rclcpp.hpp"
 #include "scr/node.hpp"
@@ -143,12 +145,18 @@ private:
     int MAX_Y;
     GraphNode start_node; //TODO initialize this one with wherever the heck we're starting at
 
+    // filename for the waypoints (should be CSV file with label,lat,lon)
+    const std::string WAYPOINTS_FILENAME = "waypoints.csv";
+    std::ifstream waypointsFile;
+    std::unordered_map<std::string, std::vector<std::vector<double>>> waypointsDict; // dictionairy of a list of double tuples
+
     // smelly bits
     std::vector<GraphNode> smellyFrontier; // store our frontier for breadth-first searching for a goal node
-    std::vector<std::vector<double>> waypoints; // gps waypoints we PID to
+    std::vector<std::vector<double>> waypoints; // gps waypoints we PID to //TODO this needs to be how it is and the other thing needs to be renamed
     double waypointTime = -1; // time we hit a waypoint or something
     double resetWhen = -1; // when to reset safety lights color
     double WAYPOINT_POP_DISTANCE = 1.1; //FIXME tune this is from last year
+    double WAYPOINT_DELAY = 10; //TODO this needs to be configurable or something
 
     double MAX_DEPTH = 50; // max depth for the breadth-first search
     double SMELLY_Y = 80; //TODO this might need to be MAX_Y or something
