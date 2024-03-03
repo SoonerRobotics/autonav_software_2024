@@ -1,5 +1,3 @@
-#include "rclcpp/rclcpp.hpp"
-#include "scr/node.hpp"
 #include "autonav_nav/astar.h"
 
 #define PI 3.1415926535897932384626433

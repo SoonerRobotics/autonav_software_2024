@@ -1,4 +1,3 @@
-#include "rclcpp/rclcpp.hpp"
 #include "autonav_nav/astar.h"
 
 int main(int argc, char *argv[]) {
