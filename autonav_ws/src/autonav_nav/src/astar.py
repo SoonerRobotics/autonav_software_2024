@@ -104,10 +104,19 @@ class AStarNode(Node):
             direction_index = 0
             self.get_logger().info("Facing North")
 
-        
-        if direction_index == 1:
-            # south
-            pass
+
+        if self.system_mode == SystemModeEnum.COMPETITION:
+            if direction_index == 0:
+                return waypoints["compNorth"]
+            else:
+                return waypoints["compSouth"]
+        elif self.system_mode == SystemModeEnum.SIMULATION:
+            if direction_index == 0:
+                return waypoints["simulationNorth"]
+            else:
+                return waypoints["simulationSouth"]
+        else:
+            return waypoints["practice"]
 
         
 
