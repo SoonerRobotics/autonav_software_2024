@@ -22,28 +22,7 @@ VERTICAL_CAMERA_DIST = 2.75
 HORIZONTAL_CAMERA_DIST = 3
 CV_BRIDGE = cv_bridge.CvBridge()
 
-# STARTING_PT = (42.6681268, -83.218887)
-
-competition_waypoints = [
-    # Start Nomans, Frist Ramp, Middle Ramp, End Ramp, End Nomans
-    [(42.6682837222, -83.2193403028), (42.6681206444, -83.2193606083), (42.66809863885, -83.2193606083), (42.6680766333, -83.2193606083),
-     (42.6679277056, -83.2193276417), (42.6679817056, -83.2193316417), (42.66794, -83.2189), (42.6681268, -83.218887)],  # Start Facing North
-    # [(42.6679277056,-83.2193276417),(42.6680766333,-83.2193591583),(42.6681206444,-83.2193606083),(42.6682837222 ,-83.2193403028), (42.668290020, -83.2189080), (42.6681268, -83.218887)], # Start Facing South
-    # [(42.668222,-83.218472),(42.6680859611,-83.2184456444),(42.6679600583,-83.2184326556)], # Start Facing North
-    # [(42.6679600583,-83.2184326556), (42.6680859611,-83.2184456444),(42.668222,-83.218472)], # Start Facing South
-    [],
-]
-
-practice_waypoints = [
-    [(35.2104852, -97.44193), (35.210483, -97.44207), (35.2104841, -97.4421986), (35.2104819, -97.4423302), (35.2105455, -97.4423329),
-     (35.2106096, -97.4423347), (35.2106107, -97.4422153), (35.2106078, -97.4421059), (35.2105575, -97.4420365), (35.2104852, -97.44193)]
-]
-
-simulation_waypoints = [
-    [(35.19505, -97.43823),(35.19492, -97.43824),(35.19485, -97.43824),(35.19471, -97.43823)], # Facing North
-    [(35.19471, -97.43823),(35.19492, -97.43824),(35.19485, -97.43824),(35.19505, -97.43823)], # Facing South
-]
-
+waypoints = {}
 
 def hexToRgb(color: str):
     if color[0] == "#":
@@ -114,18 +93,23 @@ class AStarNode(Node):
         self.waypointTime = self.config.waypointDelay + time.time()
 
     def getWaypointsForDirection(self):
-        # Get out current heading and estimate within 180 degrees which direction we are facing (north or south, 0 and 1 respectively)
-        heading = self.position.theta
-        direction_index = 0
-        heading_degrees = abs(heading * 180 / math.pi)
+        # Get our current heading and estimate within 180 degrees which direction we are facing (north or south, 0 and 1 respectively)
+        heading_degrees = abs(self.position.theta * 180 / math.pi)
+        
         self.get_logger().info(f"Heading: {heading_degrees}")
         if heading_degrees > 120 and heading_degrees < 240:
             direction_index = 1
             self.get_logger().info("Facing South")
         else:
+            direction_index = 0
             self.get_logger().info("Facing North")
 
-        return simulation_waypoints[direction_index] if self.system_mode == SystemModeEnum.SIMULATION else competition_waypoints[direction_index] if self.system_mode == SystemModeEnum.COMPETITION else practice_waypoints[direction_index]
+        
+        if direction_index == 1:
+            # south
+            pass
+
+        
 
     def transition(self, old: SystemState, updated: SystemState):
         if updated.state == SystemStateEnum.AUTONOMOUS and updated.mobility and len(self.waypoints) == 0:
@@ -328,6 +312,18 @@ class AStarNode(Node):
 
 
 def main():
+    # read GPS waypoints data from file
+    with open("data/waypoints.csv", "r") as f:
+        for line in f.readlines():
+            label, lat, lon = line.split(",")
+
+            try:
+                waypoints[label].append((lat, lon))
+            except KeyError:
+                waypoints[label] = []
+                waypoints[label].append((lat, lon))
+                
+
     rclpy.init()
     node = AStarNode()
     Node.run_node(node)
