@@ -14,7 +14,7 @@ namespace SCR
         ERRORED = 5
     };
 
-    std::string toString(DeviceState state)
+    std::string getAsString(DeviceState state)
     {
         switch (state)
         {
@@ -42,7 +42,7 @@ namespace SCR
         SHUTDOWN = 3
     };
 
-    std::string toString(SystemState state)
+    std::string getAsString(SystemState state)
     {
         switch (state)
         {
@@ -65,7 +65,7 @@ namespace SCR
         PRACTICE = 2,
     };
 
-    std::string toString(SystemMode state)
+    std::string getAsString(SystemMode state)
     {
         switch (state)
         {
