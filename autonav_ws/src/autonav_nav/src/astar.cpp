@@ -70,12 +70,26 @@ void AStarNode::init() {
 
 // system state callback function
 void AStarNode::system_state_transition(scr_msgs::msg::SystemState old, scr_msgs::msg::SystemState updated) {
-    //TODO write
+    if (updated.state == SCR::SystemState::AUTONOMOUS && updated.mobility && this->waypoints.size() == 0) {
+        // if we just changed to autonomous and we're now allowed to move and we don't have waypoints yet
+        this->waypointTime = NOW + this->WAYPOINT_DELAY; // then set the delay for using the waypoints
+    } else if (updated.state != SCR::SystemState::AUTONOMOUS and this->device_state == SCR::DeviceState::OPERATING) {
+        // otherwise, if we're not changing to auto but we are operating (ie we're changing to disabled or something)
+        this->OnReset(); // reset
+    }
+}
+
+// reset function
+void AStarNode::OnReset() {
+    this->imu = autonav_msgs::msg::IMUData();
+    this->position = geometry_msgs::msg::Pose();
+    this->waypoints = std::vector<std::vector<double>>();
+    this->waypointTime = NOW + this->WAYPOINT_DELAY;
 }
 
 // config update callback
 void AStarNode::config_updated(json config) {
-    //TODO write
+    //TODO
 }
 
 // return default config for initializing the display.html data
@@ -134,14 +148,14 @@ void AStarNode::DoAStar() {
 
         // find the total size of the 2D array
         std::size_t totalsize = 0;
-        for (int x = 0; x < map.size(); x++) {
+        for (int x = 0; x < (int)map.size(); x++) {
             totalsize += map[x].size();
         }
 
         // make a 1D array with that size (to make the CV Mat image)
         auto data = new int[totalsize]();
-        for (int y = 0; y < map.size(); y++) {
-            for (int x = 0; x < map[y].size(); x++) {
+        for (int y = 0; y < (int)map.size(); y++) {
+            for (int x = 0; x < (int)map[y].size(); x++) {
                 // one dimensionalize the 2D array
                 data[y*MAX_X + x] = map[y][x];
             }
@@ -259,7 +273,7 @@ std::vector<GraphNode> AStarNode::GetNeighbors(GraphNode node) {
     std::vector<std::vector<double>> addresses = {{-1, 0}, {0, -1}, {1, 0}, {0, 1}}; // addresses of the 4 edge-adjacent neighbors
 
     // loop through all the neighbors
-    for(int i = 0; i < addresses.size(); i++) {
+    for(int i = 0; i < (int)addresses.size(); i++) {
         int neighbor_x = node.x + addresses[i][0];
         int neighbor_y = node.y + addresses[i][1];
 
@@ -503,11 +517,9 @@ GraphNode AStarNode::Smellification() {
 
         // convert waypoints ((x, y), (x, y)) to 1d array of (x, y, x, y) for ROS
         auto waypoint1Darr = std::vector<double>(waypoints.size() * 2);
-        int j = 0;
-        for (int i = 0; i < this->waypoints.size(); i++) {
+        for (int i = 0, j = 0; i < (int)this->waypoints.size(); i++, j+=2) {
             waypoint1Darr[j] = this->waypoints[i][0];
             waypoint1Darr[j+1] = this->waypoints[i][1];
-            j += 2;
         }
         debugMsg.waypoints = waypoint1Darr;
 
@@ -522,7 +534,7 @@ GraphNode AStarNode::Smellification() {
     // while we haven't hit the max depth and still have nodes to explore
     while (depth < MAX_DEPTH && smellyFrontier.size() > 0) {
         // we should explore those nodes
-        for (int i = 0; i < smellyFrontier.size(); i++) {
+        for (int i = 0; i < (int)smellyFrontier.size(); i++) {
             auto node = smellyFrontier[i];
 
             // cost is based on y coordinate and depth (favoring shorter paths)
@@ -543,10 +555,11 @@ GraphNode AStarNode::Smellification() {
 
             // remove this node from the frontier because we've explored it
             frontier.erase(std::find(frontier.begin(), frontier.end(), node));
+            
+            // add it to the list of explored so we don't accidentally explore it again
             // explored.push_back(node);
 
             //TODO fix this
-            // explored.add(x + 80 * y)
 
             // if y > 1 and grid_data[x + 80 * (y-1)] < 50 and x + 80 * (y-1) not in explored:
             //     frontier.add((x, y - 1))

@@ -6,6 +6,7 @@
                 "${workspaceFolder}/**",
                 "/opt/ros/humble/include/**",
                 "/usr/local/vectornav/cpp/include/**",
+                "/usr/include/opencv4"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

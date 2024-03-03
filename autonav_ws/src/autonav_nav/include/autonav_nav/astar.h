@@ -86,6 +86,8 @@ private:
     void onPoseReceived(geometry_msgs::msg::Pose pos_msg);
     void onImuReceived(autonav_msgs::msg::IMUData imu_msg);
 
+    void OnReset();
+
     //TODO publisher callback/timer/whatnot
 
     // === /end ros things ===
