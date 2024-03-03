@@ -6,11 +6,10 @@
 #include <string>
 #include <iostream>
 #include <chrono>
-#include <ctime> 
+#include <ctime>
 #include <fstream>
 #include <unordered_map>
 
-#include "rclcpp/rclcpp.hpp"
 #include "scr/node.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include "nav_msgs/msg/map_meta_data.hpp"

@@ -36,7 +36,6 @@ ament_auto_find_build_dependencies()
 # C++
 add_executable(astar src/astar_node.cpp src/astar.cpp)
 ament_target_dependencies(astar rclcpp sensor_msgs autonav_msgs nav_msgs cv_bridge image_transport scr)
-# ament_target_dependencies(astar rclcpp sensor_msgs autonav_msgs nav_msgs cv_bridge image_transport scr)
 
 install(TARGETS
   astar
