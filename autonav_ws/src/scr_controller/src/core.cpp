@@ -95,7 +95,7 @@ private:
         }
 
         // Update the device state
-        RCLCPP_INFO(this->get_logger(), "Device %s state changed to %s", request->device.c_str(), SCR::getAsString((SCR::DeviceState)request->state).c_str());
+        RCLCPP_INFO(this->get_logger(), "Device %s state changed to %s", request->device.c_str(), SCR::toString((SCR::DeviceState)request->state).c_str());
         if (device_states.find(request->device) == device_states.end())
         {
             // This is the first time we've seen this device, so we need to publish the system state, device state, and all known configs
