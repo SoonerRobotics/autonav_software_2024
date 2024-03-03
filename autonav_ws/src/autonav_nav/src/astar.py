@@ -327,10 +327,10 @@ def main():
             label, lat, lon = line.split(",")
 
             try:
-                waypoints[label].append((lat, lon))
+                waypoints[label].append((float(lat), float(lon)))
             except KeyError:
                 waypoints[label] = []
-                waypoints[label].append((lat, lon))
+                waypoints[label].append((float(lat), float(lon)))
                 
 
     rclpy.init()
