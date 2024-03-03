@@ -87,10 +87,8 @@ class BroadcastNode(Node):
 
 		self.systemStateService = self.create_client(SetSystemState, "/scr/state/set_system_state")
 
-		self.cameraSubscriberLeft = self.create_subscription(CompressedImage, "/autonav/camera/compressed/left", self.cameraCallbackLeft, 20)
-		self.cameraSubscriberRight = self.create_subscription(CompressedImage, "/autonav/camera/compressed/right", self.cameraCallbackRight, 20)
-		self.filteredSubscriberLeft = self.create_subscription(CompressedImage, "/autonav/cfg_space/raw/image/left", self.filteredCallbackLeft, 20)
-		self.filteredSubscriberRight = self.create_subscription(CompressedImage, "/autonav/cfg_space/raw/image/right", self.filteredCallbackRight, 20)
+		self.cameraSubscriber = self.create_subscription(CompressedImage, "/autonav/camera/compressed", self.cameraCallback, 20)
+		self.filteredSubscriber = self.create_subscription(CompressedImage, "/autonav/cfg_space/raw/image", self.filteredCallback, 20)
 		self.debugAStarSubscriber = self.create_subscription(CompressedImage, "/autonav/debug/astar/image", self.debugAStarCallback, 20)
 		
 		self.get_logger().info("Starting event loop")
@@ -338,8 +336,8 @@ class BroadcastNode(Node):
 			"right_motor_output": msg.right_motor_output
 		}))
 
-	def cameraCallbackLeft(self, msg: CompressedImage):
-		if not self.limiter.use("/autonav/camera/compressed/left"):
+	def cameraCallback(self, msg: CompressedImage):
+		if not self.limiter.use("/autonav/camera/compressed"):
 			return
 
 		byts = msg.data.tobytes()
@@ -347,13 +345,13 @@ class BroadcastNode(Node):
 
 		self.pushSendQueue(json.dumps({
 			"op": "data",
-			"topic": "/autonav/camera/compressed/left",
+			"topic": "/autonav/camera/compressed",
 			"format": msg.format,
 			"data": base64_str
 		}))
 
-	def cameraCallbackRight(self, msg: CompressedImage):
-		if not self.limiter.use("/autonav/camera/compressed/right"):
+	def filteredCallback(self, msg: CompressedImage):
+		if not self.limiter.use("/autonav/cfg_space/raw/image"):
 			return
 
 		byts = msg.data.tobytes()
@@ -361,35 +359,7 @@ class BroadcastNode(Node):
 
 		self.pushSendQueue(json.dumps({
 			"op": "data",
-			"topic": "/autonav/camera/compressed/right",
-			"format": msg.format,
-			"data": base64_str
-		}))
-
-	def filteredCallbackLeft(self, msg: CompressedImage):
-		if not self.limiter.use("/autonav/cfg_space/raw/image/left"):
-			return
-
-		byts = msg.data.tobytes()
-		base64_str = base64.b64encode(byts).decode("utf-8")
-
-		self.pushSendQueue(json.dumps({
-			"op": "data",
-			"topic": "/autonav/cfg_space/raw/image/left",
-			"format": msg.format,
-			"data": base64_str
-		}))
-
-	def filteredCallbackRight(self, msg: CompressedImage):
-		if not self.limiter.use("/autonav/cfg_space/raw/image/right"):
-			return
-
-		byts = msg.data.tobytes()
-		base64_str = base64.b64encode(byts).decode("utf-8")
-
-		self.pushSendQueue(json.dumps({
-			"op": "data",
-			"topic": "/autonav/cfg_space/raw/image/right",
+			"topic": "/autonav/cfg_space/raw/image",
 			"format": msg.format,
 			"data": base64_str
 		}))
