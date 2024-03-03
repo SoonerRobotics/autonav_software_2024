@@ -4,6 +4,14 @@
 
 #define NOW std::chrono::duration<double>(std::chrono::system_clock::now().time_since_epoch()).count()
 
+int main(int argc, char *argv[]) {
+    rclcpp::init(argc, argv);
+    rclcpp::spin(std::make_shared<AStarNode>());
+    rclcpp::shutdown();
+    return 0;
+}
+
+
 // main initilization method (because we don't really have a constructor for reasons)
 void AStarNode::init() {
     //TODO std::vector<std::vector<GraphNode>> map;
