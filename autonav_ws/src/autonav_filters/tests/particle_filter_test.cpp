@@ -143,8 +143,11 @@ TEST(ParticleFilterTests, complete_test) {
     std::vector<double> gps_vector;
     for (int i = 0; i < n; i++) {
         motor_message.delta_x = sliced_delta_xs[i];
+        printf("motor_mesage delta_x %f\n", motor_message.delta_x);
         motor_message.delta_y = sliced_delta_ys[i];
+        printf("motor_mesage delta_y %f\n", motor_message.delta_y);
         motor_message.delta_theta = sliced_delta_thetas[i];
+        printf("motor_mesage delta_theta %f\n\n", motor_message.delta_theta);
 
         gps_message.latitude = latitudes[i];
         gps_message.longitude = longitudes[i];
