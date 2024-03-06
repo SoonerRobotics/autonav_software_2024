@@ -6,7 +6,8 @@
                 "${workspaceFolder}/**",
                 "/opt/ros/humble/include/**",
                 "/usr/local/vectornav/cpp/include/**",
-                "/usr/include/opencv4"
+                "/usr/include/opencv4",
+                "${workspaceFolder}/autonav_ws/src/autonav_nav/include"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

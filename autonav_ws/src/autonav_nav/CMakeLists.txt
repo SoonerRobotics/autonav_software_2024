@@ -25,6 +25,7 @@ find_package(image_transport REQUIRED)
  
 # Install Python programs
 install(PROGRAMS
+  src/pure_pursuit.py
   src/path_resolver.py
   src/astar.py
   DESTINATION lib/${PROJECT_NAME}
@@ -34,11 +35,11 @@ find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
 
 # C++
-add_executable(astar src/astar.cpp)
-ament_target_dependencies(astar rclcpp sensor_msgs autonav_msgs nav_msgs cv_bridge image_transport scr)
+add_executable(astarfast src/astar.cpp)
+ament_target_dependencies(astarfast rclcpp sensor_msgs autonav_msgs nav_msgs cv_bridge image_transport scr)
 
 install(TARGETS
-  astar
+astarfast
   DESTINATION lib/${PROJECT_NAME}
 )
 

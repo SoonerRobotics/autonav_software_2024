@@ -47,6 +47,15 @@ struct GraphNode {
     }
 };
 
+struct AStarConfig {
+    double waypointPopDistance;
+    double waypointDirection;
+    bool useOnlyWaypoints;
+    double waypointDelay;
+
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(AStarConfig, waypointPopDistance, waypointDirection, useOnlyWaypoints, waypointDelay)
+};
+
 
 class AStarNode : public SCR::Node {
 public:
@@ -55,8 +64,8 @@ public:
 
     void init() override;
     void system_state_transition(scr_msgs::msg::SystemState old, scr_msgs::msg::SystemState updated) override;
-    void config_updated(json config) override;
-    json get_default_config() override;
+    void config_updated(nlohmann::json newConfig) override;
+    nlohmann::json get_default_config() override;
 private:
     // === ros things ===
     // subcribers
@@ -165,6 +174,8 @@ private:
     double SMELLY_DEPTH_COST = 2.2; //FIXME this is from last year
     double LATITUDE_LENGTH = 111086.2;
     double LONGITUDE_LENGTH = 81978.2;
+
+    AStarConfig config;
 
     // === /a* things ===
 };

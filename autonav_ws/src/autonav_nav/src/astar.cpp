@@ -94,13 +94,22 @@ void AStarNode::OnReset() {
 }
 
 // config update callback
-void AStarNode::config_updated(json config) {
-    //TODO
+//TODO we don't actually use any of the config so fix
+void AStarNode::config_updated(nlohmann::json newConfig) {
+    this->config = newConfig.template get<AStarConfig>();
 }
 
 // return default config for initializing the display.html data
-json AStarNode::get_default_config() {
-    //TODO write
+//TODO document and fix this is awful why do we have these do we even want these
+nlohmann::json AStarNode::get_default_config() {
+    AStarConfig defaultConfig;
+
+    defaultConfig.waypointPopDistance = 1.1;
+    defaultConfig.waypointDirection = 0;
+    defaultConfig.useOnlyWaypoints = false;
+    defaultConfig.waypointDelay = 17.5;
+
+    return defaultConfig;
 }
 
 
@@ -348,8 +357,8 @@ nav_msgs::msg::Path AStarNode::ToPath(std::vector<GraphNode> nodes) {
     nav_msgs::msg::Path pathMsg;
     pathMsg.header = std_msgs::msg::Header(); //TODO add actual header data or something
 
-    //TODO initialize this with a good default size
-    pathMsg.poses = std::vector<geometry_msgs::msg::PoseStamped>(); // wait this is a vector that's so sick
+    // default size of 100 ought to be sufficient for a 100x100 grid (rarely do we do more than go straight)
+    pathMsg.poses = std::vector<geometry_msgs::msg::PoseStamped>(100); // wait this is a vector that's so sick
 
     for (GraphNode node : nodes) {
         // and PoseStamped is just Header header, Pose pose
