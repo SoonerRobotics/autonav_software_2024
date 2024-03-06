@@ -561,14 +561,14 @@ $(document).ready(function () {
         }
 
         if (topic == "/autonav/camera/compressed/left") {
-            console.log("Updating left: " + topic);
+            // Set to 
             const imgElement = document.getElementById("target_raw_camera_left");
             imgElement.src = `data:image/jpeg;base64,${msg.data}`;
             return;
         }
 
         if (topic == "/autonav/camera/compressed/right") {
-            console.log("Updating right: " + topic);
+            // Set to 
             const imgElement = document.getElementById("target_raw_camera_right");
             imgElement.src = `data:image/jpeg;base64,${msg.data}`;
             return;
@@ -582,6 +582,12 @@ $(document).ready(function () {
 
         if (topic == "/autonav/cfg_space/raw/image/right") {
             const imgElement = document.getElementById("target_filtered_camera_right");
+            imgElement.src = `data:image/jpeg;base64,${msg.data}`;
+            return;
+        }
+
+        if (topic == "/autonav/cfg_space/raw") {
+            const imgElement = document.getElementById("target_camera_raw");
             imgElement.src = `data:image/jpeg;base64,${msg.data}`;
             return;
         }

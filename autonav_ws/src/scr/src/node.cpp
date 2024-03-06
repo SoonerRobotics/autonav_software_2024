@@ -253,9 +253,27 @@ namespace SCR
         executor.spin();
 
         // Shutdown
+        executor.remove_node(node);
+
+        rclcpp::shutdown();
+    }
+
+    void Node::run_nodes(std::vector<std::shared_ptr<Node>> nodes)
+    {
+        rclcpp::executors::MultiThreadedExecutor executor;
+        for (auto node : nodes)
+        {
+            executor.add_node(node);
+        }
+
+        executor.spin();
+
         for (auto node : nodes)
         {
             executor.remove_node(node);
         }
+
+        rclcpp::shutdown();
     }
+
 }
