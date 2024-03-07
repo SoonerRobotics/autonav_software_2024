@@ -25,16 +25,8 @@ struct Circle
 class ExpandifyNode : public SCR::Node
 {
 public:
-    ExpandifyNode(std::string direction) : SCR::Node("autonav_vision_expandifier") 
-    {
-        this->direction = direction;
-    }
+    ExpandifyNode() : SCR::Node("autonav_vision_expandifier") {}
     ~ExpandifyNode() {}
-
-    std::string directionify(std::string topic)
-    {
-        return topic + "/" + direction;
-    }
 
     void init() override
     {
@@ -62,9 +54,9 @@ public:
             }
         }
 
-        raw_map_subscriber = create_subscription<nav_msgs::msg::OccupancyGrid>(directionify("/autonav/cfg_space/raw"), 20, std::bind(&ExpandifyNode::onConfigSpaceReceived, this, std::placeholders::_1));
-        expanded_map_publisher = create_publisher<nav_msgs::msg::OccupancyGrid>(directionify("/autonav/cfg_space/expanded"), 20);
-        debug_publisher = create_publisher<sensor_msgs::msg::CompressedImage>(directionify("/autonav/cfg_space/expanded/image"), 20);
+        raw_map_subscriber = create_subscription<nav_msgs::msg::OccupancyGrid>("/autonav/cfg_space/raw", 20, std::bind(&ExpandifyNode::onConfigSpaceReceived, this, std::placeholders::_1));
+        expanded_map_publisher = create_publisher<nav_msgs::msg::OccupancyGrid>("/autonav/cfg_space/expanded", 20);
+        debug_publisher = create_publisher<sensor_msgs::msg::CompressedImage>("/autonav/cfg_space/expanded/image", 20);
 
         set_device_state(SCR::DeviceState::OPERATING);
     }
@@ -158,7 +150,6 @@ private:
     rclcpp::Publisher<sensor_msgs::msg::CompressedImage>::SharedPtr debug_publisher;
 
     nav_msgs::msg::MapMetaData map;
-    std::string direction;
 
     float maxRange = 0.65;
     float noGoPercent = 0.70;
@@ -170,10 +161,7 @@ private:
 int main(int argc, char *argv[])
 {
     rclcpp::init(argc, argv);
-    auto left_node = std::make_shared<ExpandifyNode>("left");
-    auto right_node = std::make_shared<ExpandifyNode>("right");
-    auto nodes = std::vector<std::shared_ptr<SCR::Node>>{left_node, right_node};
-    SCR::Node::run_node(nodes);
+    SCR::Node::run_node(std::make_shared<ExpandifyNode>());
     rclcpp::shutdown();
     return 0;
 }
