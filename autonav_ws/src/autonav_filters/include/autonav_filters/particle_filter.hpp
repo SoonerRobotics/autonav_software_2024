@@ -7,6 +7,7 @@
 #include <chrono>
 #include <time.h>
 #include <iomanip>
+#include <numeric>
 
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -47,6 +48,9 @@ class ParticleFilter {
         ParticleFilter(double latitudeLength, double longitudeLength) {
             this->latitudeLength = latitudeLength;
             this->longitudeLength = longitudeLength;
+            std::random_device rd;
+            std::mt19937 generator(rd());
+            this->generator = generator;
         };
 
         void init_particles() {
@@ -160,7 +164,7 @@ class ParticleFilter {
                 weights.push_back(this->particles[i].weight);
                 printf("weight: %f\n", weights[i]);
             }
-            double weights_sum = std::accumulate(weights.begin(), weights.end(), 0);
+            double weights_sum = std::accumulate(weights.begin(), weights.end(), 0.0);
             printf("weight sum: %f\n", weights_sum);
             if (weights_sum < 0.0001) {
                 weights_sum = 0.0001;
@@ -198,14 +202,15 @@ class ParticleFilter {
                 double x = p.x + random_x * cos(p.theta) + random_y * sin(p.theta);
                 double y = p.y + random_x * sin(p.theta) + random_y * cos(p.theta);
 
-                printf("x, y: %f, %f\n", x, y);
+                printf("x, y, theta: %f, %f, %f\n", x, y, p.theta);
 
                 std::normal_distribution<> normal_distribution_theta{p.theta, this->odom_noise[2]};
                 double theta = normal_distribution_theta(generator);
+                printf("theta: %f\n", theta);
                 this->particles.push_back(Particle(x, y, theta, p.weight));
             }
             for (int i = 0; i < int(std::size(this->particles)); i++) {
-                printf("new particles after resample: %f, %f, %f, %f\n", new_particles[i].x, new_particles[i].y, new_particles[i].theta, new_particles[i].weight);
+                printf("new particles after resample: %f, %f, %f, %f\n", this->particles[i].x, this->particles[i].y, this->particles[i].theta, this->particles[i].weight);
             }
         }
 
@@ -251,7 +256,8 @@ class ParticleFilter {
         #pragma endregion Getters
 
     private:
-        static const int num_particles = 10;
+        std::mt19937 generator;
+        static const int num_particles = 1;
         double gps_noise[1] = {0.45};
         double odom_noise[3] = {0.05, 0.05, 0.01};
         std::vector<Particle> particles;
@@ -261,8 +267,6 @@ class ParticleFilter {
         autonav_msgs::msg::GPSFeedback first_gps;
 
         // random generator for distributions
-        std::random_device rd;
-        std::mt19937 generator;
         std::normal_distribution<> normal_distribution{0, 1};
 
         double pymod(double n, double M) {
