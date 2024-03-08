@@ -6,7 +6,7 @@
 
 int main(int argc, char *argv[]) {
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<AStarNode>());
+    SCR::Node::run_node(std::make_shared<AStarNode>());
     rclcpp::shutdown();
     return 0;
 }
@@ -23,7 +23,7 @@ void AStarNode::init() {
 
     // === subscribers ===
     // filtered subscriber
-    expandedSubscriber = this->create_subscription<nav_msgs::msg::OccupancyGrid>("/autonav/cfg_space/expanded/", 20, std::bind(&AStarNode::onConfigSpaceReceived, this, std::placeholders::_1));
+    expandedSubscriber = this->create_subscription<nav_msgs::msg::OccupancyGrid>("/autonav/cfg_space/expanded", 20, std::bind(&AStarNode::onConfigSpaceReceived, this, std::placeholders::_1));
     
     // localization data subscribers
     poseSubscriber = this->create_subscription<geometry_msgs::msg::Pose>("/autonav/position", 20, std::bind(&AStarNode::onPoseReceived, this, std::placeholders::_1));
