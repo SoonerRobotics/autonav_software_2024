@@ -9,6 +9,8 @@
 #include <unordered_map>
 #include <filesystem>
 
+#include <bits/stdc++.h>
+
 
 struct GPSPoint {
     double lat;
@@ -35,7 +37,7 @@ void init() {
 
     // === read waypoints from file ===
     waypointsFile.open(WAYPOINTS_FILENAME);
-    double numWaypoints = 0;
+    int numWaypoints = 0;
     bool firstLine = false;
 
     // loop through the lines in the file
@@ -47,6 +49,16 @@ void init() {
                 firstLine = true;
                 continue;
             }
+
+            std::vector<std::string> tokens;
+            std::stringstream strstream(line);
+            std::string intermediate;
+            while(getline(strstream, intermediate, ',')) {
+                tokens.push_back(intermediate);
+            }
+            auto latString = tokens[1];
+            auto lonString = tokens[2];
+
             // label, latitude, longitude = line.split(",")
             // format is like label,lat,lon, right?
             // so label is [0:first comma]
@@ -61,15 +73,18 @@ void init() {
             auto secondCommaIndex = line.substr(firstCommaIndex+1, line.length()).find(",");
             auto thirdCommaIndex = line.substr(secondCommaIndex+2, line.length()).find(","); // do we even need this?
           
-            auto latString = line.substr(firstCommaIndex+1, secondCommaIndex);
-            auto lonString = line.substr(secondCommaIndex+1, thirdCommaIndex);
+            // auto latString = line.substr(firstCommaIndex+1, secondCommaIndex);
+            // auto lonString = line.substr(secondCommaIndex+1, thirdCommaIndex);
           
             std::cout << "LAT: " + latString << std::endl;
             std::cout << "LON: " + lonString << std::endl;
             std::cout << std::endl;
            
-            // double lat = std::stod(latString); //https://cplusplus.com/reference/string/stod/
-            // double lon = std::stod(lonString);
+            double lat = std::stod(latString); //https://cplusplus.com/reference/string/stod/
+            double lon = std::stod(lonString);
+            GPSPoint point;
+            point.lat = lat;
+            point.lon = lon;
             numWaypoints++;
 
             // if the vector doesn't exist yet in the dictionary, make it
@@ -80,7 +95,7 @@ void init() {
             // waypoints are stored like {"north":[(lat, lon), (lat, lon)]}
             // with lat, lon in sequential order
             // waypointsDict[label].push_back({lat, lon});
-            // waypointsDict[label].push_back(GPSPoint(lat, lon));
+            waypointsDict[label].push_back(point);
         }
     }
     std::cout << "NUM WAYPOINTS: " + std::to_string(numWaypoints) << std::endl;
