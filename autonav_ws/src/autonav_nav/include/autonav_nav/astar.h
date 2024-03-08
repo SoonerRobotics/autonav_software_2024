@@ -10,6 +10,9 @@
 #include <fstream>
 #include <unordered_map>
 
+#include <filesystem>
+
+
 #include "scr/node.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include "nav_msgs/msg/map_meta_data.hpp"
@@ -47,6 +50,11 @@ struct GraphNode {
     }
 };
 
+struct GPSPoint {
+    double lat;
+    double lon;
+};
+
 struct AStarConfig {
     double waypointPopDistance;
     double waypointDirection;
@@ -75,7 +83,7 @@ private:
 
     // message containers
     geometry_msgs::msg::Pose position;
-    std::vector<double> gps_position; // for smellification algorithm
+    GPSPoint gps_position; // for smellification algorithm
     autonav_msgs::msg::IMUData imu;
     nav_msgs::msg::OccupancyGrid grid;
 
@@ -128,13 +136,14 @@ private:
     GraphNode Smellification();
 
     // get us our waypoints
-    std::vector<std::vector<double>> GetWaypoints();
+    std::vector<GPSPoint> GetWaypoints();
 
     // return a safety lights message from RGB arguments
     autonav_msgs::msg::SafetyLights GetSafetyLightsMsg(int red, int green, int blue);
 
     // get distance between two GPS points (using custom in-house formula that I don't know what it does)
     double GpsDistanceFormula(std::vector<double> goal, std::vector<double> currPose);
+    double GpsDistanceFormula(GPSPoint goal, GPSPoint currPose);
 
     // get difference between two angles
     double GetAngleDifference(double angle1, double angle2); //TODO write
@@ -156,13 +165,13 @@ private:
     GraphNode start_node; //TODO initialize this one with wherever the heck we're starting at
 
     // filename for the waypoints (should be CSV file with label,lat,lon)
-    const std::string WAYPOINTS_FILENAME = "waypoints.csv";
+    const std::string WAYPOINTS_FILENAME = "./data/waypoints.csv";
     std::ifstream waypointsFile;
-    std::unordered_map<std::string, std::vector<std::vector<double>>> waypointsDict; // dictionairy of a list of double tuples
+    std::unordered_map<std::string, std::vector<GPSPoint>> waypointsDict; // dictionairy of a list of double tuples
 
     // smelly bits
     std::vector<GraphNode> smellyFrontier; // store our frontier for breadth-first searching for a goal node
-    std::vector<std::vector<double>> waypoints; // gps waypoints we PID to //TODO this needs to be how it is and the other thing needs to be renamed
+    std::vector<GPSPoint> waypoints; // gps waypoints we PID to //TODO this needs to be how it is and the other thing needs to be renamed
     double waypointTime = -1; // time we hit a waypoint or something
     double resetWhen = -1; // when to reset safety lights color
     double WAYPOINT_POP_DISTANCE = 1.1; //FIXME tune this is from last year

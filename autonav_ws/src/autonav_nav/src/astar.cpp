@@ -14,6 +14,7 @@ int main(int argc, char *argv[]) {
 
 // main initilization method (because we don't really have a constructor for reasons)
 void AStarNode::init() {
+    RCLCPP_WARN(this->get_logger(), "INITIALIZATION STARTED");
     //TODO std::vector<std::vector<GraphNode>> map;
     //TODO make the file reading code so we can a list of waypoints and stuff
 
@@ -28,33 +29,66 @@ void AStarNode::init() {
     // localization data subscribers
     poseSubscriber = this->create_subscription<geometry_msgs::msg::Pose>("/autonav/position", 20, std::bind(&AStarNode::onPoseReceived, this, std::placeholders::_1));
     imuSubscriber = this->create_subscription<autonav_msgs::msg::IMUData>("/autonav/imu", 20, std::bind(&AStarNode::onImuReceived, this, std::placeholders::_1));
-    // raw_map_subscriber = create_subscription<nav_msgs::msg::OccupancyGrid>(directionify("/autonav/cfg_space/raw"), 20, std::bind(&ExpandifyNode::onConfigSpaceReceived, this, std::placeholders::_1));
+    RCLCPP_WARN(this->get_logger(), "SUBSCRIBERS DONE");
 
     // === publishers ===
     pathPublisher = this->create_publisher<nav_msgs::msg::Path>("/autonav/path", 20);
     safetyPublisher = this->create_publisher<autonav_msgs::msg::SafetyLights>("/autonav/SafetyLights", 20);
     debugPublisher = this->create_publisher<autonav_msgs::msg::PathingDebug>("/autonav/debug/astar", 20);
     pathDebugImagePublisher = this->create_publisher<sensor_msgs::msg::CompressedImage>("/autonav/debug/astar/image", 20);
+    RCLCPP_WARN(this->get_logger(), "PUBLISHERS DONE");
 
-    // we've set everything up so now we're operating
-    set_device_state(SCR::DeviceState::OPERATING);
+    RCLCPP_WARN(this->get_logger(), "STARTING LISTING ALL FILES");
+    std::string path = ".";
+    for (const auto & entry : std::filesystem::directory_iterator(path)) {
+        RCLCPP_WARN(this->get_logger(), entry.path().string().c_str());
+    }
+    RCLCPP_WARN(this->get_logger(), "ALL FILES LISTED");
 
     // === read waypoints from file ===
     waypointsFile.open(WAYPOINTS_FILENAME);
+    double numWaypoints = 0;
+    bool firstLine = false;
 
     // loop through the lines in the file
     std::string line;
     if (waypointsFile.is_open()) {
+        RCLCPP_WARN(this->get_logger(), "YES FILE IS OPEN");
         while (getline(waypointsFile, line) ) {
+            if (!firstLine) { // first line is the one with the labels, we can skip it
+                firstLine = true;
+                continue;
+            }
             // label, latitude, longitude = line.split(",")
             // format is like label,lat,lon, right?
             // so label is [0:first comma]
             // latitude is [first comma:second to last comma] (because remember there's a trailing comma before the newline)
             // longitude is [second to last comma:end of string-1] (so we don't catch that last comma at the end)
             //TODO rewrite this as it is awful
+            RCLCPP_WARN(this->get_logger(), "LINE:");
+            RCLCPP_WARN(this->get_logger(), line.c_str());
+            // RCLCPP_WARN(this->get_logger(), "LABEL:");
             std::string label = line.substr(0, line.find(",")); //https://cplusplus.com/reference/string/string/find/
-            double lat = std::stod(line.substr(line.find(","), line.substr(0, line.length()-1).rfind(","))); //https://cplusplus.com/reference/string/stod/
-            double lon = std::stod(line.substr(line.substr(0, line.length()-1).rfind(","), line.length()-1));
+            // RCLCPP_WARN(this->get_logger(), label.c_str());
+            // RCLCPP_WARN(this->get_logger(), "SUBSTRING:");
+            // alright so what if we look for [first comma:second comma] ?
+            auto firstCommaIndex = line.find(",");
+            auto secondCommaIndex = line.substr(firstCommaIndex+1, line.length()).find(",");
+            auto thirdCommaIndex = line.substr(secondCommaIndex+2, line.length()).find(","); // do we even need this?
+          
+            auto latString = line.substr(firstCommaIndex+1, secondCommaIndex);
+            auto lonString = line.substr(secondCommaIndex+1, thirdCommaIndex);
+            // auto lonString = line.substr(secondCommaIndex+1, line.length()-2);
+          
+            RCLCPP_WARN(this->get_logger(), "LAT:");
+            RCLCPP_WARN(this->get_logger(), latString.c_str());
+            RCLCPP_WARN(this->get_logger(), "LON:");
+            RCLCPP_WARN(this->get_logger(), lonString.c_str());
+            RCLCPP_WARN(this->get_logger(), "\n");
+          
+            // double lat = std::stod(latString); //https://cplusplus.com/reference/string/stod/
+            // double lon = std::stod(lonString);
+            numWaypoints++;
 
             // if the vector doesn't exist yet in the dictionary, make it
             // if (!waypoints[label]) {
@@ -63,19 +97,28 @@ void AStarNode::init() {
 
             // waypoints are stored like {"north":[(lat, lon), (lat, lon)]}
             // with lat, lon in sequential order
-            waypointsDict[label].push_back({lat, lon});
+            // waypointsDict[label].push_back({lat, lon});
+            // waypointsDict[label].push_back(GPSPoint(lat, lon));
         }
     }
+    RCLCPP_WARN(this->get_logger(), "NUM WAYPOINTS: ");
+    RCLCPP_WARN(this->get_logger(), std::to_string(numWaypoints).c_str());
 
     waypointsFile.close();
+    RCLCPP_WARN(this->get_logger(), "WAYPOINTS READ");
     // === /read waypoints ===
 
     // go ahead and initialize our waypointTime
     this->waypointTime = NOW + this->WAYPOINT_DELAY;
+
+    // we've set everything up so now we're operating
+    set_device_state(SCR::DeviceState::OPERATING);
 }
 
 // system state callback function
 void AStarNode::system_state_transition(scr_msgs::msg::SystemState old, scr_msgs::msg::SystemState updated) {
+    RCLCPP_WARN(this->get_logger(), "SYSTEM STATE TRANSITION");
+    
     if (updated.state == SCR::SystemState::AUTONOMOUS && updated.mobility && this->waypoints.size() == 0) {
         // if we just changed to autonomous and we're now allowed to move and we don't have waypoints yet
         this->waypointTime = NOW + this->WAYPOINT_DELAY; // then set the delay for using the waypoints
@@ -87,6 +130,7 @@ void AStarNode::system_state_transition(scr_msgs::msg::SystemState old, scr_msgs
 
 // reset function
 void AStarNode::OnReset() {
+    RCLCPP_WARN(this->get_logger(), "ON RESET");
     this->imu = autonav_msgs::msg::IMUData();
     this->position = geometry_msgs::msg::Pose();
     this->waypoints = std::vector<std::vector<double>>();
@@ -96,12 +140,16 @@ void AStarNode::OnReset() {
 // config update callback
 //TODO we don't actually use any of the config so fix
 void AStarNode::config_updated(nlohmann::json newConfig) {
+    RCLCPP_WARN(this->get_logger(), "ON CONFIG UPDATED");
+
     this->config = newConfig.template get<AStarConfig>();
 }
 
 // return default config for initializing the display.html data
 //TODO document and fix this is awful why do we have these do we even want these
 nlohmann::json AStarNode::get_default_config() {
+    RCLCPP_WARN(this->get_logger(), "GET DEFAULT CONFIG");
+
     AStarConfig defaultConfig;
 
     defaultConfig.waypointPopDistance = 1.1;
@@ -115,6 +163,8 @@ nlohmann::json AStarNode::get_default_config() {
 
 // main callback
 void AStarNode::onConfigSpaceReceived(nav_msgs::msg::OccupancyGrid grid_msg) {
+    RCLCPP_WARN(this->get_logger(), "GOT CONFIG SPACE");
+
     grid = grid_msg;
 
     // perform A* every time we get new data, we don't need to otherwise
@@ -123,6 +173,8 @@ void AStarNode::onConfigSpaceReceived(nav_msgs::msg::OccupancyGrid grid_msg) {
 
 // gps data callback
 void AStarNode::onPoseReceived(geometry_msgs::msg::Pose pos_msg) {
+    RCLCPP_WARN(this->get_logger(), "GOT GPS");
+
     this->position = pos_msg;
 }
 
@@ -134,6 +186,8 @@ void AStarNode::onImuReceived(autonav_msgs::msg::IMUData imu_msg) {
 
 // main function of the A* node but not really
 void AStarNode::DoAStar() {
+    RCLCPP_WARN(this->get_logger(), "STARTING A*");
+
     // find our goal node using smellification algorithm
     GraphNode goal = this->Smellification();
 
@@ -145,6 +199,7 @@ void AStarNode::DoAStar() {
     start.h_cost = DistanceFormula(start, goal);
     start.f_cost = start.g_cost + start.h_cost;
 
+    RCLCPP_WARN(this->get_logger(), "UPDATING THE GRID DATA");
     // update the map with the grid data
     for (int x = 0; x < MAX_X; x++) {
         for (int y = 0; y < MAX_Y; y++) {
@@ -158,8 +213,13 @@ void AStarNode::DoAStar() {
 
     // only publish if we found a path
     if (pathMsg.poses.size() > 0) {
+        RCLCPP_WARN(this->get_logger(), "PUBLISHING PATH");
+
         // publish results
         this->pathPublisher->publish(pathMsg);
+
+        RCLCPP_WARN(this->get_logger(), "PUBLISHING IMAGE");
+
 
         // find the total size of the 2D array
         std::size_t totalsize = 0;
@@ -176,6 +236,7 @@ void AStarNode::DoAStar() {
             }
         }
 
+        RCLCPP_WARN(this->get_logger(), "MAKING DEBUG IMAGE");
         // draw the cost map onto a debug image
         auto image = cv::Mat(MAX_X, MAX_Y, CV_8UC1, data); //TODO define data and double check size
 
@@ -198,7 +259,7 @@ void AStarNode::DoAStar() {
         compressed->header.frame_id = "map";
         compressed->format = "jpeg";
 
-
+        RCLCPP_WARN(this->get_logger(), "PUBLISHING DEBUG IMAGE");
         // publish the A* output as an image
         this->pathDebugImagePublisher->publish(*compressed);
 
@@ -223,6 +284,8 @@ std::vector<GraphNode> AStarNode::Search(GraphNode start, GraphNode goal) {
 
     // while there are still nodes in the open list (frontier)
     while (frontier.size() > 0) {
+        RCLCPP_WARN(this->get_logger(), "STARTING SEARCH");
+
         // sort the list to get the node with the lowest f_cost first
         //TODO priority queue sorted linked list according to Noah
         std::sort(frontier.begin(), frontier.end());
@@ -236,6 +299,8 @@ std::vector<GraphNode> AStarNode::Search(GraphNode start, GraphNode goal) {
 
         // if the curent node is the goal node, then we've reached our goal
         if (currentNode.x == goal.x && currentNode.y == goal.y) {
+            RCLCPP_WARN(this->get_logger(), "FOUND GOAL");
+
             // return the finished path so we can traverse it
             return ReconstructPath(goal);
         }
@@ -243,8 +308,10 @@ std::vector<GraphNode> AStarNode::Search(GraphNode start, GraphNode goal) {
         // otherwise, get all the neighboring nodes
         std::vector<GraphNode> neighbors = GetNeighbors(currentNode);
 
+        RCLCPP_WARN(this->get_logger(), "SEARCHING NEIGHBORS");
         // for each neighbor
         for (GraphNode node : neighbors) {
+
             // if it's been visited (part of the closed list)
             // https://stackoverflow.com/questions/571394/how-to-find-out-if-an-item-is-present-in-a-stdvector
             if (std::find(closed.begin(), closed.end(), node) != closed.begin()) {
@@ -283,6 +350,8 @@ std::vector<GraphNode> AStarNode::Search(GraphNode start, GraphNode goal) {
 
 // helper function to get the neighbors of the current node (excluding diagonals)
 std::vector<GraphNode> AStarNode::GetNeighbors(GraphNode node) {
+    RCLCPP_WARN(this->get_logger(), "GETTING NEIGHBORS");
+
     std::vector<GraphNode> neighbors;
 
     std::vector<std::vector<double>> addresses = {{-1, 0}, {0, -1}, {1, 0}, {0, 1}}; // addresses of the 4 edge-adjacent neighbors
@@ -322,8 +391,12 @@ double AStarNode::DistanceFormula(GraphNode current, GraphNode goal) {
 
 // function to get the path from the goal to the start (traverses the pointers of each GraphNode)
 std::vector<GraphNode> AStarNode::ReconstructPath(GraphNode goal) {
+    RCLCPP_WARN(this->get_logger(), "RECONSTRUCTING PATH");
+
     std::vector<GraphNode> path = {goal}; // the path starts at the goal node
     GraphNode current = goal; // and so we start at the goal node
+
+    RCLCPP_WARN(this->get_logger(), "RECONSTRUCT INITIALIZED");
 
     // while we haven't reached the start
     while (current.parent != &start_node) {
@@ -332,10 +405,14 @@ std::vector<GraphNode> AStarNode::ReconstructPath(GraphNode goal) {
 
         // then move to the parent
         current = *current.parent;
+        RCLCPP_WARN(this->get_logger(), "TRAVERSING...");
     }
 
+    RCLCPP_WARN(this->get_logger(), "REVERSING...");
     // reverse the path (so that it's start to finish instead of finish to start)
     std::reverse(path.begin(), path.end()); //https://stackoverflow.com/questions/8877448/how-do-i-reverse-a-c-vector
+
+    RCLCPP_WARN(this->get_logger(), "GOT PATH");
 
     return path;
 }
@@ -343,6 +420,8 @@ std::vector<GraphNode> AStarNode::ReconstructPath(GraphNode goal) {
 
 // update a node with new information
 void AStarNode::UpdateNode(GraphNode node, double g_cost, double h_cost, GraphNode current) {
+    RCLCPP_WARN(this->get_logger(), "UPDATING NODE");
+
     // pretty standard stuff
     node.g_cost = g_cost;
     node.h_cost = h_cost;
@@ -354,6 +433,8 @@ void AStarNode::UpdateNode(GraphNode node, double g_cost, double h_cost, GraphNo
 
 // convert a list of nodes to a ROS Path message
 nav_msgs::msg::Path AStarNode::ToPath(std::vector<GraphNode> nodes) {
+    RCLCPP_WARN(this->get_logger(), "CONVERTING TO PATH MSG");
+
     nav_msgs::msg::Path pathMsg;
     pathMsg.header = std_msgs::msg::Header(); //TODO add actual header data or something
 
@@ -388,12 +469,16 @@ nav_msgs::msg::Path AStarNode::ToPath(std::vector<GraphNode> nodes) {
         pathMsg.poses.push_back(poseStamped);
     }
 
+    RCLCPP_WARN(this->get_logger(), "MADE PATH MSG");
+
     return pathMsg;
 }
 
 // ======================================
 // get a safety lights message from parameters
 autonav_msgs::msg::SafetyLights AStarNode::GetSafetyLightsMsg(int red, int green, int blue) {
+    RCLCPP_WARN(this->get_logger(), "TRANSLATING TO SAFETY MSG");
+
     autonav_msgs::msg::SafetyLights msg;
 
     // FIXME default config values used here, but at some point we might want to be able to change them
@@ -412,6 +497,8 @@ autonav_msgs::msg::SafetyLights AStarNode::GetSafetyLightsMsg(int red, int green
 
 // get the waypoints vector list thingy from the waypoints dictionary that stores all the waypoints we read from the file
 std::vector<std::vector<double>> AStarNode::GetWaypoints() {
+    RCLCPP_WARN(this->get_logger(), "GETTING WAYPOINTS VECTOR");
+
     /**
     var yaw = atan2(2.0*(q.y*q.z + q.w*q.x), q.w*q.w - q.x*q.x - q.y*q.y + q.z*q.z);
     https://stackoverflow.com/questions/5782658/extracting-yaw-from-a-quaternion answer #2
@@ -426,20 +513,33 @@ std::vector<std::vector<double>> AStarNode::GetWaypoints() {
     // if we're mostly facing towards 180 degrees, then it's probably North
     if (120 < heading_degrees && heading_degrees < 240) {
         north = true;
+        RCLCPP_WARN(this->get_logger(), "NORTH");
     } else {
         north = false;
+        RCLCPP_WARN(this->get_logger(), "SOUTH");
     }
 
+    RCLCPP_WARN(this->get_logger(), "System mode: ");
+    RCLCPP_WARN(this->get_logger(), std::to_string(this->system_mode).c_str());
 
     if (this->system_mode == SCR::SystemMode::SIMULATION) {
         // return simulation waypoints if we're in simulation
+        RCLCPP_WARN(this->get_logger(), "WAYPOINTS SIZE:");
+        RCLCPP_WARN(this->get_logger(), std::to_string(this->waypointsDict["simulation1"].size()).c_str());
+
         return this->waypointsDict["simulation1"];
     } else if (this->system_mode == SCR::SystemMode::COMPETITION) {
         // otherwise, if we're at competition, and we're facing north
         if (north) {
+            RCLCPP_WARN(this->get_logger(), "WAYPOINTS SIZE:");
+            RCLCPP_WARN(this->get_logger(), std::to_string(this->waypointsDict["compNorth"].size()).c_str());
+
             // return the waypoints list for north
             return this->waypointsDict["compNorth"];
         } else {
+            RCLCPP_WARN(this->get_logger(), "WAYPOINTS SIZE:");
+            RCLCPP_WARN(this->get_logger(), std::to_string(this->waypointsDict["compSouth"].size()).c_str());
+
             // otherwise south
             return this->waypointsDict["compSouth"];
         }
@@ -470,6 +570,8 @@ double AStarNode::GetAngleDifference(double angle1, double angle2) {
 
 // smelly algorithm (bias towards center, away from obstacles, away from lanes, towards goal heading) to identify a goal node
 GraphNode AStarNode::Smellification() {
+    RCLCPP_WARN(this->get_logger(), "PERFORMING SMELLIFICATION");
+
     smellyFrontier = frontier; //FIXME I don't think copying over the frontier is right
     int depth = 0; // how deep we've searched so far
     
@@ -486,6 +588,8 @@ GraphNode AStarNode::Smellification() {
 
     // if we don't have waypoints and it's time to use them
     if (this->waypoints.size() == 0  &&  timeNow > waypointTime  &&  waypointTime != 0) {
+        RCLCPP_WARN(this->get_logger(), "TIME USE WAYPOINTS");
+
         // then assign waypoints and start moving
         this->waypoints = this->GetWaypoints();
         this->waypointTime = 0;
@@ -507,6 +611,8 @@ GraphNode AStarNode::Smellification() {
 
     // if we do, however, have waypoints
     if (waypoints.size() > 0) {
+        RCLCPP_WARN(this->get_logger(), "SMELLING THE WAYPOINTS");
+
         //FIXME this code is just straight copied pasted from the Python file
         auto next_waypoint = this->waypoints[0];
         auto north_to_gps = (next_waypoint[0] - this->gps_position[0]) * this->LATITUDE_LENGTH;
@@ -544,7 +650,7 @@ GraphNode AStarNode::Smellification() {
     //=======================================================
 
 
-
+    RCLCPP_WARN(this->get_logger(), "ACTUAL SMELLY BITS");
     // smellification idk
     // while we haven't hit the max depth and still have nodes to explore
     while (depth < MAX_DEPTH && smellyFrontier.size() > 0) {
