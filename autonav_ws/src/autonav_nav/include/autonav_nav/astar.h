@@ -48,6 +48,10 @@ struct GraphNode {
     bool operator == (const GraphNode& other) const {
         return (x == other.x && y == other.y);
     }
+
+    std::string to_string() const {
+        return "(" + std::to_string(x) + ", " + std::to_string(y) + ")";
+    }
 };
 
 struct GPSPoint {
@@ -115,7 +119,7 @@ private:
     std::vector<GraphNode> Search(GraphNode start, GraphNode goal);
 
     // helper function to get the minecraft crafting table neighbors
-    std::vector<GraphNode> GetNeighbors(GraphNode node);
+    std::vector<GraphNode> GetNeighbors(GraphNode node, bool canGoBackwards = true);
 
     // traverse the nodes backwards to the start and return that
     std::vector<GraphNode> ReconstructPath(GraphNode goal);
@@ -142,7 +146,6 @@ private:
     autonav_msgs::msg::SafetyLights GetSafetyLightsMsg(int red, int green, int blue);
 
     // get distance between two GPS points (using custom in-house formula that I don't know what it does)
-    double GpsDistanceFormula(std::vector<double> goal, std::vector<double> currPose);
     double GpsDistanceFormula(GPSPoint goal, GPSPoint currPose);
 
     // get difference between two angles
@@ -160,8 +163,8 @@ private:
     std::vector<std::vector<int>> map;
 
     size_t count_;
-    int MAX_X; //TODO assign these values (or figure out how to calculate them automagically)
-    int MAX_Y;
+    int MAX_X = 80; //TODO assign these values (or figure out how to calculate them automagically)
+    int MAX_Y = 80;
     GraphNode start_node; //TODO initialize this one with wherever the heck we're starting at
 
     // filename for the waypoints (should be CSV file with label,lat,lon)
@@ -171,6 +174,7 @@ private:
 
     // smelly bits
     std::vector<GraphNode> smellyFrontier; // store our frontier for breadth-first searching for a goal node
+    std::vector<GraphNode> smellyExplored; // store our explored for breadth-first searching for a goal node
     std::vector<GPSPoint> waypoints; // gps waypoints we PID to //TODO this needs to be how it is and the other thing needs to be renamed
     double waypointTime = -1; // time we hit a waypoint or something
     double resetWhen = -1; // when to reset safety lights color

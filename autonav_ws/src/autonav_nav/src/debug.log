@@ -1,28 +1,47 @@
+previous:
 SYSTEM STATE TRANSITION
 GOT CONFIG SPACE
 STARTING A*
+START NODE: (0, 0)
+UPDATING THE GRID DATA
 PERFORMING SMELLIFICATION
 TIME USE WAYPOINTS
 GETTING WAYPOINTS VECTOR
 SOUTH
+System mode:
+0
+WAYPOINTS SIZE:
+6
+SMELLING THE WAYPOINTS
 ACTUAL SMELLY BITS
-UPDATING THE GRID DATA
+FRONTIER SIZE:
+1
+SMELLY FRONTIER SIZE:
+1
+SMELLIFICATION DEPTH:
+0
+SMELLING NODE: (0, 0)
+NODES:
+GETTING NEIGBORS OF: (0, 0)
+LOOPING THROUGH NEIGHBOR ADDRESSES
+(X, Y) => (-1, 0)
+LOOPING THROUGH NEIGHBOR ADDRESSES
+(X, Y) => (1, 0)
+LOOPING THROUGH NEIGHBOR ADDRESSES
+(X, Y) => (0, 1)
+NUM NEIGHBORS:
+0
+NUM SMELLY ITERATIONS:
+1
 STARTING SEARCH
 FOUND GOAL
 RECONSTRUCTING PATH
 RECONSTRUCT INITIALIZED
 
-system_state_transition
-onConfigSpaceReceived
-DoAStar (line 1, starting)
-Smellification (starting smellification)
-this->GetWaypoints()
-GetWaypoints
-SOUTH
-IMPORTANT: no SMELLING THE WAYPOINTS, so !(waypoints.size() > 0)
-then the breadth-first search (where we dont actually append more points)
-then back to DoAStar, and we update the grid data fine
-then we go to Search()
-then immediately hit FOUND GOAL, despite certainly not finding the goal? hmm...
-then we head to ReconstructPath
-then we error somewhere between that line and TRAVERSING, because we never actually get the TRAVERSING message
+current:
+GOT CONFIG SPACE
+STARTING A*
+START NODE: (40, 80)
+UPDATING THE GRID DATA
+GRID SIZE: 6400
+(0, 0)

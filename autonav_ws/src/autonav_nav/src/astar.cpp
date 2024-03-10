@@ -3,6 +3,7 @@
 #define PI 3.1415926535897932384626433
 
 #define NOW std::chrono::duration<double>(std::chrono::system_clock::now().time_since_epoch()).count()
+#define PRINT_NODE(msg_, node_) RCLCPP_WARN(this->get_logger(), (std::string(msg_) + node_.to_string()).c_str());
 
 int main(int argc, char *argv[]) {
     rclcpp::init(argc, argv);
@@ -15,12 +16,20 @@ int main(int argc, char *argv[]) {
 // main initilization method (because we don't really have a constructor for reasons)
 void AStarNode::init() {
     RCLCPP_WARN(this->get_logger(), "INITIALIZATION STARTED");
-    //TODO std::vector<std::vector<GraphNode>> map;
-    //TODO make the file reading code so we can a list of waypoints and stuff
 
+    // initialize our arrays
+    frontier = std::vector<GraphNode>();
+    closed = std::vector<GraphNode>();
+    map = std::vector<std::vector<int>>();
+    
     // reserve space so we avoid constantly allocating and reallocating space
     frontier.reserve(100);
     closed.reserve(100);
+
+    map.reserve(100);
+    for (auto vec : map) {
+        vec.reserve(100);
+    }
 
     // === subscribers ===
     // filtered subscriber
@@ -38,16 +47,9 @@ void AStarNode::init() {
     pathDebugImagePublisher = this->create_publisher<sensor_msgs::msg::CompressedImage>("/autonav/debug/astar/image", 20);
     RCLCPP_WARN(this->get_logger(), "PUBLISHERS DONE");
 
-    RCLCPP_WARN(this->get_logger(), "STARTING LISTING ALL FILES");
-    std::string path = ".";
-    for (const auto & entry : std::filesystem::directory_iterator(path)) {
-        RCLCPP_WARN(this->get_logger(), entry.path().string().c_str());
-    }
-    RCLCPP_WARN(this->get_logger(), "ALL FILES LISTED");
-
     // === read waypoints from file ===
     waypointsFile.open(WAYPOINTS_FILENAME);
-    double numWaypoints = 0;
+    int numWaypoints = 0;
     bool firstLine = false;
 
     // loop through the lines in the file
@@ -55,50 +57,26 @@ void AStarNode::init() {
     if (waypointsFile.is_open()) {
         RCLCPP_WARN(this->get_logger(), "YES FILE IS OPEN");
         while (getline(waypointsFile, line) ) {
-            if (!firstLine) { // first line is the one with the labels, we can skip it
+            if (!firstLine) { // first line is the one with the labels, we need to skip it
                 firstLine = true;
                 continue;
             }
-            // label, latitude, longitude = line.split(",")
-            // format is like label,lat,lon, right?
-            // so label is [0:first comma]
-            // latitude is [first comma:second to last comma] (because remember there's a trailing comma before the newline)
-            // longitude is [second to last comma:end of string-1] (so we don't catch that last comma at the end)
-            //TODO rewrite this as it is awful
-            RCLCPP_WARN(this->get_logger(), "LINE:");
-            RCLCPP_WARN(this->get_logger(), line.c_str());
-            // RCLCPP_WARN(this->get_logger(), "LABEL:");
-            std::string label = line.substr(0, line.find(",")); //https://cplusplus.com/reference/string/string/find/
-            // RCLCPP_WARN(this->get_logger(), label.c_str());
-            // RCLCPP_WARN(this->get_logger(), "SUBSTRING:");
-            // alright so what if we look for [first comma:second comma] ?
-            auto firstCommaIndex = line.find(",");
-            auto secondCommaIndex = line.substr(firstCommaIndex+1, line.length()).find(",");
-            auto thirdCommaIndex = line.substr(secondCommaIndex+2, line.length()).find(","); // do we even need this?
-          
-            auto latString = line.substr(firstCommaIndex+1, secondCommaIndex);
-            auto lonString = line.substr(secondCommaIndex+1, thirdCommaIndex);
-            // auto lonString = line.substr(secondCommaIndex+1, line.length()-2);
-          
-            RCLCPP_WARN(this->get_logger(), "LAT:");
-            RCLCPP_WARN(this->get_logger(), latString.c_str());
-            RCLCPP_WARN(this->get_logger(), "LON:");
-            RCLCPP_WARN(this->get_logger(), lonString.c_str());
-            RCLCPP_WARN(this->get_logger(), "\n");
-          
-            // double lat = std::stod(latString); //https://cplusplus.com/reference/string/stod/
-            // double lon = std::stod(lonString);
+
+            // https://www.geeksforgeeks.org/tokenizing-a-string-cpp/
+            std::vector<std::string> tokens;
+            std::stringstream strstream(line);
+            std::string intermediate;
+            while(getline(strstream, intermediate, ',')) {
+                tokens.push_back(intermediate);
+            }
+
+            GPSPoint point;
+            point.lat = std::stod(tokens[1]); //https://cplusplus.com/reference/string/stod/
+            point.lon = std::stod(tokens[2]);
+
+            // waypoints are stored like {"north":[GPSPoint, GPSPoint]}
+            waypointsDict[tokens[0]].push_back(point);
             numWaypoints++;
-
-            // if the vector doesn't exist yet in the dictionary, make it
-            // if (!waypoints[label]) {
-            //     waypoints[label] = std::vector<std::vector<double>>(5);
-            // }
-
-            // waypoints are stored like {"north":[(lat, lon), (lat, lon)]}
-            // with lat, lon in sequential order
-            // waypointsDict[label].push_back({lat, lon});
-            // waypointsDict[label].push_back(GPSPoint(lat, lon));
         }
     }
     RCLCPP_WARN(this->get_logger(), "NUM WAYPOINTS: ");
@@ -133,7 +111,7 @@ void AStarNode::OnReset() {
     RCLCPP_WARN(this->get_logger(), "ON RESET");
     this->imu = autonav_msgs::msg::IMUData();
     this->position = geometry_msgs::msg::Pose();
-    this->waypoints = std::vector<std::vector<double>>();
+    this->waypoints = std::vector<GPSPoint>();
     this->waypointTime = NOW + this->WAYPOINT_DELAY;
 }
 
@@ -188,25 +166,36 @@ void AStarNode::onImuReceived(autonav_msgs::msg::IMUData imu_msg) {
 void AStarNode::DoAStar() {
     RCLCPP_WARN(this->get_logger(), "STARTING A*");
 
-    // find our goal node using smellification algorithm
-    GraphNode goal = this->Smellification();
-
     // make the starting node (our initial position on the relative map)
     GraphNode start;
-    start.x = MAX_X/2; // start in the middle
+    start.x = (int)((double)MAX_X/2); // start in the middle
     start.y = MAX_Y; // start at the bottom, because arrays and indexing
     start.g_cost = 0;
-    start.h_cost = DistanceFormula(start, goal);
+    // start.h_cost = DistanceFormula(start, goal);
+    start.h_cost = 0;
     start.f_cost = start.g_cost + start.h_cost;
 
+    PRINT_NODE("START NODE: ", start);
+
     RCLCPP_WARN(this->get_logger(), "UPDATING THE GRID DATA");
+    RCLCPP_WARN(this->get_logger(), (std::string("GRID SIZE: ") + std::to_string(grid.data.size())).c_str());
     // update the map with the grid data
     for (int x = 0; x < MAX_X; x++) {
         for (int y = 0; y < MAX_Y; y++) {
+            RCLCPP_WARN(this->get_logger(), ("(" + std::to_string(x) + ", " + std::to_string(y) + ")").c_str());
+            RCLCPP_WARN(this->get_logger(), ("GRID DATA AT CELL: " + std::to_string(grid.data[y+x])).c_str());
+            RCLCPP_WARN(this->get_logger(), ("MAP DATA AT CELL: " + std::to_string(map[y][x])).c_str());
+
             // grid is a 1D array, map is a 2D array
             map[y][x] = grid.data[y+x];
         }
     }
+
+    // initialize our frontier with our starting position so Smellification actually works
+    frontier.push_back(start);
+
+    // find our goal node using smellification algorithm
+    GraphNode goal = this->Smellification();
 
     // perform A*
     auto pathMsg = AStarNode::ToPath(AStarNode::Search(start, goal));
@@ -349,24 +338,39 @@ std::vector<GraphNode> AStarNode::Search(GraphNode start, GraphNode goal) {
 
 
 // helper function to get the neighbors of the current node (excluding diagonals)
-std::vector<GraphNode> AStarNode::GetNeighbors(GraphNode node) {
-    RCLCPP_WARN(this->get_logger(), "GETTING NEIGHBORS");
+std::vector<GraphNode> AStarNode::GetNeighbors(GraphNode node, bool canGoBackwards) {
+    int maxObstacle = 1;
+
+    PRINT_NODE("GETTING NEIGBORS OF: ", node);
 
     std::vector<GraphNode> neighbors;
 
     std::vector<std::vector<double>> addresses = {{-1, 0}, {0, -1}, {1, 0}, {0, 1}}; // addresses of the 4 edge-adjacent neighbors
+    if (!canGoBackwards) {
+        addresses.erase(addresses.begin() + 1); // remove the 2nd index (ie x+0, y-1) so that we don't check behind us
+        // this is used by the Smellification algorithm to avoid the nonsense that happens in Python
+
+        //FIXME this is for smellification to work but it's bad
+        maxObstacle = 50;
+    }
 
     // loop through all the neighbors
     for(int i = 0; i < (int)addresses.size(); i++) {
         int neighbor_x = node.x + addresses[i][0];
         int neighbor_y = node.y + addresses[i][1];
+        RCLCPP_WARN(this->get_logger(), "LOOPING THROUGH NEIGHBOR ADDRESSES");
+
+        RCLCPP_WARN(this->get_logger(), std::string("(X, Y) => (" + std::to_string(neighbor_x) + ", " + std::to_string(neighbor_y) + ")").c_str());
 
         // check if it's in bounds
         if (0 < neighbor_x && neighbor_x < MAX_X) {
+            RCLCPP_WARN(this->get_logger(), "IN BOUNDS: X");
             if (0 < neighbor_y && neighbor_y < MAX_Y) {
+                RCLCPP_WARN(this->get_logger(), "IN BOUNDS: Y");
 
                 // check if it's traversable (ie not an obstacle, so != 1)
-                if (map[neighbor_x][neighbor_y] == 0) {
+                if (map[neighbor_x][neighbor_y] < maxObstacle) {
+                    RCLCPP_WARN(this->get_logger(), "NOT AN OBSTACLE");
                     // make a new node to represent the neighbor
                     GraphNode node;
                     node.x = neighbor_x;
@@ -496,7 +500,7 @@ autonav_msgs::msg::SafetyLights AStarNode::GetSafetyLightsMsg(int red, int green
 }
 
 // get the waypoints vector list thingy from the waypoints dictionary that stores all the waypoints we read from the file
-std::vector<std::vector<double>> AStarNode::GetWaypoints() {
+std::vector<GPSPoint> AStarNode::GetWaypoints() {
     RCLCPP_WARN(this->get_logger(), "GETTING WAYPOINTS VECTOR");
 
     /**
@@ -549,10 +553,10 @@ std::vector<std::vector<double>> AStarNode::GetWaypoints() {
 }
 
 // get distance from GPS coordinates
-double AStarNode::GpsDistanceFormula(std::vector<double> goal, std::vector<double> currPose) {
+double AStarNode::GpsDistanceFormula(GPSPoint goal, GPSPoint currPose) {
     // calculate lat and lon offsets
-    auto north_to_gps = (goal[0] - currPose[0]) * this->LATITUDE_LENGTH;
-    auto west_to_gps = (currPose[1] - goal[1]) * this->LONGITUDE_LENGTH;
+    auto north_to_gps = (goal.lat - currPose.lat) * this->LATITUDE_LENGTH;
+    auto west_to_gps = (currPose.lon - goal.lon) * this->LONGITUDE_LENGTH;
 
     // square each and add them together
     return (north_to_gps*north_to_gps) + (west_to_gps*west_to_gps);
@@ -573,6 +577,7 @@ GraphNode AStarNode::Smellification() {
     RCLCPP_WARN(this->get_logger(), "PERFORMING SMELLIFICATION");
 
     smellyFrontier = frontier; //FIXME I don't think copying over the frontier is right
+    this->smellyExplored = std::vector<GraphNode>(); // reset the explored vector each time or something idk
     int depth = 0; // how deep we've searched so far
     
     // current and best costs for this search (not for A*)
@@ -615,8 +620,8 @@ GraphNode AStarNode::Smellification() {
 
         //FIXME this code is just straight copied pasted from the Python file
         auto next_waypoint = this->waypoints[0];
-        auto north_to_gps = (next_waypoint[0] - this->gps_position[0]) * this->LATITUDE_LENGTH;
-        auto west_to_gps = (this->gps_position[1] - next_waypoint[1]) * this->LONGITUDE_LENGTH; 
+        auto north_to_gps = (next_waypoint.lat - this->gps_position.lat) * this->LATITUDE_LENGTH;
+        auto west_to_gps = (this->gps_position.lon - next_waypoint.lon) * this->LONGITUDE_LENGTH; 
 
         heading_to_gps = fmod(atan2(west_to_gps, north_to_gps), (2 * PI));
 
@@ -632,15 +637,15 @@ GraphNode AStarNode::Smellification() {
         // debug information
         autonav_msgs::msg::PathingDebug debugMsg;
         debugMsg.desired_heading = heading_to_gps;
-        debugMsg.desired_latitude = next_waypoint[0];
-        debugMsg.desired_longitude = next_waypoint[1];
+        debugMsg.desired_latitude = next_waypoint.lat;
+        debugMsg.desired_longitude = next_waypoint.lon;
         debugMsg.distance_to_destination = GpsDistanceFormula(next_waypoint, this->gps_position);
 
         // convert waypoints ((x, y), (x, y)) to 1d array of (x, y, x, y) for ROS
         auto waypoint1Darr = std::vector<double>(waypoints.size() * 2);
         for (int i = 0, j = 0; i < (int)this->waypoints.size(); i++, j+=2) {
-            waypoint1Darr[j] = this->waypoints[i][0];
-            waypoint1Darr[j+1] = this->waypoints[i][1];
+            waypoint1Darr[j] = this->waypoints[i].lat;
+            waypoint1Darr[j+1] = this->waypoints[i].lon;
         }
         debugMsg.waypoints = waypoint1Darr;
 
@@ -651,12 +656,22 @@ GraphNode AStarNode::Smellification() {
 
 
     RCLCPP_WARN(this->get_logger(), "ACTUAL SMELLY BITS");
+    RCLCPP_WARN(this->get_logger(), "FRONTIER SIZE: ");
+    RCLCPP_WARN(this->get_logger(), std::to_string((int)this->frontier.size()).c_str());
+    RCLCPP_WARN(this->get_logger(), "SMELLY FRONTIER SIZE: ");
+    RCLCPP_WARN(this->get_logger(), std::to_string((int)smellyFrontier.size()).c_str());
+    int iterations = 0;
     // smellification idk
     // while we haven't hit the max depth and still have nodes to explore
     while (depth < MAX_DEPTH && smellyFrontier.size() > 0) {
+        RCLCPP_WARN(this->get_logger(), "SMELLIFICATION DEPTH: ");
+        RCLCPP_WARN(this->get_logger(), std::to_string(depth).c_str());
+
         // we should explore those nodes
         for (int i = 0; i < (int)smellyFrontier.size(); i++) {
             auto node = smellyFrontier[i];
+
+            PRINT_NODE("SMELLING NODE: ", node);
 
             // cost is based on y coordinate and depth (favoring shorter paths)
             cost = (SMELLY_Y - node.y) * SMELLY_Y_COST  +  (depth * SMELLY_DEPTH_COST);
@@ -675,25 +690,38 @@ GraphNode AStarNode::Smellification() {
             }
 
             // remove this node from the frontier because we've explored it
-            frontier.erase(std::find(frontier.begin(), frontier.end(), node));
+            smellyFrontier.erase(std::find(smellyFrontier.begin(), smellyFrontier.end(), node));
             
             // add it to the list of explored so we don't accidentally explore it again
-            // explored.push_back(node);
+            smellyExplored.push_back(node);
+
+            RCLCPP_WARN(this->get_logger(), "NODES:");
 
             //TODO fix this
+            auto neighbors = this->GetNeighbors(node, false); // false so we don't check behind us
 
-            // if y > 1 and grid_data[x + 80 * (y-1)] < 50 and x + 80 * (y-1) not in explored:
-            //     frontier.add((x, y - 1))
+            RCLCPP_WARN(this->get_logger(), "NUM NEIGHBORS:");
+            RCLCPP_WARN(this->get_logger(), std::to_string((int)neighbors.size()).c_str());
 
-            // if x < 79 and grid_data[x + 1 + 80 * y] < 50 and x + 1 + 80 * y not in explored:
-            //     frontier.add((x + 1, y))
-
-            // if x > 0 and grid_data[x - 1 + 80 * y] < 50 and x - 1 + 80 * y not in explored:
-            //     frontier.add((x - 1, y))
+            // for the 3 nodes (to the left, to the right, and in front)
+            for (GraphNode neighbor : neighbors) {
+                //NOTE: this doesn't work
+                RCLCPP_WARN(this->get_logger(), neighbor.to_string().c_str());
+                // check if we've explored it yet, and if we haven't
+                // if neighbor not in explored: frontier.add(node)
+                if (std::find(smellyFrontier.begin(), smellyFrontier.end(), neighbor) == smellyFrontier.end()) {
+                    // add it to the frontier
+                    smellyFrontier.push_back(neighbor);
+                }
+            }
+            iterations++;
         }
 
         depth++;
     }
+
+    RCLCPP_WARN(this->get_logger(), "NUM SMELLY ITERATIONS: ");
+    RCLCPP_WARN(this->get_logger(), std::to_string(iterations).c_str());
 
     return bestPos;
 }
