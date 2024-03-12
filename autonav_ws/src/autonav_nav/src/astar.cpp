@@ -1,6 +1,6 @@
 #include "autonav_nav/astar.h"
 
-#define PI 3.1415926535897932384626433
+#define PI 3.1415926535897932384626433832
 
 #define NOW std::chrono::duration<double>(std::chrono::system_clock::now().time_since_epoch()).count()
 #define PRINT_NODE(msg_, node_) RCLCPP_WARN(this->get_logger(), (std::string(msg_) + node_.to_string()).c_str());
