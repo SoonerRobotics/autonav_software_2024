@@ -76,20 +76,34 @@ h5 > span {
     flex-direction: column;
 }
 
+/* Off */
 span[data-state="0"] {
     color: --var(-text-color);
 }
 
+/* Booting */
 span[data-state="1"] {
-    color: #C21858;
+    color: #FF9800;
 }
 
+/* Standby */
 span[data-state="2"] {
+    color: #FFC107;
+}
+
+/* Ready */
+span[data-state="3"] {
+    color: #4CAF50;
+}
+
+/* Operating */
+span[data-state="4"] {
     color: #57ACDC;
 }
 
-span[data-state="3"] {
-    color: #60C689;
+/* Errored */
+span[data-state="5"] {
+    color: #C21858;
 }
 
 #element_device_states > h5 > span {
