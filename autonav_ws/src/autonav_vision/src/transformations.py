@@ -78,15 +78,14 @@ class ImageTransformer(Node):
         bottom_right = (int)(img.shape[1]), 0
 
         src_pts = np.float32([[top_left], [top_right], [bottom_left], [bottom_right]])
-        dest_pts = np.float32([[0, 480], [640, 480], [0, 0], [640, 0]])
+        dest_pts = np.float32([[0, 640], [480, 640], [0, 0], [480, 0]])
 
         matrix = cv2.getPerspectiveTransform(dest_pts, src_pts)
-        output = cv2.warpPerspective(img, matrix, (640, 480))
+        output = cv2.warpPerspective(img, matrix, (480, 640))
         return output
 
     def publishOccupancyMap(self, img):
-        datamap = cv2.resize(img, dsize=(self.config.map_res, self.config.map_res),
-                             interpolation=cv2.INTER_LINEAR) / 2
+        datamap = cv2.resize(img, dsize=(self.config.map_res, self.config.map_res), interpolation=cv2.INTER_LINEAR) / 2
         flat = list(datamap.flatten().astype(int))
         msg = OccupancyGrid(info=g_mapData, data=flat)
         self.rawMapPublisher.publish(msg)
@@ -109,11 +108,18 @@ class ImageTransformer(Node):
         # Apply region of disinterest and flattening
         height = img.shape[0]
         width = img.shape[1]
-        region_of_disinterest_vertices = [
-            (0, height),
-            (width / 2, height / 2 + self.config.rod_offset),
-            (width, height)
-        ]
+        if self.dir == "left":
+            region_of_disinterest_vertices = [
+                (width, height),
+                (width, height / 2),
+                (0, height)
+            ]
+        else:
+            region_of_disinterest_vertices = [
+                (0, height),
+                (0, height / 2),
+                (width, height)
+            ]
 
         # Apply region of disinterest and flattening
         mask = self.regionOfDisinterest(mask, np.array([region_of_disinterest_vertices], np.int32))

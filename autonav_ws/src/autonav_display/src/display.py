@@ -64,7 +64,7 @@ class BroadcastNode(Node):
 		self.limiter.setLimit("/autonav/camera/compressed/right", 2)
 		self.limiter.setLimit("/autonav/cfg_space/raw/image/left", 5)
 		self.limiter.setLimit("/autonav/cfg_space/raw/image/right", 5)
-		self.limiter.setLimit("/autonav/cfg_space/raw", 5)
+		self.limiter.setLimit("/autonav/cfg_space/raw/debug", 5)
 		self.limiter.setLimit("/autonav/debug/astar/image", 5)
 
 		self.get_logger().info("Broadcasting on ws://{}:{}".format(self.host, self.port))
@@ -93,7 +93,7 @@ class BroadcastNode(Node):
 		self.cameraSubscriberRight = self.create_subscription(CompressedImage, "/autonav/camera/compressed/right", self.cameraCallbackRight, 20)
 		self.filteredSubscriber = self.create_subscription(CompressedImage, "/autonav/cfg_space/raw/image/left", self.filteredCallbackLeft, 20)
 		self.filteredSubscriber = self.create_subscription(CompressedImage, "/autonav/cfg_space/raw/image/right", self.filteredCallbackRight, 20)
-		self.bigboiSubscriber = self.create_subscription(CompressedImage, "/autonav/cfg_space/raw", self.bigboiCallback, 20)
+		self.bigboiSubscriber = self.create_subscription(CompressedImage, "/autonav/cfg_space/raw/debug", self.bigboiCallback, 20)
 		self.debugAStarSubscriber = self.create_subscription(CompressedImage, "/autonav/debug/astar/image", self.debugAStarCallback, 20)
 		
 		self.get_logger().info("Starting event loop")
@@ -398,7 +398,7 @@ class BroadcastNode(Node):
 		}))
 
 	def bigboiCallback(self, msg: CompressedImage):
-		if not self.limiter.use("/autonav/cfg_space/raw"):
+		if not self.limiter.use("/autonav/cfg_space/raw/debug"):
 			return
 
 		byts = msg.data.tobytes()
@@ -406,7 +406,7 @@ class BroadcastNode(Node):
 
 		self.pushSendQueue(json.dumps({
 			"op": "data",
-			"topic": "/autonav/cfg_space/raw",
+			"topic": "/autonav/cfg_space/raw/debug",
 			"format": msg.format,
 			"data": base64_str
 		}))

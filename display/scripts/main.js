@@ -586,7 +586,7 @@ $(document).ready(function () {
             return;
         }
 
-        if (topic == "/autonav/cfg_space/raw") {
+        if (topic == "/autonav/cfg_space/raw/debug") {
             const imgElement = document.getElementById("target_camera_raw");
             imgElement.src = `data:image/jpeg;base64,${msg.data}`;
             return;

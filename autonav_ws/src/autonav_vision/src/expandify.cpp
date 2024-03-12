@@ -95,10 +95,10 @@ public:
             return;
         }
 
-        std::vector<int8_t> cfg_space = std::vector<int8_t>(config.map_res * config.map_res);
+        std::vector<int8_t> cfg_space = std::vector<int8_t>((config.map_res * 2) * config.map_res);
         std::fill(cfg_space.begin(), cfg_space.end(), 0);
 
-        for (int x = 0; x < config.map_res; x++)
+        for (int x = 0; x < config.map_res * 2; x++)
         {
             for (int y = 1; y < config.map_res; y++)
             {
@@ -107,7 +107,7 @@ public:
                     for (Circle &circle : circles)
                     {
                         auto idx = (x + circle.x) + config.map_res * (y + circle.y);
-                        auto expr_x = (x + circle.x) < config.map_res && (x + circle.x) >= 0;
+                        auto expr_x = (x + circle.x) < config.map_res * 2 && (x + circle.x) >= 0;
                         auto expr_y = (y + circle.y) < config.map_res && (y + circle.y) >= 0;
                         if (expr_x && expr_y)
                         {
