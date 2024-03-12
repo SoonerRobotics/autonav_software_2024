@@ -41,6 +41,7 @@ class Node(ROSNode):
         self.system_state = SystemStateEnum.DISABLED
         self.system_mode = SystemModeEnum.COMPETITION
         self.device_states = {}
+        self.node_configs = {}
         self.mobility = False
         self.perf_measurements = {}
 
@@ -115,6 +116,7 @@ class Node(ROSNode):
         self.mobility = msg.mobility
 
     def on_config_updated(self, msg: ConfigUpdated):
+        self.node_configs[msg.device] = json.loads(msg.json)
         if msg.device is None or msg.device != self.identifier:
             return
         

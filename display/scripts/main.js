@@ -62,6 +62,7 @@ $(document).ready(function () {
                 }
     
                 if (op == "get_nodes_callback") {
+                    console.log(obj);
                     for (let i = 0; i < obj.nodes.length; i++) {
                         const node = obj.nodes[i];
                         send({
@@ -82,6 +83,12 @@ $(document).ready(function () {
                             }
                         }
                     }
+
+                    for (const key in obj.configs)
+                    {
+                        config[key] = obj.configs[key];
+                    }
+                    regenerateConfig();
                 }
             }
         };
@@ -108,10 +115,6 @@ $(document).ready(function () {
 
     var sendQueue = [];
 
-    function send(obj) {
-        sendQueue.push(obj);
-    }
-
     function setSystemState() {
         send({
             op: "set_system_state",
@@ -119,148 +122,6 @@ $(document).ready(function () {
             estop: systemState.estop,
             mobility: systemState.mobility,
         });
-    }
-
-    function generateElementForConfiguration(data, type, device, text) {
-        if (type == "bool") {
-            const checked = fromBytesToBool(data);
-
-            // Create a dropdown
-            const div = document.createElement("div");
-            div.classList.add("input-group");
-            div.classList.add("mb-3");
-
-            const select = document.createElement("select");
-            select.classList.add("form-select");
-            select.onchange = function () {
-                send({
-                    op: "configuration",
-                    opcode: 1,
-                    device: device,
-                    address: text,
-                    data: Array.from(fromBoolToBytes(select.value == 1)),
-                    iterator: iterate()
-                });
-            }
-
-            const optionTrue = document.createElement("option");
-            optionTrue.value = 1;
-            optionTrue.innerText = "True";
-            optionTrue.selected = checked;
-
-            const optionFalse = document.createElement("option");
-            optionFalse.value = 0;
-            optionFalse.innerText = "False";
-            optionFalse.selected = !checked;
-
-            select.appendChild(optionTrue);
-            select.appendChild(optionFalse);
-
-            const span = document.createElement("span");
-            span.classList.add("input-group-text");
-            span.innerText = text;
-
-            div.appendChild(span);
-            div.appendChild(select);
-            return div;
-        }
-        else if (type == "float") {
-            const div = document.createElement("div");
-            div.classList.add("input-group");
-            div.classList.add("mb-3");
-
-            const input = document.createElement("input");
-            input.type = "number";
-            input.classList.add("form-control");
-            input.value = fromBytesToFloat(data).toFixed(6);
-            input.onchange = function () {
-                send({
-                    op: "configuration",
-                    opcode: 1,
-                    device: device,
-                    address: text,
-                    data: Array.from(fromFloatToBytes(input.value)),
-                    iterator: iterate()
-                });
-            }
-
-            const span = document.createElement("span");
-            span.classList.add("input-group-text");
-            span.innerText = text;
-
-            div.appendChild(span);
-            div.appendChild(input);
-            return div;
-        }
-        else if (type == "int") {
-            const div = document.createElement("div");
-            div.classList.add("input-group");
-            div.classList.add("mb-3");
-
-            const input = document.createElement("input");
-            input.type = "number";
-            input.classList.add("form-control");
-            input.value = fromBytesToInt(data);
-            input.onchange = function () {
-                send({
-                    op: "configuration",
-                    opcode: 1,
-                    device: device,
-                    address: text,
-                    data: Array.from(fromIntToBytes(input.value)),
-                    iterator: iterate()
-                });
-            }
-
-            const span = document.createElement("span");
-            span.classList.add("input-group-text");
-            span.innerText = text;
-
-            div.appendChild(span);
-            div.appendChild(input);
-            return div;
-        }
-        else {
-            const options = addressKeys[device][text];
-
-            if (typeof options == "object") {
-                const index = fromBytesToInt(data);
-
-                // Create a dropdown
-                const div = document.createElement("div");
-                div.classList.add("input-group");
-                div.classList.add("mb-3");
-
-                const select = document.createElement("select");
-                select.classList.add("form-select");
-                select.onchange = function () {
-                    send({
-                        op: "configuration",
-                        opcode: 1,
-                        device: device,
-                        address: text,
-                        data: Array.from(fromIntToBytes(select.value)),
-                        iterator: iterate()
-                    });
-                }
-
-                for (let i = 0; i < Object.keys(options).length; i++) {
-                    const option = document.createElement("option");
-                    option.value = i;
-                    option.selected = i == index;
-                    option.innerText = options[i];
-                    select.appendChild(option);
-                }
-
-                const span = document.createElement("span");
-                span.classList.add("input-group-text");
-                span.innerText = text;
-
-                div.appendChild(span);
-                div.appendChild(select);
-                return div;
-            }
-        }
     }
 
     function generateElementForConbus(data, type, text, deviceId, address, readonly = false) {
@@ -452,54 +313,7 @@ $(document).ready(function () {
         }
 
         if (topic == "/scr/configuration") {
-            const { device, opcode, data, address } = msg;
-            if (opcode == 4) {
-                return;
-            }
-
-            if (opcode == 2 || opcode == 3) {
-                if (!(device in config)) {
-                    config[device] = {};
-                }
-
-                config[device][address] = data;
-
-                const configElement = $("#configuration");
-                configElement.empty();
-
-                for (const deviceId in config) {
-                    const deviceConfig = config[deviceId];
-                    const title = addressKeys[deviceId]["internal_title"];
-                    const deviceElement = $(`<div class="card" style="margin-bottom: 10px;"></div>`);
-                    deviceElement.append(`<div class="card-header"><h5>${title}</h5></div>`);
-                    const deviceBody = $(`<div class="card-body"></div>`);
-                    deviceElement.append(deviceBody);
-
-                    for (const address of Object.keys(deviceConfig).sort()) {
-                        const data = deviceConfig[address];
-                        const type = addressKeys[deviceId][address];
-                        if (type == undefined) {
-                            const alert = $(`<div class="alert alert-warning" role="alert">Unknown Address: ${address}</div>`);
-                            deviceBody.append(alert);
-                            continue;
-                        }
-
-                        const inputElement = generateElementForConfiguration(data, type, deviceId, address);
-                        deviceBody.append(inputElement);
-                    }
-
-                    for (const address in addressKeys[deviceId]) {
-                        if (address in deviceConfig || address == "internal_title") {
-                            continue;
-                        }
-
-                        const alert = $(`<div class="alert alert-danger" role="alert">Unknown Address: ${address}</div>`);
-                        deviceBody.append(alert);
-                    }
-
-                    configElement.append(deviceElement);
-                }
-            }
+            console.log(msg);
             return;
         }
 
@@ -731,4 +545,187 @@ $(document).ready(function () {
         logs = [];
         $("#log_body").empty();
     });
+
+    function generateElementForConfiguration(data, type, device, text) {
+        if (type == "bool") {
+            const checked = data == 1;
+    
+            // Create a dropdown
+            const div = document.createElement("div");
+            div.classList.add("input-group");
+            div.classList.add("mb-3");
+    
+            const select = document.createElement("select");
+            select.classList.add("form-select");
+            select.onchange = function () {
+                config[device][text] = select.value;
+                send({
+                    op: "configuration",
+                    device: device,
+                    json: config[device],
+                });
+            }
+    
+            const optionTrue = document.createElement("option");
+            optionTrue.value = 1;
+            optionTrue.innerText = "True";
+            optionTrue.selected = checked;
+    
+            const optionFalse = document.createElement("option");
+            optionFalse.value = 0;
+            optionFalse.innerText = "False";
+            optionFalse.selected = !checked;
+    
+            select.appendChild(optionTrue);
+            select.appendChild(optionFalse);
+    
+            const span = document.createElement("span");
+            span.classList.add("input-group-text");
+            span.innerText = text;
+    
+            div.appendChild(span);
+            div.appendChild(select);
+            return div;
+        }
+        else if (type == "float") {
+            const div = document.createElement("div");
+            div.classList.add("input-group");
+            div.classList.add("mb-3");
+    
+            const input = document.createElement("input");
+            input.type = "number";
+            input.classList.add("form-control");
+            input.value = data;
+            input.onchange = function () {
+                config[device][text] = input.value;
+                send({
+                    op: "configuration",
+                    device: device,
+                    json: config[device],
+                });
+            }
+    
+            const span = document.createElement("span");
+            span.classList.add("input-group-text");
+            span.innerText = text;
+    
+            div.appendChild(span);
+            div.appendChild(input);
+            return div;
+        }
+        else if (type == "int") {
+            const div = document.createElement("div");
+            div.classList.add("input-group");
+            div.classList.add("mb-3");
+    
+            const input = document.createElement("input");
+            input.type = "number";
+            input.classList.add("form-control");
+            input.value = data;
+            input.onchange = function () {
+                config[device][text] = input.value;
+                send({
+                    op: "configuration",
+                    device: device,
+                    json: config[device],
+                });
+            }
+    
+            const span = document.createElement("span");
+            span.classList.add("input-group-text");
+            span.innerText = text;
+    
+            div.appendChild(span);
+            div.appendChild(input);
+            return div;
+        }
+        else {
+            const options = addressKeys[device][text];
+    
+            if (typeof options == "object") {
+                const index = data;
+    
+                // Create a dropdown
+                const div = document.createElement("div");
+                div.classList.add("input-group");
+                div.classList.add("mb-3");
+    
+                const select = document.createElement("select");
+                select.classList.add("form-select");
+                select.onchange = function () {
+                    config[device][text] = select.value;
+                    send({
+                        op: "configuration",
+                        device: device,
+                        json: config[device],
+                    });
+                }
+    
+                for (let i = 0; i < Object.keys(options).length; i++) {
+                    const option = document.createElement("option");
+                    option.value = i;
+                    option.selected = i == index;
+                    option.innerText = options[i];
+                    select.appendChild(option);
+                }
+    
+                const span = document.createElement("span");
+                span.classList.add("input-group-text");
+                span.innerText = text;
+    
+                div.appendChild(span);
+                div.appendChild(select);
+                return div;
+            }
+        }
+    }
+    
+    const regenerateConfig = () => {
+        const configElement = $("#configuration");
+        configElement.empty();
+    
+        for (const deviceId in config) {
+            const deviceConfig = config[deviceId];
+            if (addressKeys[deviceId] == undefined) {
+                console.log(`Unknown Device Config: ${deviceId}`);
+                // const alert = $(`<div class="alert alert-danger" role="alert">Unknown Device Config: ${deviceId}</div>`);
+                // configElement.append(alert);
+                continue;
+            }
+    
+            const title = addressKeys[deviceId]["internal_title"];
+            const deviceElement = $(`<div class="card" style="margin-bottom: 10px;"></div>`);
+            deviceElement.append(`<div class="card-header"><h5>${title}</h5></div>`);
+            const deviceBody = $(`<div class="card-body"></div>`);
+            deviceElement.append(deviceBody);
+    
+            for (const address of Object.keys(deviceConfig).sort()) {
+                const data = deviceConfig[address];
+                const type = addressKeys[deviceId][address];
+                if (type == undefined) {
+                    const alert = $(`<div class="alert alert-warning" role="alert">Unknown Type: ${address}</div>`);
+                    deviceBody.append(alert);
+                    continue;
+                }
+    
+                const inputElement = generateElementForConfiguration(data, type, deviceId, address);
+                deviceBody.append(inputElement);
+            }
+    
+            for (const address in addressKeys[deviceId]) {
+                if (address in deviceConfig || address == "internal_title") {
+                    continue;
+                }
+    
+                const alert = $(`<div class="alert alert-danger" role="alert">Unknown Configuration Entry: ${address}</div>`);
+                deviceBody.append(alert);
+            }
+    
+            configElement.append(deviceElement);
+        }
+    }
+    
+    function send(obj) {
+        sendQueue.push(obj);
+    }
 })

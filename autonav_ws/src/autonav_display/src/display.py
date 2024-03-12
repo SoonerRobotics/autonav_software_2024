@@ -5,7 +5,7 @@ from scr.node import Node
 from scr.states import DeviceStateEnum
 # from scr_msgs.msg import SystemState, DeviceState, Log, ConfigurationInstruction
 from scr_msgs.msg import SystemState, DeviceState, ConfigUpdated
-from scr_msgs.srv import SetSystemState
+from scr_msgs.srv import SetSystemState, UpdateConfig
 from std_msgs.msg import Empty
 from autonav_msgs.msg import Position, MotorFeedback, MotorInput, MotorControllerDebug, ObjectDetection, PathingDebug, GPSFeedback, IMUData, Conbus
 from sensor_msgs.msg import CompressedImage
@@ -74,7 +74,8 @@ class BroadcastNode(Node):
 		self.broadcastPublisher = self.create_publisher(Empty, "/scr/state/broadcast", 20)
 		self.configurationInstructionSubscriber = self.create_subscription(ConfigUpdated, "/scr/config_updated", self.configurationInstructionCallback, 100)
 		# self.logSubscriber = self.create_subscription(Log, "/scr/logging", self.logCallback, 20)
-		# self.configurationInstructionPublisher = self.create_publisher(ConfigurationInstruction, "/scr/configuration", 100)
+		# self.configurationInstructionPublisher = self.create_publisher(ConfigUpdated, "/scr/config_updated", 100)
+		self.configUpdateClient = self.create_client(UpdateConfig, "/scr/update_config_client")
 
 		self.positionSubscriber = self.create_subscription(Position, "/autonav/position", self.positionCallback, 20)
 		self.motorFeedbackSubscriber = self.create_subscription(MotorFeedback, "/autonav/MotorFeedback", self.motorFeedbackCallback, 20)
@@ -142,14 +143,12 @@ class BroadcastNode(Node):
 			if obj["op"] == "broadcast":
 				self.broadcastPublisher.publish(Empty())
 
-			# if obj["op"] == "configuration" and "device" in obj and "opcode" in obj:
-			# 	msg = ConfigurationInstruction()
-			# 	msg.device = str(obj["device"])
-			# 	msg.opcode = int(obj["opcode"])
-			# 	msg.data = obj["data"] if "data" in obj else []
-			# 	msg.address = str(obj["address"]) if "address" in obj else ""
-			# 	msg.iterator = int(obj["iterator"]) if "iterator" in obj else 0
-			# 	self.configurationInstructionPublisher.publish(msg)
+			if obj["op"] == "configuration" and "device" in obj and "json" in obj:
+				self.log("Received configuration instruction for " + obj["device"])
+				config_packet = UpdateConfig.Request()
+				config_packet.device = obj["device"]
+				config_packet.json = json.dumps(obj["json"])
+				self.configUpdateClient.call_async(config_packet)
 
 			if obj["op"] == "get_nodes":
 				nodes = self.get_node_names()
@@ -161,7 +160,8 @@ class BroadcastNode(Node):
 				self.pushSendQueue(json.dumps({
 					"op": "get_nodes_callback",
 					"nodes": nodes,
-					"states": node_states
+					"states": node_states,
+					"configs": self.node_configs
 				}), unique_id)
 
 			if obj["op"] == "set_system_state":
