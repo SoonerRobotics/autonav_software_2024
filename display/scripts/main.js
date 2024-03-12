@@ -74,6 +74,11 @@ $(document).ready(function () {
 
                         const statemap = obj.states;
                         if (node in statemap) {
+                            if (node == "rosbridge_websocket" || node == "rosapi" || node == "scr_core" || node == "rosapi_params")
+                            {
+                                continue;
+                            }
+
                             deviceStates[node] = statemap[node];
                             unorderedListElement = $("#element_device_states");
                             unorderedListElement.empty();
@@ -94,7 +99,7 @@ $(document).ready(function () {
         };
 
         websocket.onclose = function (event) {
-            $("#connecting-state").text("Waiting for the Weeb Wagon");
+            $("#connecting-state").text("Waiting for the Danger Zone");
             $(".connecting").show();
             $(".connecting-input").show();
             $("#main").hide();
