@@ -40,6 +40,7 @@ class Node(ROSNode):
         self.device_state = DeviceStateEnum.OFF
         self.system_state = SystemStateEnum.DISABLED
         self.system_mode = SystemModeEnum.COMPETITION
+        self.device_states = {}
         self.mobility = False
         self.perf_measurements = {}
 
@@ -66,6 +67,7 @@ class Node(ROSNode):
         :param msg: The device state message.
         """
 
+        self.device_states[msg.device] = msg.state
         if msg.device is None or msg.device != self.identifier:
             return
 
