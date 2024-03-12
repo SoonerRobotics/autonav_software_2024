@@ -155,9 +155,13 @@ class BroadcastNode(Node):
 				nodes = self.get_node_names()
 				for i in range(len(nodes)):
 					nodes[i] = nodes[i].replace("/", "")
+				node_states = {}
+				for identifier in nodes:
+					node_states[identifier] = self.device_states[identifier] if identifier in self.device_states else 0
 				self.pushSendQueue(json.dumps({
 					"op": "get_nodes_callback",
-					"nodes": nodes
+					"nodes": nodes,
+					"states": node_states
 				}), unique_id)
 
 			if obj["op"] == "set_system_state":

@@ -70,6 +70,17 @@ $(document).ready(function () {
                             opcode: 4,
                             iterator: iterate()
                         });
+
+                        const statemap = obj.states;
+                        if (node in statemap) {
+                            deviceStates[node] = statemap[node];
+                            unorderedListElement = $("#element_device_states");
+                            unorderedListElement.empty();
+                            for (const id in deviceStates) {
+                                const state = deviceStates[id];
+                                unorderedListElement.append(`<h5>${id}: <span data-state=\"${state}\">${deviceStateToName(state)}</span></h5>`);
+                            }
+                        }
                     }
                 }
             }
