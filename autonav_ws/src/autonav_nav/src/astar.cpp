@@ -26,9 +26,10 @@ void AStarNode::init() {
     frontier.reserve(100);
     closed.reserve(100);
 
-    map.reserve(100);
-    for (auto vec : map) {
-        vec.reserve(100);
+    map.resize(100);
+    for (int i = 0; i < 100; i++) {
+        map[i] = std::vector<int>();
+        map[i].resize(100);
     }
 
     // === subscribers ===
@@ -182,9 +183,9 @@ void AStarNode::DoAStar() {
     // update the map with the grid data
     for (int x = 0; x < MAX_X; x++) {
         for (int y = 0; y < MAX_Y; y++) {
-            RCLCPP_WARN(this->get_logger(), ("(" + std::to_string(x) + ", " + std::to_string(y) + ")").c_str());
-            RCLCPP_WARN(this->get_logger(), ("GRID DATA AT CELL: " + std::to_string(grid.data[y+x])).c_str());
-            RCLCPP_WARN(this->get_logger(), ("MAP DATA AT CELL: " + std::to_string(map[y][x])).c_str());
+            // RCLCPP_WARN(this->get_logger(), ("(" + std::to_string(x) + ", " + std::to_string(y) + ")").c_str());
+            // RCLCPP_WARN(this->get_logger(), ("GRID DATA AT CELL: " + std::to_string(grid.data[y+x])).c_str());
+            // RCLCPP_WARN(this->get_logger(), ("MAP DATA AT CELL: " + std::to_string(map[y][x])).c_str());
 
             // grid is a 1D array, map is a 2D array
             map[y][x] = grid.data[y+x];
@@ -234,7 +235,8 @@ void AStarNode::DoAStar() {
             for (int y = 0; y < MAX_Y; y++) {
                 // at the pixel at (x, y), draw the presence of an obstacle or not (*255 will make 1 into pure white)
                 // image[x][y] = map[x][y] * 255;
-                image.at<uchar>(y, x) = 128; // per https://docs.opencv.org/3.4/d5/d98/tutorial_mat_operations.html
+                // image.at<uchar>(y, x) = 128; // per https://docs.opencv.org/3.4/d5/d98/tutorial_mat_operations.html
+                image.at<uchar>(y, x) = (unsinged char)(map[y][x]*50);
             }
         }
 
@@ -297,7 +299,7 @@ std::vector<GraphNode> AStarNode::Search(GraphNode start, GraphNode goal) {
         // otherwise, get all the neighboring nodes
         std::vector<GraphNode> neighbors = GetNeighbors(currentNode);
 
-        RCLCPP_WARN(this->get_logger(), "SEARCHING NEIGHBORS");
+        // RCLCPP_WARN(this->get_logger(), "SEARCHING NEIGHBORS");
         // for each neighbor
         for (GraphNode node : neighbors) {
 
@@ -341,13 +343,13 @@ std::vector<GraphNode> AStarNode::Search(GraphNode start, GraphNode goal) {
 std::vector<GraphNode> AStarNode::GetNeighbors(GraphNode node, bool canGoBackwards) {
     int maxObstacle = 1;
 
-    PRINT_NODE("GETTING NEIGBORS OF: ", node);
+    // PRINT_NODE("GETTING NEIGBORS OF: ", node);
 
     std::vector<GraphNode> neighbors;
 
     std::vector<std::vector<double>> addresses = {{-1, 0}, {0, -1}, {1, 0}, {0, 1}}; // addresses of the 4 edge-adjacent neighbors
     if (!canGoBackwards) {
-        addresses.erase(addresses.begin() + 1); // remove the 2nd index (ie x+0, y-1) so that we don't check behind us
+        addresses.erase(addresses.begin() + 3); // remove the 2nd index (ie x+0, y+1) so that we don't check behind us
         // this is used by the Smellification algorithm to avoid the nonsense that happens in Python
 
         //FIXME this is for smellification to work but it's bad
@@ -358,19 +360,21 @@ std::vector<GraphNode> AStarNode::GetNeighbors(GraphNode node, bool canGoBackwar
     for(int i = 0; i < (int)addresses.size(); i++) {
         int neighbor_x = node.x + addresses[i][0];
         int neighbor_y = node.y + addresses[i][1];
-        RCLCPP_WARN(this->get_logger(), "LOOPING THROUGH NEIGHBOR ADDRESSES");
+        // RCLCPP_WARN(this->get_logger(), "LOOPING THROUGH NEIGHBOR ADDRESSES");
 
-        RCLCPP_WARN(this->get_logger(), std::string("(X, Y) => (" + std::to_string(neighbor_x) + ", " + std::to_string(neighbor_y) + ")").c_str());
+        // RCLCPP_WARN(this->get_logger(), std::string("(X, Y) => (" + std::to_string(neighbor_x) + ", " + std::to_string(neighbor_y) + ")").c_str());
 
         // check if it's in bounds
-        if (0 < neighbor_x && neighbor_x < MAX_X) {
-            RCLCPP_WARN(this->get_logger(), "IN BOUNDS: X");
-            if (0 < neighbor_y && neighbor_y < MAX_Y) {
-                RCLCPP_WARN(this->get_logger(), "IN BOUNDS: Y");
+        if (0 <= neighbor_x && neighbor_x <= MAX_X) {
+            // RCLCPP_WARN(this->get_logger(), "IN BOUNDS: X");
+            if (0 <= neighbor_y && neighbor_y <= MAX_Y) {
+                // RCLCPP_WARN(this->get_logger(), "IN BOUNDS: Y");
+
+                // RCLCPP_WARN(this->get_logger(), ("OBSTACLE: " + std::to_string(map[neighbor_y][neighbor_x])).c_str());
 
                 // check if it's traversable (ie not an obstacle, so != 1)
-                if (map[neighbor_x][neighbor_y] < maxObstacle) {
-                    RCLCPP_WARN(this->get_logger(), "NOT AN OBSTACLE");
+                if (map[neighbor_y][neighbor_x] < maxObstacle) {
+                    // RCLCPP_WARN(this->get_logger(), "NOT AN OBSTACLE");
                     // make a new node to represent the neighbor
                     GraphNode node;
                     node.x = neighbor_x;
@@ -664,14 +668,14 @@ GraphNode AStarNode::Smellification() {
     // smellification idk
     // while we haven't hit the max depth and still have nodes to explore
     while (depth < MAX_DEPTH && smellyFrontier.size() > 0) {
-        RCLCPP_WARN(this->get_logger(), "SMELLIFICATION DEPTH: ");
-        RCLCPP_WARN(this->get_logger(), std::to_string(depth).c_str());
+        // RCLCPP_WARN(this->get_logger(), "SMELLIFICATION DEPTH: ");
+        // RCLCPP_WARN(this->get_logger(), std::to_string(depth).c_str());
 
         // we should explore those nodes
         for (int i = 0; i < (int)smellyFrontier.size(); i++) {
             auto node = smellyFrontier[i];
 
-            PRINT_NODE("SMELLING NODE: ", node);
+            // PRINT_NODE("SMELLING NODE: ", node);
 
             // cost is based on y coordinate and depth (favoring shorter paths)
             cost = (SMELLY_Y - node.y) * SMELLY_Y_COST  +  (depth * SMELLY_DEPTH_COST);
@@ -695,18 +699,17 @@ GraphNode AStarNode::Smellification() {
             // add it to the list of explored so we don't accidentally explore it again
             smellyExplored.push_back(node);
 
-            RCLCPP_WARN(this->get_logger(), "NODES:");
+            // RCLCPP_WARN(this->get_logger(), "NODES:");
 
             //TODO fix this
             auto neighbors = this->GetNeighbors(node, false); // false so we don't check behind us
 
-            RCLCPP_WARN(this->get_logger(), "NUM NEIGHBORS:");
-            RCLCPP_WARN(this->get_logger(), std::to_string((int)neighbors.size()).c_str());
+            // RCLCPP_WARN(this->get_logger(), "NUM NEIGHBORS:");
+            // RCLCPP_WARN(this->get_logger(), std::to_string((int)neighbors.size()).c_str());
 
             // for the 3 nodes (to the left, to the right, and in front)
             for (GraphNode neighbor : neighbors) {
-                //NOTE: this doesn't work
-                RCLCPP_WARN(this->get_logger(), neighbor.to_string().c_str());
+                // RCLCPP_WARN(this->get_logger(), neighbor.to_string().c_str());
                 // check if we've explored it yet, and if we haven't
                 // if neighbor not in explored: frontier.add(node)
                 if (std::find(smellyFrontier.begin(), smellyFrontier.end(), neighbor) == smellyFrontier.end()) {
