@@ -23,13 +23,13 @@ void AStarNode::init() {
     map = std::vector<std::vector<int>>();
     
     // reserve space so we avoid constantly allocating and reallocating space
-    frontier.reserve(100);
-    closed.reserve(100);
+    // frontier.reserve(100);
+    // closed.reserve(100);
 
-    map.resize(100);
-    for (int i = 0; i < 100; i++) {
+    map.resize(MAX_Y);
+    for (int i = 0; i < MAX_Y; i++) {
         map[i] = std::vector<int>();
-        map[i].resize(100);
+        map[i].resize(MAX_X);
     }
 
     // === subscribers ===
@@ -134,7 +134,7 @@ nlohmann::json AStarNode::get_default_config() {
     defaultConfig.waypointPopDistance = 1.1;
     defaultConfig.waypointDirection = 0;
     defaultConfig.useOnlyWaypoints = false;
-    defaultConfig.waypointDelay = 17.5;
+    defaultConfig.waypointDelay = 7.0;
 
     return defaultConfig;
 }
@@ -170,7 +170,7 @@ void AStarNode::DoAStar() {
     // make the starting node (our initial position on the relative map)
     GraphNode start;
     start.x = (int)((double)MAX_X/2); // start in the middle
-    start.y = MAX_Y; // start at the bottom, because arrays and indexing
+    start.y = MAX_Y-1; // start at the bottom, because arrays and indexing
     start.g_cost = 0;
     // start.h_cost = DistanceFormula(start, goal);
     start.h_cost = 0;
@@ -202,7 +202,7 @@ void AStarNode::DoAStar() {
     auto pathMsg = AStarNode::ToPath(AStarNode::Search(start, goal));
 
     // only publish if we found a path
-    if (pathMsg.poses.size() > 0) {
+    // if (pathMsg.poses.size() > 0) {
         RCLCPP_WARN(this->get_logger(), "PUBLISHING PATH");
 
         // publish results
@@ -222,7 +222,7 @@ void AStarNode::DoAStar() {
         for (int y = 0; y < (int)map.size(); y++) {
             for (int x = 0; x < (int)map[y].size(); x++) {
                 // one dimensionalize the 2D array
-                data[y*MAX_X + x] = map[y][x];
+                data[y*(int)(MAX_X/2) + x] = map[y][x];
             }
         }
 
@@ -236,7 +236,7 @@ void AStarNode::DoAStar() {
                 // at the pixel at (x, y), draw the presence of an obstacle or not (*255 will make 1 into pure white)
                 // image[x][y] = map[x][y] * 255;
                 // image.at<uchar>(y, x) = 128; // per https://docs.opencv.org/3.4/d5/d98/tutorial_mat_operations.html
-                image.at<uchar>(y, x) = (unsinged char)(map[y][x]*50);
+                // image.at<uchar>(y, x) = (unsigned char)(map[y][x]*50);
             }
         }
 
@@ -256,7 +256,7 @@ void AStarNode::DoAStar() {
 
         // manual memory management because we have to use arrays for the message instead of vectors
         delete[] data;
-    }
+    // }
 }
 
 
@@ -287,6 +287,8 @@ std::vector<GraphNode> AStarNode::Search(GraphNode start, GraphNode goal) {
 
         // add the current node to the list of closed nodes
         closed.push_back(currentNode);
+
+        RCLCPP_WARN(this->get_logger(), ("FRONTIER SIZE: " + std::to_string(frontier.size())).c_str());
 
         // if the curent node is the goal node, then we've reached our goal
         if (currentNode.x == goal.x && currentNode.y == goal.y) {
@@ -343,13 +345,14 @@ std::vector<GraphNode> AStarNode::Search(GraphNode start, GraphNode goal) {
 std::vector<GraphNode> AStarNode::GetNeighbors(GraphNode node, bool canGoBackwards) {
     int maxObstacle = 1;
 
-    // PRINT_NODE("GETTING NEIGBORS OF: ", node);
+    PRINT_NODE("GETTING NEIGBORS OF: ", node);
 
     std::vector<GraphNode> neighbors;
 
     std::vector<std::vector<double>> addresses = {{-1, 0}, {0, -1}, {1, 0}, {0, 1}}; // addresses of the 4 edge-adjacent neighbors
     if (!canGoBackwards) {
-        addresses.erase(addresses.begin() + 3); // remove the 2nd index (ie x+0, y+1) so that we don't check behind us
+        // addresses.erase(addresses.begin() + 3); // remove the 2nd index (ie x+0, y+1) so that we don't check behind us
+        addresses.erase(addresses.begin() + 1); // remove the 2nd index (ie x+0, y+1) so that we don't check behind us
         // this is used by the Smellification algorithm to avoid the nonsense that happens in Python
 
         //FIXME this is for smellification to work but it's bad
@@ -360,27 +363,27 @@ std::vector<GraphNode> AStarNode::GetNeighbors(GraphNode node, bool canGoBackwar
     for(int i = 0; i < (int)addresses.size(); i++) {
         int neighbor_x = node.x + addresses[i][0];
         int neighbor_y = node.y + addresses[i][1];
-        // RCLCPP_WARN(this->get_logger(), "LOOPING THROUGH NEIGHBOR ADDRESSES");
+        RCLCPP_WARN(this->get_logger(), "LOOPING THROUGH NEIGHBOR ADDRESSES");
 
-        // RCLCPP_WARN(this->get_logger(), std::string("(X, Y) => (" + std::to_string(neighbor_x) + ", " + std::to_string(neighbor_y) + ")").c_str());
+        RCLCPP_WARN(this->get_logger(), std::string("(X, Y) => (" + std::to_string(neighbor_x) + ", " + std::to_string(neighbor_y) + ")").c_str());
 
         // check if it's in bounds
         if (0 <= neighbor_x && neighbor_x <= MAX_X) {
-            // RCLCPP_WARN(this->get_logger(), "IN BOUNDS: X");
+            RCLCPP_WARN(this->get_logger(), "IN BOUNDS: X");
             if (0 <= neighbor_y && neighbor_y <= MAX_Y) {
-                // RCLCPP_WARN(this->get_logger(), "IN BOUNDS: Y");
+                RCLCPP_WARN(this->get_logger(), "IN BOUNDS: Y");
 
-                // RCLCPP_WARN(this->get_logger(), ("OBSTACLE: " + std::to_string(map[neighbor_y][neighbor_x])).c_str());
+                RCLCPP_WARN(this->get_logger(), ("OBSTACLE: " + std::to_string(map[neighbor_y][neighbor_x])).c_str());
 
                 // check if it's traversable (ie not an obstacle, so != 1)
                 if (map[neighbor_y][neighbor_x] < maxObstacle) {
-                    // RCLCPP_WARN(this->get_logger(), "NOT AN OBSTACLE");
+                    RCLCPP_WARN(this->get_logger(), "NOT AN OBSTACLE");
                     // make a new node to represent the neighbor
-                    GraphNode node;
-                    node.x = neighbor_x;
-                    node.y = neighbor_y;
+                    GraphNode neighbor;
+                    neighbor.x = neighbor_x;
+                    neighbor.y = neighbor_y;
 
-                    neighbors.push_back(node); // add it to the list
+                    neighbors.push_back(neighbor); // add it to the list
                 }
             }
         }
@@ -408,6 +411,12 @@ std::vector<GraphNode> AStarNode::ReconstructPath(GraphNode goal) {
 
     // while we haven't reached the start
     while (current.parent != &start_node) {
+        PRINT_NODE("TRAVERSING: ", current);
+        if (current.parent == nullptr) {
+            RCLCPP_WARN(this->get_logger(), "NULL PTR!");
+        }
+
+
         // add the parent of the current node to the list
         path.push_back(*current.parent);
 
@@ -589,7 +598,7 @@ GraphNode AStarNode::Smellification() {
     double bestCost = 0;
     GraphNode bestPos;
     bestPos.x = (int)(MAX_X/2);
-    bestPos.y = MAX_Y;
+    bestPos.y = 0;
     double heading_to_gps = 0;
 
     // get the current time
@@ -675,7 +684,7 @@ GraphNode AStarNode::Smellification() {
         for (int i = 0; i < (int)smellyFrontier.size(); i++) {
             auto node = smellyFrontier[i];
 
-            // PRINT_NODE("SMELLING NODE: ", node);
+            PRINT_NODE("SMELLING NODE: ", node);
 
             // cost is based on y coordinate and depth (favoring shorter paths)
             cost = (SMELLY_Y - node.y) * SMELLY_Y_COST  +  (depth * SMELLY_DEPTH_COST);
@@ -699,13 +708,13 @@ GraphNode AStarNode::Smellification() {
             // add it to the list of explored so we don't accidentally explore it again
             smellyExplored.push_back(node);
 
-            // RCLCPP_WARN(this->get_logger(), "NODES:");
+            RCLCPP_WARN(this->get_logger(), "NODES:");
 
             //TODO fix this
             auto neighbors = this->GetNeighbors(node, false); // false so we don't check behind us
 
-            // RCLCPP_WARN(this->get_logger(), "NUM NEIGHBORS:");
-            // RCLCPP_WARN(this->get_logger(), std::to_string((int)neighbors.size()).c_str());
+            RCLCPP_WARN(this->get_logger(), "NUM NEIGHBORS:");
+            RCLCPP_WARN(this->get_logger(), std::to_string((int)neighbors.size()).c_str());
 
             // for the 3 nodes (to the left, to the right, and in front)
             for (GraphNode neighbor : neighbors) {
@@ -723,8 +732,14 @@ GraphNode AStarNode::Smellification() {
         depth++;
     }
 
-    RCLCPP_WARN(this->get_logger(), "NUM SMELLY ITERATIONS: ");
-    RCLCPP_WARN(this->get_logger(), std::to_string(iterations).c_str());
+    // RCLCPP_WARN(this->get_logger(), "NUM SMELLY ITERATIONS: ");
+    // RCLCPP_WARN(this->get_logger(), std::to_string(iterations).c_str());
+
+    RCLCPP_WARN(this->get_logger(), "DEPTH REACHED: ");
+    RCLCPP_WARN(this->get_logger(), std::to_string(depth).c_str());
+
+    PRINT_NODE("BEST POS: ", bestPos);
+
 
     return bestPos;
 }
