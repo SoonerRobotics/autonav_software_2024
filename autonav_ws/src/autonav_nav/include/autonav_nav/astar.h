@@ -4,6 +4,7 @@
 #include <string>
 #include <iostream>
 #include <filesystem>
+#include <unordered_map>
 
 // SCR::Node
 #include "scr/node.hpp"
@@ -20,6 +21,47 @@
 
 // to keep character counts down, 'cause in this economy every letter counts
 using json = nlohmann::json;
+
+
+// === structs ===
+// struct to represent a node on the graph for the A* algorithm (essentially a square in the grid/map, but like math-technically it's a 'node' or something)
+struct GraphNode {
+    // x and y coordinates
+    int x;
+    int y;
+
+    // costs
+    double g_cost; // movement cost (distance from start)
+    double h_cost; // heueristic (distance from goal)
+    double f_cost; // total cost
+
+    // pointer to parent
+    GraphNode* parent;
+
+    // define the less_than operator so we can use std::sort on the list
+    // https://stackoverflow.com/questions/1380463/sorting-a-vector-of-custom-objects
+    bool operator < (const GraphNode& other) const {
+        return (f_cost < other.f_cost);
+    }
+
+    // two nodes are equal if their coordinates are equal (obviously)
+    bool operator == (const GraphNode& other) const {
+        return (x == other.x && y == other.y);
+    }
+
+    // to_string for debugging
+    std::string to_string() const {
+        return "(" + std::to_string(x) + ", " + std::to_string(y) + ")";
+    }
+};
+
+// pretty basic point struct
+struct GPSPoint {
+    double lat;
+    double lon;
+};
+
+
 
 class AStarNode : public SCR::Node {
 public:
@@ -40,21 +82,34 @@ public:
     void config_updated(json newConfig) override;
 
 private:
-    // members fields
-    //TODO
+    // Y and X dimensions for the occpancy grid
+    int MAX_Y = 80;
+    int MAX_X = 80;
+
+    // member fields
+    int* map[MAX_Y * MAX_X]; // 1D map of all grid data
+    GPSPoint position; // position of robot (lat, lon)
+
+    // stuff for file-reading code
+    const std::string WAYPOINTS_FILENAME = "./data/waypoints.csv"; // filename for the waypoints (should be CSV file with label,lat,lon,)
+    std::ifstream waypointsFile; // actual C++ file object
+    std::unordered_map<std::string, std::vector<GPSPoint>> waypointsDict; // dictionairy of lists containing the GPS waypoints we're AStar-ing to
+
 
     // subscribers
-    //TODO
-
+    rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr expandedSubscriber; // subscirbes to the output of expandification
+    rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr poseSubscriber; // subscribes to sensor fusion position output
+    
     // subscriber callbacks
-    //TODO
+    void onOccupancyGridReceived(nav_msgs::msg::OccupancyGrid msg);
+    void onPositionReceived(geometry_msgs::msg::Pose msg);
 
     // publishers
-    //TODO
+    rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pathPublisher;
 
     // publisher callbacks
-    //TODO
+    void publishPath();
 
     // main methods
-    //TODO
+    GraphNode getGoalPoint(); // Smellification algorithm
 };
