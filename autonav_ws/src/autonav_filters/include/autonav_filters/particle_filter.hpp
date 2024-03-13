@@ -257,7 +257,7 @@ class ParticleFilter {
 
     private:
         std::mt19937 generator;
-        static const int num_particles = 1;
+        static const int num_particles = 100;
         double gps_noise[1] = {0.45};
         double odom_noise[3] = {0.05, 0.05, 0.01};
         std::vector<Particle> particles;
