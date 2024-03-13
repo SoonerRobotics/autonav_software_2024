@@ -1,0 +1,21 @@
+subscribers:
+ - occupancy grid -> obstacles
+ - position (gps?) -> position
+ - IMU (TODO)
+
+publishers:
+ - path (list of poses) -> path
+ - debug image (TODO)
+
+members:
+ - one for each message we receive
+
+functions:
+ - smellification
+ - do A*
+
+init:
+ - do subscribers and publishers
+ - read waypoints from file
+
+alright theoretically this is not terrible, but I guess we will see
