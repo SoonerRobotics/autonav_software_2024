@@ -5,6 +5,7 @@
 #include <iostream>
 #include <filesystem>
 #include <unordered_map>
+#include <queue>
 
 // SCR::Node
 #include "scr/node.hpp"
@@ -87,7 +88,9 @@ private:
     int MAX_X = 80;
 
     // member fields
-    int* map[MAX_Y * MAX_X]; // 1D map of all grid data
+    int* map[MAX_Y * MAX_X] = {}; // 1D map (row-major) of all grid data
+    std::priority_queue<GraphNode> frontier; // priority queue (aka heap, heapqueue, etc) of all the points we need to explore next for A* (priority queue is used because it is fast and good)
+    GraphNode* closed[MAX_X * MAX_Y] = {}; // list of all points we've explored in the current iteration of A*
     GPSPoint position; // position of robot (lat, lon)
 
     // stuff for file-reading code
@@ -112,4 +115,5 @@ private:
 
     // main methods
     GraphNode getGoalPoint(); // Smellification algorithm
+    void doAStar(); // main A* algorithm
 };
