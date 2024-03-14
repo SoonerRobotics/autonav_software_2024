@@ -115,5 +115,5 @@ private:
 
     // main methods
     GraphNode getGoalPoint(); // Smellification algorithm
-    void doAStar(); // main A* algorithm
+    std::vector<GraphNode> doAStar(); // main A* algorithm
 };

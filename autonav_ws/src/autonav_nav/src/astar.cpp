@@ -48,6 +48,11 @@ void AStarNode::init() {
     set_device_state(SCR::DeviceState::OPERATING);
 }
 
+/*
+ * on system state transition:
+ *  - set getNewGpsCoords = true;
+*/
+
 // callback for GPS position
 void AStarNode::onPositionReceived(geometry_msgs::msg::Pose msg) {
 
@@ -57,29 +62,97 @@ void AStarNode::onPositionReceived(geometry_msgs::msg::Pose msg) {
 void AStarNode::onOccupancyGridReceived(nav_msgs::msg::OccupancyGrid msg) {
     this->map = msg.data; // take the data and run with it
 
-    // and do A*
-    this->doAStar();
-}
-
-// main actual A* method
-void AStarNode::doAStar() {
-    auto goal = this->getGoalPoint();
-
-    //TODO
-}
-
-// smellification algorithm to determine our goal node that we path plan to
-GraphNode AStarNode::getGoalPoint() {
-    GraphNode best;
-
-    int depth = 0;
-
-    while (depth < MAX_DEPTH) {
-        //TODO
-    }
+    // and then publish our path
+    this->publishPath();
 }
 
 // convert what's returned by A* into a publishable path and publish it
 void AStarNode::publishPath() {
-    //TODO
+    // get the path to the goal
+    std::vector<GraphNode> path = this->doAStar();
+
+    // if A* didn't find anything
+    if (path.size() == 0) {
+        //TODO
+    } else {
+        //TODO
+    }
+}
+
+
+// main actual A* method
+void AStarNode::doAStar() {
+    // get our goal point
+    GraphNode goal = this->getGoalPoint();
+    
+    // make our starting node
+    GraphNode start;
+    start.x = 0; //FIXME
+    start.y = 0; //FIXME
+    start.g_cost = 0;
+    start.h_cost = 0;
+    start.f_cost = 0;
+
+    // initialize our frontier
+    frontier.push(start);
+    
+    // while there are still nodes we can explore, we should keep searching
+    while (frontier.size() > 0) {
+        GraphNode current = frontier.pop(); // get the node with the lowest cost
+
+        // if we're at the goal, then we should have a path reaching all the way back to the start
+        if (current == goal) {
+            break; // so break us out
+        }
+
+        // for each neighbor of the current node
+        for (GraphNode neighbor : getNeighbors(current)) {
+            //FIXME
+            if (neighbor in closed) { // if we've already explored it,
+                continue; // skip it
+            }
+
+            // otherwise, we should update the node
+            neighbor.g_cost = current.g_cost + 1; // cost to move there is one more than where we are currently (because it is adjacent to us)
+            neighbor.h_cost = this->heuristic(neighbor, goal); // additional cost
+            neighbor.f_cost = neighbor.g_cost + neighbor.h_cost; // f_cost is total cost
+
+            // if it's not in the frontier,
+            if (neighbor not in frontier) { //FIXME
+                // add it so we can explore its neighbors and expand the search
+                frontier.push(neighbor);
+            }
+        }
+    }
+
+    //TODO return stuff
+}
+
+// smellification algorithm to determine our goal node that we path plan to
+GraphNode AStarNode::getGoalPoint() {
+    // if we're doing a new run, we might possibly be facing a different direction, and need to change which GPS coords we use to smellify and A*
+    if (getNewGpsCoords) {
+        //TODO update the GPS coords we're using
+    } // otherwise we can continue to avoid doing that literally every main loop iteration
+
+    // keep track of what position we're returning
+    GraphNode best;
+    best.f_cost = 99999;
+
+    int depth = 0;
+    while (depth < MAX_DEPTH && smellyFrontier.size() > 0) {
+        for (GraphNode node : smellyFrontier) {
+            //TODO
+
+            // if the current node is cheaper to go to
+            if (node.f_cost < best.f_cost) {
+                // then replace the current best with the new best
+                best.x = node.x;
+                best.y = node.y;
+                best.f_cost = node.f_cost;
+            }
+        }
+
+        depth++
+    }
 }
