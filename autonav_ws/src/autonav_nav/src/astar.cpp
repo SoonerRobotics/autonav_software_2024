@@ -594,8 +594,8 @@ GraphNode AStarNode::Smellification() {
     int depth = 0; // how deep we've searched so far
     
     // current and best costs for this search (not for A*)
-    double cost = 0;
-    double bestCost = 0;
+    double cost = 999999;
+    double bestCost = 999999;
     GraphNode bestPos;
     bestPos.x = (int)(MAX_X/2);
     bestPos.y = 0;
