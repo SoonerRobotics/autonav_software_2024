@@ -67,4 +67,10 @@ int main() {
     double weights_sum = std::accumulate(weights.begin(), weights.end(), 0.0);
     printf("weights sum: %f\n", weights_sum);
 
+    //exponential
+    double dist_sqrt = .063345;
+    double exponential_result = exp(-1 * dist_sqrt / (2 * pow(0.45, 2)));
+
+    printf("exponential_result: %f\n", exponential_result);
+
 }

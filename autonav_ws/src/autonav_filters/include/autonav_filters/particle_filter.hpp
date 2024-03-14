@@ -49,7 +49,7 @@ class ParticleFilter {
             this->latitudeLength = latitudeLength;
             this->longitudeLength = longitudeLength;
             std::random_device rd;
-            std::mt19937 generator(rd());
+            std::mt19937 generator(std::chrono::high_resolution_clock::now().time_since_epoch().count());
             this->generator = generator;
         };
 
@@ -126,7 +126,7 @@ class ParticleFilter {
                 printf("particle_x, particle_y: %f, %f\n", this->particles[i].x, this->particles[i].y);
                 double distance = sqrt(pow((this->particles[i].x - gps_x), double(2)) + pow((this->particles[i].y - gps_y), double(2)));
                 printf("distance: %f\n", distance);
-                this->particles[i].weight = exp(-1 * distance / 2 * pow(this->gps_noise[0], 2));
+                this->particles[i].weight = exp(-1 * distance / (2 * pow(this->gps_noise[0], 2)));
                 printf("particle weight after reassignment: %f\n", this->particles[i].weight);
             }
 
@@ -180,6 +180,7 @@ class ParticleFilter {
 
             for (int i = 0;i < num_particles; i++) {
                 int index = discrete(generator);
+                //index = 0;
                 printf("index %i\n", index);
                 Particle selected_particle = this->particles[index];
                 new_particles.push_back(selected_particle);
@@ -195,8 +196,10 @@ class ParticleFilter {
             std::normal_distribution<> normal_distribution_y{0, this->odom_noise[1]};
             for (Particle p : new_particles) {
                 double random_x = normal_distribution_x(generator);
+                random_x = 0.03;
                 double random_y = normal_distribution_y(generator);
-                
+                random_y = 0.05;
+
                 printf("random_x, random_y: %f, %f\n", random_x, random_y);
 
                 double x = p.x + random_x * cos(p.theta) + random_y * sin(p.theta);
@@ -206,6 +209,7 @@ class ParticleFilter {
 
                 std::normal_distribution<> normal_distribution_theta{p.theta, this->odom_noise[2]};
                 double theta = normal_distribution_theta(generator);
+                //theta = 2.0;
                 printf("theta: %f\n", theta);
                 this->particles.push_back(Particle(x, y, theta, p.weight));
             }
@@ -257,7 +261,7 @@ class ParticleFilter {
 
     private:
         std::mt19937 generator;
-        static const int num_particles = 100;
+        static const int num_particles = 2;
         double gps_noise[1] = {0.45};
         double odom_noise[3] = {0.05, 0.05, 0.01};
         std::vector<Particle> particles;
