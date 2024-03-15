@@ -1,11 +1,14 @@
 #pragma once
 
 // C++ includes
-#include <string>
-#include <iostream>
+#include <algorithm>
 #include <filesystem>
-#include <unordered_map>
+#include <fstream>
+#include <iostream>
 #include <queue>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 // SCR::Node
 #include "scr/node.hpp"
@@ -84,14 +87,20 @@ public:
 
 private:
     // Y and X dimensions for the occpancy grid
-    int MAX_Y = 80;
-    int MAX_X = 80;
+    const static int MAX_Y = 80;
+    const static int MAX_X = 80;
 
     // member fields
     int* map[MAX_Y * MAX_X] = {}; // 1D map (row-major) of all grid data
+    //https://www.geeksforgeeks.org/priority-queue-in-cpp-stl/ and  https://cplusplus.com/reference/queue/priority_queue/
     std::priority_queue<GraphNode> frontier; // priority queue (aka heap, heapqueue, etc) of all the points we need to explore next for A* (priority queue is used because it is fast and good)
     GraphNode* closed[MAX_X * MAX_Y] = {}; // list of all points we've explored in the current iteration of A*
     GPSPoint position; // position of robot (lat, lon)
+    std::vector<GPSPoint> waypoints;
+
+    bool getNewGpsCoords; // whether we need to update the waypoints array or not
+    const int MAX_DEPTH = 50; // smellification max depth
+    std::vector<GraphNode> smellyFrontier; // smellification frontier
 
     // stuff for file-reading code
     const std::string WAYPOINTS_FILENAME = "./data/waypoints.csv"; // filename for the waypoints (should be CSV file with label,lat,lon,)
@@ -116,4 +125,5 @@ private:
     // main methods
     GraphNode getGoalPoint(); // Smellification algorithm
     std::vector<GraphNode> doAStar(); // main A* algorithm
+    std::vector<GraphNode> getNeighbors();
 };

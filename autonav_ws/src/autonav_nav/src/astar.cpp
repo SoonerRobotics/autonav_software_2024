@@ -1,6 +1,8 @@
 // only include we need, to not accidentally double-include things
 #include "autonav_nav/astar.h"
 
+// https://github.com/SoonerRobotics/autonav_software_2024/blob/feat/astar_rewrite/autonav_ws/src/autonav_nav/src/astar.cpp
+
 // main method (don't put in separate file else it no worky)
 int main(int argc, char *argv[]) {
     rclcpp::init(argc, argv);
@@ -39,8 +41,8 @@ void AStarNode::init() {
 
 
     // ROS stuff
-    expandedSubscriber = this->create_subscription<nav_msgs::msg::OccupancyGrid>("/autonav/cfg_space/expanded", 20, std::bind(&AStarNode::onConfigSpaceReceived, this, std::placeholders::_1));
-    poseSubscriber = this->create_subscription<geometry_msgs::msg::Pose>("/autonav/position", 20, std::bind(&AStarNode::onPoseReceived, this, std::placeholders::_1));
+    expandedSubscriber = this->create_subscription<nav_msgs::msg::OccupancyGrid>("/autonav/cfg_space/expanded", 20, std::bind(&AStarNode::onOccupancyGridReceived, this, std::placeholders::_1));
+    poseSubscriber = this->create_subscription<geometry_msgs::msg::Pose>("/autonav/position", 20, std::bind(&AStarNode::onPositionReceived, this, std::placeholders::_1));
     pathPublisher = this->create_publisher<nav_msgs::msg::Path>("/autonav/path", 20);
 
 
@@ -60,6 +62,7 @@ void AStarNode::onPositionReceived(geometry_msgs::msg::Pose msg) {
 
 // callback for occupancy grid
 void AStarNode::onOccupancyGridReceived(nav_msgs::msg::OccupancyGrid msg) {
+    //FIXME msg.data is a vector, not an array
     this->map = msg.data; // take the data and run with it
 
     // and then publish our path
@@ -73,15 +76,41 @@ void AStarNode::publishPath() {
 
     // if A* didn't find anything
     if (path.size() == 0) {
-        //TODO
-    } else {
-        //TODO
+        //TODO don't we just like not publish anything then? or do we need to like tell somebody, because theoretically we should always be able to find a path right?
+    } else { // otherwise we found something and need to publish it
+        // message we're publishing
+        nav_msgs::msg::Path pathMsg;
+
+        // chuck the header into it
+        pathMsg.header = std_msgs::msg::Header();
+        pathMsg.header.stamp = this->now();
+
+        // for each node in the path
+        for(GraphNode node : path) {
+            // we need to append a Pose for it, which requires a few other messages to add to it
+            geometry_msgs::msg::PoseStamped poseStamped;
+            geometry_msgs::msg::Pose pose;
+            geometry_msgs::msg::Point point;
+
+            //FIXME this should be giving the lat and lon, no?
+            point.x = node.x;
+            point.y = node.y;
+
+            // reassemble/constructify the PoseStamped message
+            pose.position = point;
+            poseStamped.pose = pose;
+
+            // add the position to the actual message
+            pathMsg.poses.push_back(poseStamped);
+        }
+
+        this->pathPublisher->publish(pathMsg);
     }
 }
 
 
 // main actual A* method
-void AStarNode::doAStar() {
+std::vector<GraphNode> AStarNode::doAStar() {
     // get our goal point
     GraphNode goal = this->getGoalPoint();
     
@@ -95,10 +124,12 @@ void AStarNode::doAStar() {
 
     // initialize our frontier
     frontier.push(start);
+    GraphNode current;
     
     // while there are still nodes we can explore, we should keep searching
     while (frontier.size() > 0) {
-        GraphNode current = frontier.pop(); // get the node with the lowest cost
+        current = frontier.top(); // get the node with the lowest cost
+        frontier.pop(); // and remove it
 
         // if we're at the goal, then we should have a path reaching all the way back to the start
         if (current == goal) {
@@ -107,8 +138,9 @@ void AStarNode::doAStar() {
 
         // for each neighbor of the current node
         for (GraphNode neighbor : getNeighbors(current)) {
-            //FIXME
-            if (neighbor in closed) { // if we've already explored it,
+            // if we've already explored it,
+            //TODO find a faster/better way to do this
+            if (std::find(closed.begin(), closed.end(), neighbor) != closed.end()) { //https://stackoverflow.com/questions/571394/how-to-find-out-if-an-item-is-present-in-a-stdvector
                 continue; // skip it
             }
 
@@ -125,7 +157,21 @@ void AStarNode::doAStar() {
         }
     }
 
+    // if we've broken out of the loop, then current is at the goal node
     //TODO return stuff
+    std::vector<GraphNode> path;
+    path.resize(100);
+    GraphNode parent;
+    while(true) {
+        parent = current;
+        current = *parent; //???
+        path.push_back(parent);
+    }
+
+    // reverse the path because it's finish->start and it needs to be start->finish
+    std::reverse(path.begin(), path.end()); // https://stackoverflow.com/questions/8877448/how-do-i-reverse-a-c-vector
+
+    return path;
 }
 
 // smellification algorithm to determine our goal node that we path plan to
@@ -141,8 +187,14 @@ GraphNode AStarNode::getGoalPoint() {
 
     int depth = 0;
     while (depth < MAX_DEPTH && smellyFrontier.size() > 0) {
+        // for each node on our frontier
         for (GraphNode node : smellyFrontier) {
             //TODO
+
+            // for each neighbor of our current node
+            for (GraphNode neighbor : getNeighbors(node)) {
+                //TODO
+            }
 
             // if the current node is cheaper to go to
             if (node.f_cost < best.f_cost) {
@@ -153,6 +205,8 @@ GraphNode AStarNode::getGoalPoint() {
             }
         }
 
-        depth++
+        depth++;
     }
+
+    return best;
 }
