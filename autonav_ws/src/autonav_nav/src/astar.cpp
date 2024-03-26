@@ -184,10 +184,38 @@ public:
 
         // begin the search
         while (depth < MAX_DEPTH) {
-            //TODO
+            // for each node on our frontier
+            for (GraphNode node : frontier) {
+                //TODO calculate costs
+                //TODO update costs
+
+                // for each neighbor of our current node
+                for (GraphNode neighbor : getNeighbors(node)) {
+                    // if the neighbor is already in the to-be-explored list
+                    if (neighbor in smellyFrontier) {
+                        continue; // skip it
+                    } 
+
+                    // otherwise, it should be in the frontier
+                    smellyFrontier.push_back(neighbor);
+                }
+
+                // if the current node is cheaper to go to
+                if (node.f_cost < best.f_cost) {
+                    // then replace the current best with the new best
+                    best.x = node.x;
+                    best.y = node.y;
+                    best.f_cost = node.f_cost;
+                }
+
+                // once we've reached here we've obviously explored it, so tack it to the explored list
+                smellyExplored.push_back(node);
+            }
 
             depth++;
         }
+
+        //TODO make path from best cost back to start
     }
 
 private:
