@@ -169,11 +169,25 @@ public:
         // empty the frontier
         this->frontier.erase();
 
+        //TODO make startNode variable thingamajig
+
         // push the starting node for our search onto the frontier
-        this->frontier.push_back(startNode);
+        this->frontier.push(startNode);
+
+        // combined smellification algorithm
+        int depth = 0;
+        GraphNode best;
+        best.f_cost = 9999;
+
+        GraphNode current;
+        current.f_cost = 9999;
 
         // begin the search
-        
+        while (depth < MAX_DEPTH) {
+            //TODO
+
+            depth++;
+        }
     }
 
 private:
