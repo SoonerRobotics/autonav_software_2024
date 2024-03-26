@@ -57,7 +57,12 @@ void AStarNode::init() {
 
 // callback for GPS position
 void AStarNode::onPositionReceived(geometry_msgs::msg::Pose msg) {
+    GPSPoint pos;
+    pos.lat = msg.position.y;
+    pos.lon = msg.position.x;
 
+    this->position = pos;
+    //TODO we probably want to do something with the heading or something
 }
 
 // callback for occupancy grid
@@ -158,13 +163,12 @@ std::vector<GraphNode> AStarNode::doAStar() {
     }
 
     // if we've broken out of the loop, then current is at the goal node
-    //TODO return stuff
     std::vector<GraphNode> path;
     path.resize(100);
     GraphNode parent;
     while(true) {
         parent = current;
-        current = *parent; //???
+        current = *parent; //FIXME
         path.push_back(parent);
     }
 
@@ -193,7 +197,13 @@ GraphNode AStarNode::getGoalPoint() {
 
             // for each neighbor of our current node
             for (GraphNode neighbor : getNeighbors(node)) {
-                //TODO
+                // if the neighbor is already in the to-be-explored list
+                if (neighbor in smellyFrontier) {
+                    continue; // skip it
+                } 
+
+                // otherwise, it should be in the frontier
+                smellyFrontier.push_back(neighbor);
             }
 
             // if the current node is cheaper to go to
@@ -203,6 +213,9 @@ GraphNode AStarNode::getGoalPoint() {
                 best.y = node.y;
                 best.f_cost = node.f_cost;
             }
+
+            // once we've reached here we've obviously explored it, so tack it to the explored list
+            smellyExplored.push_back(node);
         }
 
         depth++;
