@@ -49,7 +49,16 @@ class ParticleFilter {
             this->latitudeLength = latitudeLength;
             this->longitudeLength = longitudeLength;
             std::random_device rd;
-            std::mt19937 generator(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+            //std::mt19937 generator(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+            std::mt19937 generator(rd());
+            std::vector<int> range = {1, 5, 10, 15, 20, 25};
+            std::discrete_distribution<int> discrete(range.begin(), range.end());
+             for (int i = 0; i < 10; i++) {
+                int index = discrete(generator);
+                int value = range[index];
+                printf("index: %d\n", index);
+                printf("value: %d\n", value);
+            }
             this->generator = generator;
         };
 
@@ -261,7 +270,7 @@ class ParticleFilter {
 
     private:
         std::mt19937 generator;
-        static const int num_particles = 2;
+        static const int num_particles = 1;
         double gps_noise[1] = {0.45};
         double odom_noise[3] = {0.05, 0.05, 0.01};
         std::vector<Particle> particles;

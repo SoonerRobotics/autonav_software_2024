@@ -129,7 +129,7 @@ TEST(ParticleFilterTests, complete_test) {
     // cut down the deltas until they are the same length as the gps values
     
     int n = latitudes.size();
-    //n = 10;
+    //n = 5;
 
     std::vector sliced_delta_xs(delta_xs.begin(), delta_xs.begin() + n);
     std::vector sliced_delta_ys(delta_ys.begin(), delta_ys.begin() + n);

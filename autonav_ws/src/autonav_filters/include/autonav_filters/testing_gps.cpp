@@ -49,16 +49,16 @@ int main() {
     
     std::cout << '\n';
     std::cout << sum;
-    // for (int i = 0; i < 1; i++) {
-    //     int index = discrete(generator);
-    //     int value = range[index];
-    //     printf("index: %d\n", index);
-    //     printf("value: %d\n", value);
-    // }
-    // std::vector<int> indexes;
-    // for (int i = 0; i < 100; i++) {
-    //     indexes.push_back(num_generator());
-    // }
+    for (int i = 0; i < 1; i++) {
+        int index = discrete(generator);
+        int value = range[index];
+        printf("index: %d\n", index);
+        printf("value: %d\n", value);
+    }
+    std::vector<int> indexes;
+    for (int i = 0; i < 10; i++) {
+        indexes.push_back(num_generator());
+    }
 
     // accumulate
     std::vector<double> weights;
