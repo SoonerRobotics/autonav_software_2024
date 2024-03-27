@@ -44,7 +44,7 @@ private:
     MotorWithEncoder right_motor_;
 
     float update_period_ = 0.025f;
-    float pulses_per_radian_ = 600.0f * 20.0f / 16.8f;
+    float pulses_per_radian_ = 600.0f;
     float wheel_radius_ = 0.19f;
     float wheelbase_length_ = 0.575f;
     float left_encoder_factor_ = 1.00f;
