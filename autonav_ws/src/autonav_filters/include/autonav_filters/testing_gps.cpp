@@ -22,6 +22,10 @@ int num_generator() {
     return index;
 }
 
+double pymod(double n, double M) {
+    return fmodl(((fmodl(n, M)) + M), M);
+}
+
 int main() {
     // distance
     double particles_x;
@@ -73,4 +77,12 @@ int main() {
 
     printf("exponential_result: %f\n", exponential_result);
 
+    double theta = 0.0;
+
+    for (int i=0; i < 10; i++) {
+        std::normal_distribution<> normal_distribution_theta{theta, 0.05};
+        double theta = pymod(normal_distribution_theta(generator), (2* M_PI));
+        //theta = 2.0;
+        printf("theta: %f\n", theta);
+    }
 }

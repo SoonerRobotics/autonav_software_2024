@@ -203,7 +203,7 @@ class ParticleFilter {
 
             std::normal_distribution<> normal_distribution_x{0, this->odom_noise[0]};
             std::normal_distribution<> normal_distribution_y{0, this->odom_noise[1]};
-            for (Particle p : new_particles) {
+            for (int i = 0; i < int(std::size(new_particles)); i++) {
                 double random_x = normal_distribution_x(generator);
                 random_x = 0.03;
                 double random_y = normal_distribution_y(generator);
@@ -211,16 +211,16 @@ class ParticleFilter {
 
                 printf("random_x, random_y: %f, %f\n", random_x, random_y);
 
-                double x = p.x + random_x * cos(p.theta) + random_y * sin(p.theta);
-                double y = p.y + random_x * sin(p.theta) + random_y * cos(p.theta);
+                double x = new_particles[i].x + random_x * cos(new_particles[i].theta) + random_y * sin(new_particles[i].theta);
+                double y = new_particles[i].y + random_x * sin(new_particles[i].theta) + random_y * cos(new_particles[i].theta);
 
-                printf("x, y, theta: %f, %f, %f\n", x, y, p.theta);
+                printf("x, y, theta: %f, %f, %f\n", x, y, new_particles[i].theta);
 
-                std::normal_distribution<> normal_distribution_theta{p.theta, this->odom_noise[2]};
-                double theta = normal_distribution_theta(generator);
-                //theta = 2.0;
+                std::normal_distribution<> normal_distribution_theta{new_particles[i].theta, this->odom_noise[2]};
+                double theta = pymod(normal_distribution_theta(generator), (2 * M_PI));
+                //double theta = 6.0;
                 printf("theta: %f\n", theta);
-                this->particles.push_back(Particle(x, y, theta, p.weight));
+                this->particles.push_back(Particle(x, y, theta, new_particles[i].weight));
             }
             for (int i = 0; i < int(std::size(this->particles)); i++) {
                 printf("new particles after resample: %f, %f, %f, %f\n", this->particles[i].x, this->particles[i].y, this->particles[i].theta, this->particles[i].weight);
@@ -270,7 +270,7 @@ class ParticleFilter {
 
     private:
         std::mt19937 generator;
-        static const int num_particles = 1;
+        static const int num_particles = 10;
         double gps_noise[1] = {0.45};
         double odom_noise[3] = {0.05, 0.05, 0.01};
         std::vector<Particle> particles;
