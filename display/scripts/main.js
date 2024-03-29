@@ -602,7 +602,7 @@ $(document).ready(function () {
             input.classList.add("form-control");
             input.value = data;
             input.onchange = function () {
-                config[device][text] = input.value;
+                config[device][text] = parseFloat(input.value);
                 send({
                     op: "configuration",
                     device: device,
@@ -628,7 +628,7 @@ $(document).ready(function () {
             input.classList.add("form-control");
             input.value = data;
             input.onchange = function () {
-                config[device][text] = input.value;
+                config[device][text] = parseInt(input.value);
                 send({
                     op: "configuration",
                     device: device,

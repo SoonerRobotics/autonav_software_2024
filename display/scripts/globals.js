@@ -43,7 +43,9 @@ var addressKeys = {
 		"blur_weight": "int",
 		"blur_iterations": "int",
 		"rod_offset": "int",
-		"map_res": "int"
+		"map_res": "int",
+		"image_warp_tl": "float",
+		"image_warp_tr": "float"
 	},
 
 	"autonav_vision_expandifier": {

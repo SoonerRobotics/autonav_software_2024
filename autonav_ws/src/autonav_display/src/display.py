@@ -95,7 +95,7 @@ class BroadcastNode(Node):
 		self.filteredSubscriber = self.create_subscription(CompressedImage, "/autonav/cfg_space/raw/image/left", self.filteredCallbackLeft, 20)
 		self.filteredSubscriber = self.create_subscription(CompressedImage, "/autonav/cfg_space/raw/image/right", self.filteredCallbackRight, 20)
 		self.bigboiSubscriber = self.create_subscription(CompressedImage, "/autonav/cfg_space/raw/debug", self.bigboiCallback, 20)
-		self.debugAStarSubscriber = self.create_subscription(CompressedImage, "/autonav/debug/astar/image", self.debugAStarCallback, 20)
+		self.debugAStarSubscriber = self.create_subscription(CompressedImage, "/autonav/cfg_space/expanded/image", self.debugAStarCallback, 20)
 		
 		self.get_logger().info("Starting event loop")
 
