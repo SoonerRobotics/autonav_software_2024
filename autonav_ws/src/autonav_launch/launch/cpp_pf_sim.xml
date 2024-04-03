@@ -19,4 +19,5 @@
         <param name="longitude_length" value="81978.2" />
     </node>
     <node pkg="autonav_nav" exec="path_resolver.py" />
+    <node pkg="autonav_display" exec="display.py" />
 </launch>
