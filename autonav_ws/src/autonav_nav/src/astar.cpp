@@ -23,6 +23,7 @@
 #include "scr/json.hpp"
 using json = nlohmann::json;
 
+#define INF_COST 9999 // to represent a node with infinite cost (ie unexplored kind of)
 
 // === structs ===
 // struct to represent a node on the graph (essentially a square in the grid/map, but like math-technically it's a 'node' or something)
@@ -100,8 +101,8 @@ public:
 
 
         // subscribers and publisher
-        expandedSubscriber = this->create_subscription<nav_msgs::msg::OccupancyGrid>("/autonav/cfg_space/expanded", 20, std::bind(&onOccupancyGridReceived, this, std::placeholders::_1));
-        poseSubscriber = this->create_subscription<geometry_msgs::msg::Pose>("/autonav/position", 20, std::bind(&onPositionReceived, this, std::placeholders::_1));
+        expandedSubscriber = this->create_subscription<nav_msgs::msg::OccupancyGrid>("/autonav/cfg_space/expanded", 20, std::bind(AStarNode::onOccupancyGridReceived, this, std::placeholders::_1));
+        poseSubscriber = this->create_subscription<geometry_msgs::msg::Pose>("/autonav/position", 20, std::bind(AStarNode::onPositionReceived, this, std::placeholders::_1));
         pathPublisher = this->create_publisher<nav_msgs::msg::Path>("/autonav/path", 20);
 
         // we've set everything up so now we're operating
@@ -163,13 +164,54 @@ public:
         }
     }
 
+    // get the city-block neighbors (except not backwards because we don't do that here)
+    std::vector<GraphNode> getNeighbors(GraphNode node) {
+        // get the two neighbors left and right
+        // get the neighbor forwards (up)
+        const auto directions = {{-1, 0}, {0, -1}, {0, 1}};
+
+        std::vector<GraphNode> ret = {};
+
+        // for each direction
+        for (int i = 0; i < directions.length; i++) {
+            // calculate the neighbor's x and y
+            int x = node.x + directions[0];
+            int y = node.y + directions[1];
+
+            // if the x coordinate is in bounds
+            if (0 < x && x < MAX_X) {
+                // and the y coord is in bounds
+                if (0 < y && y < MAX_Y) {
+                    // and it's not an obstacle
+                    if (map[y][x] != 0) {
+                        // then it's a good neighbor
+                        GraphNode neighbor;
+                        neighbor.x = x;
+                        neighbor.y = y;
+                        neighbor.g_cost = INF_COST;
+                        neighbor.h_cost = INF_COST;
+                        neighbor.f_cost = INF_COST;
+
+                        ret.push_back(neighbor);
+                    }
+                }
+            }
+        }
+
+        return ret;
+    }
+
     std::vector<GraphNode> findPath() {
-        std::vector<GraphNode> pathSoFar;
+        // create a new, empty frontier
+        this->frontier = std::priority_queue<GraphNode>();
 
-        // empty the frontier
-        this->frontier.erase();
-
-        //TODO make startNode variable thingamajig
+        // make the start node
+        GraphNode startNode;
+        startNode.x = MAX_X/2;
+        startNode.y = MAX_Y;
+        startNode.g_cost = 1; // initial cost to move here is 1
+        startNode.h_cost = INF_COST;
+        startNode.f_cost = INF_COST;
 
         // push the starting node for our search onto the frontier
         this->frontier.push(startNode);
@@ -177,27 +219,39 @@ public:
         // combined smellification algorithm
         int depth = 0;
         GraphNode best;
-        best.f_cost = 9999;
+        best.f_cost = INF_COST;
 
         GraphNode current;
-        current.f_cost = 9999;
+        current.f_cost = INF_COST;
 
         // begin the search
         while (depth < MAX_DEPTH) {
             // for each node on our frontier
             for (GraphNode node : frontier) {
-                //TODO calculate costs
-                //TODO update costs
-
-                // for each neighbor of our current node
+                // for each neighbor of the node
                 for (GraphNode neighbor : getNeighbors(node)) {
                     // if the neighbor is already in the to-be-explored list
-                    if (neighbor in smellyFrontier) {
+                    if (neighbor in frontier || neighbor in closed) {
                         continue; // skip it
-                    } 
+                    }
 
-                    // otherwise, it should be in the frontier
-                    smellyFrontier.push_back(neighbor);
+                    // calculate smellification costs
+                    double x_cost = pow((neighbor.x - (MAX_X)/2), 2); // cost for x coordinate is (x - MAX/2)**2
+                    double y_cost = -neighbor.y + MAX_Y; // cost for y coordinate is just linear
+
+                    // update A* costs
+                    double g_cost = node.g_cost + 1; // cost to move there is current+1
+                    //TODO should this be x_cost and y_cost?
+                    double h_cost = dist(neighbor, startNode); // h_cost is just distance from here to the goal except we don't know where the goal is we're figuring that out as we go FIXME
+
+                    // otherwise, update it
+                    neighbor.parent = &node; // neighbor should point to current node for it's parent
+                    neighbor.g_cost = g_cost; // and update it with all the values we calculated
+                    neighbor.h_cost = h_cost;
+                    neighbor.f_cost = g_cost + h_cost;
+
+                    // and add it to the frontier
+                    this->frontier.push(neighbor);
                 }
 
                 // if the current node is cheaper to go to
@@ -209,7 +263,7 @@ public:
                 }
 
                 // once we've reached here we've obviously explored it, so tack it to the explored list
-                smellyExplored.push_back(node);
+                closed.push_back(node);
             }
 
             depth++;
@@ -244,18 +298,11 @@ private:
     rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr poseSubscriber; // subscribes to sensor fusion position output
     
     // subscriber callbacks
-    void onOccupancyGridReceived(nav_msgs::msg::OccupancyGrid msg);
-    void onPositionReceived(geometry_msgs::msg::Pose msg);
+    // void onOccupancyGridReceived(nav_msgs::msg::OccupancyGrid msg);
+    // void onPositionReceived(geometry_msgs::msg::Pose msg);
 
     // publishers
     rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pathPublisher;
-
-    // publisher callbacks
-    void publishPath();
-
-    // main methods
-    std::vector<GraphNode> getNeighbors(GraphNode node);
-    std::vector<GraphNode> findPath();
 };
 
 
