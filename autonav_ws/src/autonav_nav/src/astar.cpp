@@ -227,7 +227,10 @@ public:
         // begin the search
         while (depth < MAX_DEPTH) {
             // for each node on our frontier
-            for (GraphNode node : frontier) {
+            while(frontier not empty) {
+                node = frontier.peek(); // the node we look at first is the one with the least cost
+                frontier.pop(); // remove it from the frontier
+
                 // for each neighbor of the node
                 for (GraphNode neighbor : getNeighbors(node)) {
                     // if the neighbor is already in the to-be-explored list
@@ -269,7 +272,24 @@ public:
             depth++;
         }
 
-        //TODO make path from best cost back to start
+        // once we're reached here, we should have a path somewhere, so find it
+        std::vector<GraphNode> path = std::vector<GraphNode>();
+        GraphNode current = best;
+        while (true) {
+            // get the parent 
+            GraphNode node = *current.parent;
+
+            // and add it to the path
+            path.push_back(node);
+
+            // if we've reached the start node, then we've found the path
+            if (node == startNode) {
+                return path;
+            }
+
+            // and move our current back to the node
+            current = node;
+        }
     }
 
 private:
