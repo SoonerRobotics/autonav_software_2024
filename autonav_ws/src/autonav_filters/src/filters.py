@@ -78,15 +78,15 @@ class FiltersNode(Node):
             self.onReset()
             
     def onGPSReceived(self, msg: GPSFeedback):
-        self.get_logger().info("RECEIVED GPS")
+        #self.get_logger().info("RECEIVED GPS")
         if msg.gps_fix == 0 and msg.is_locked == False:
             return
         
         if self.firstGps is None:
             self.firstGps = msg
 
-        self.get_logger().info(f"firstGps.latitude {self.firstGps.latitude}\n")
-        self.get_logger().info(f"firstGps.longitude {self.firstGps.longitude}\n")
+        #self.get_logger().info(f"firstGps.latitude {self.firstGps.latitude}\n")
+        #self.get_logger().info(f"firstGps.longitude {self.firstGps.longitude}\n")
 
         self.lastGps = msg
 
@@ -111,30 +111,30 @@ class FiltersNode(Node):
         position = Position()
         position.x = averages[0]
         position.y = averages[1]
-        self.get_logger().info(f"position.x {position.x}\n")
-        self.get_logger().info(f"position.y {position.y}\n")
+        #self.get_logger().info(f"position.x {position.x}\n")
+        #self.get_logger().info(f"position.y {position.y}\n")
         position.theta = (-1 * math.pi * 2 + averages[2]) * 1
-        self.get_logger().info(f"position.theta {position.theta}\n")
+        #self.get_logger().info(f"position.theta {position.theta}\n")
         
         if self.firstGps is not None:
             gps_x = self.firstGps.latitude + position.x / self.latitudeLength
             gps_y = self.firstGps.longitude - position.y / self.longitudeLength
-            self.get_logger().info(f"firstGps.latitude {self.firstGps.latitude}\n")
-            self.get_logger().info(f"firstGps.longitude {self.firstGps.longitude}\n")
-            self.get_logger().info(f"gps_x {gps_x}\n")
-            self.get_logger().info(f"gps_y {gps_y}\n")
+            #self.get_logger().info(f"firstGps.latitude {self.firstGps.latitude}\n")
+            #self.get_logger().info(f"firstGps.longitude {self.firstGps.longitude}\n")
+            #self.get_logger().info(f"gps_x {gps_x}\n")
+            #self.get_logger().info(f"gps_y {gps_y}\n")
             
             position.latitude = gps_x
-            self.get_logger().info(f"position.latitude {position.latitude}\n")
+            #self.get_logger().info(f"position.latitude {position.latitude}\n")
             position.longitude = gps_y
-            self.get_logger().info(f"position.longitude {position.longitude}\n")
+            #self.get_logger().info(f"position.longitude {position.longitude}\n")
 
         if self.system_mode == SystemModeEnum.SIMULATION and self.lastGps is not None:
             #position.latitude = self.lastGps.latitude
             #position.longitude = self.lastGps.longitude
             print("do nothing")
         
-        self.get_logger().info(f"averages 0: {averages[0]}, averages 1: {averages[1]}, averages 2: {averages[2]}")
+        #self.get_logger().info(f"averages 0: {averages[0]}, averages 1: {averages[1]}, averages 2: {averages[2]}")
         #self.get_logger().info(f"publishing position x: {position.x}, y: {position.y}, {position.theta}")
         #self.get_logger().info(f"position latitude: {position.latitude}, longitude {position.longitude}")
         self.positionPublisher.publish(position)

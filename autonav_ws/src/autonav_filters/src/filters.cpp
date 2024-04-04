@@ -85,24 +85,24 @@ void FiltersNode::on_MotorFeedback_received(const autonav_msgs::msg::MotorFeedba
     autonav_msgs::msg::Position position;
     position.x = averages[0];
     position.y = averages[1];
-    RCLCPP_INFO(this->get_logger(), "position.x %f\n", position.x);
-    RCLCPP_INFO(this->get_logger(), "position.y %f\n", position.y);
+    //RCLCPP_INFO(this->get_logger(), "position.x %f\n", position.x);
+    //RCLCPP_INFO(this->get_logger(), "position.y %f\n", position.y);
     position.theta = (-1 * M_PI * 2 + averages[2]);
-    RCLCPP_INFO(this->get_logger(), "position.theta %f\n", position.theta);
+    //RCLCPP_INFO(this->get_logger(), "position.theta %f\n", position.theta);
     if (this->first_gps_received == true) {
         double gps_x = this->first_gps.latitude + position.x / this->latitudeLength;
         double gps_y = this->first_gps.longitude - position.y / this->longitudeLength;
 
-        RCLCPP_INFO(this->get_logger(), "first_gps.latitude %f", first_gps.latitude);
-        RCLCPP_INFO(this->get_logger(), "first_gps.longitude %f", first_gps.longitude);
-        RCLCPP_INFO(this->get_logger(), "gps_x %f", gps_x);
-        RCLCPP_INFO(this->get_logger(), "gps_y %f", gps_y);
+        //RCLCPP_INFO(this->get_logger(), "first_gps.latitude %f", first_gps.latitude);
+        //RCLCPP_INFO(this->get_logger(), "first_gps.longitude %f", first_gps.longitude);
+        //RCLCPP_INFO(this->get_logger(), "gps_x %f", gps_x);
+        //RCLCPP_INFO(this->get_logger(), "gps_y %f", gps_y);
 
 
         position.latitude = gps_x;
-        RCLCPP_INFO(this->get_logger(), "position.latitude %f\n", position.latitude);
+        //RCLCPP_INFO(this->get_logger(), "position.latitude %f\n", position.latitude);
         position.longitude = gps_y;
-        RCLCPP_INFO(this->get_logger(), "position.longitude %f\n", position.longitude);
+        //RCLCPP_INFO(this->get_logger(), "position.longitude %f\n", position.longitude);
     }
 
     if (this->last_gps_assigned = true) {

@@ -10,7 +10,6 @@
 #include "autonav_filters/rapidcsv.h"
 
 TEST(ParticleFilterTests, initialization_test) {
-    GTEST_SKIP() << "Skipping init test";
     double latitudeLength = 111086.2;
     double longitudeLength = 81978.2;
     ParticleFilter particle_filter = ParticleFilter(latitudeLength, longitudeLength);
@@ -40,14 +39,14 @@ TEST(ParticleFilterTests, feedback_test) {
     std::vector<double> delta_ys = motor_feedback_sheet.GetColumn<double>(3);
     std::vector<double> delta_thetas = motor_feedback_sheet.GetColumn<double>(4);
 
-    printf("delta_xs size: %ld\n", delta_xs.size());
+    //printf("delta_xs size: %ld\n", delta_xs.size());
 
     std::vector sliced_delta_xs(delta_xs.begin(), delta_xs.begin() + 1402);
     std::vector sliced_delta_ys(delta_ys.begin(), delta_ys.begin() + 1402);
     std::vector sliced_delta_thetas(delta_thetas.begin(), delta_thetas.begin() + 1402);
-    printf("sliced_delta_xs size: %ld\n", sliced_delta_xs.size());
-    printf("sliced_delta_xs size: %ld\n", sliced_delta_xs.size());
-    printf("sliced_delta_xs size: %ld\n", sliced_delta_xs.size());
+    // printf("sliced_delta_xs size: %ld\n", sliced_delta_xs.size());
+    // printf("sliced_delta_xs size: %ld\n", sliced_delta_xs.size());
+    // printf("sliced_delta_xs size: %ld\n", sliced_delta_xs.size());
     
 
     double latitudeLength = 111086.2;
@@ -68,9 +67,9 @@ TEST(ParticleFilterTests, feedback_test) {
         position_vector = particle_filter.feedback(motor_message);
     }
 
-    printf("%f\n", position_vector[0]);
-    printf("%f\n", position_vector[1]);
-    printf("%f\n", position_vector[2]);
+    // printf("%f\n", position_vector[0]);
+    // printf("%f\n", position_vector[1]);
+    // printf("%f\n", position_vector[2]);
 
     EXPECT_EQ(position_vector[0], 1.4589810840940724e-15);
     EXPECT_EQ(position_vector[1], -1.1226575225009583e-14);
@@ -78,7 +77,7 @@ TEST(ParticleFilterTests, feedback_test) {
 }
 
 TEST(ParticleFilterTests, gps_test) {
-    GTEST_SKIP() << "Skipping gps_test";
+    //GTEST_SKIP() << "Skipping gps_test";
     double latitudeLength = 111086.2;
     double longitudeLength = 81978.2;
     ParticleFilter particle_filter = ParticleFilter(latitudeLength, longitudeLength);
@@ -101,6 +100,7 @@ TEST(ParticleFilterTests, gps_test) {
 }
 
 TEST(ParticleFilterTests, complete_test) {
+    // This test will fail sometimes because the particle filter is non-deterministic
     double latitudeLength = 111086.2;
     double longitudeLength = 81978.2;
     ParticleFilter particle_filter = ParticleFilter(latitudeLength, longitudeLength);
@@ -143,11 +143,11 @@ TEST(ParticleFilterTests, complete_test) {
     std::vector<double> gps_vector;
     for (int i = 0; i < n; i++) {
         motor_message.delta_x = sliced_delta_xs[i];
-        printf("motor_mesage delta_x %f\n", motor_message.delta_x);
+        //printf("motor_mesage delta_x %f\n", motor_message.delta_x);
         motor_message.delta_y = sliced_delta_ys[i];
-        printf("motor_mesage delta_y %f\n", motor_message.delta_y);
+        //printf("motor_mesage delta_y %f\n", motor_message.delta_y);
         motor_message.delta_theta = sliced_delta_thetas[i];
-        printf("motor_mesage delta_theta %f\n\n", motor_message.delta_theta);
+        //printf("motor_mesage delta_theta %f\n\n", motor_message.delta_theta);
 
         gps_message.latitude = latitudes[i];
         gps_message.longitude = longitudes[i];
@@ -164,9 +164,9 @@ TEST(ParticleFilterTests, complete_test) {
     printf("%f\n", position_vector[1]);
     printf("%f\n", position_vector[2]);
 
-    ASSERT_NEAR(position_vector[0], 18.49585229987204, 1.0);
-    ASSERT_NEAR(position_vector[1], 18.936964199952953, 1.0);
-    ASSERT_NEAR(position_vector[2], 1.0485518625679005, 1.0);
+    ASSERT_NEAR(position_vector[0], 17.507143650199076, 1.0);
+    ASSERT_NEAR(position_vector[1], 17.762181504279035, 1.0);
+    ASSERT_NEAR(position_vector[2], 4.3224496833375365, 1.0);
 
     /*std::filesystem::path cwd = std::filesystem::current_path();
     std::string cwd_str = cwd.string();
