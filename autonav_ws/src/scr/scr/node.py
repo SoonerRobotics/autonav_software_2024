@@ -148,7 +148,6 @@ class Node(ROSNode):
         Called when the configuration is updated.
         """
 
-        self.get_logger().warn("Config updated method not overridden: config_updated(json)")
         pass
 
     def get_default_config(self):
@@ -156,7 +155,6 @@ class Node(ROSNode):
         Gets the default configuration for the node.
         """
 
-        self.get_logger().warn("Default config method not overridden: get_default_config()")
         return {}
 
     def set_device_state(self, state: DeviceStateEnum):
