@@ -9,6 +9,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <math.h>
 
 // SCR::Node
 #include "scr/node.hpp"
@@ -101,8 +102,8 @@ public:
 
 
         // subscribers and publisher
-        expandedSubscriber = this->create_subscription<nav_msgs::msg::OccupancyGrid>("/autonav/cfg_space/expanded", 20, std::bind(AStarNode::onOccupancyGridReceived, this, std::placeholders::_1));
-        poseSubscriber = this->create_subscription<geometry_msgs::msg::Pose>("/autonav/position", 20, std::bind(AStarNode::onPositionReceived, this, std::placeholders::_1));
+        expandedSubscriber = this->create_subscription<nav_msgs::msg::OccupancyGrid>("/autonav/cfg_space/expanded", 20, std::bind(&AStarNode::onOccupancyGridReceived, this, std::placeholders::_1));
+        poseSubscriber = this->create_subscription<geometry_msgs::msg::Pose>("/autonav/position", 20, std::bind(&AStarNode::onPositionReceived, this, std::placeholders::_1));
         pathPublisher = this->create_publisher<nav_msgs::msg::Path>("/autonav/path", 20);
 
         // we've set everything up so now we're operating
@@ -168,15 +169,15 @@ public:
     std::vector<GraphNode> getNeighbors(GraphNode node) {
         // get the two neighbors left and right
         // get the neighbor forwards (up)
-        const auto directions = {{-1, 0}, {0, -1}, {0, 1}};
+        const int directions[4][2] = {{-1, 0}, {0, -1}, {0, 1}};
 
         std::vector<GraphNode> ret = {};
 
         // for each direction
-        for (int i = 0; i < directions.length; i++) {
+        for (int i = 0; i < 4; i++) {
             // calculate the neighbor's x and y
-            int x = node.x + directions[0];
-            int y = node.y + directions[1];
+            int x = node.x + directions[i][0];
+            int y = node.y + directions[i][1];
 
             // if the x coordinate is in bounds
             if (0 < x && x < MAX_X) {
@@ -224,11 +225,13 @@ public:
         GraphNode current;
         current.f_cost = INF_COST;
 
+        GraphNode node;
+
         // begin the search
         while (depth < MAX_DEPTH) {
             // for each node on our frontier
-            while(frontier not empty) {
-                node = frontier.peek(); // the node we look at first is the one with the least cost
+            while(frontier.size() > 0) {
+                node = frontier.top(); // the node we look at first is the one with the least cost
                 frontier.pop(); // remove it from the frontier
 
                 // for each neighbor of the node
@@ -274,10 +277,10 @@ public:
 
         // once we're reached here, we should have a path somewhere, so find it
         std::vector<GraphNode> path = std::vector<GraphNode>();
-        GraphNode current = best;
+        current = best;
         while (true) {
             // get the parent 
-            GraphNode node = *current.parent;
+            node = *current.parent;
 
             // and add it to the path
             path.push_back(node);
@@ -292,6 +295,10 @@ public:
         }
     }
 
+    double dist(GraphNode here, GraphNode there) {
+        return sqrt((here.x - there.x)*(here.x-there.x)  +  (here.y-there.y)*(here.y-there.y));
+    }
+
 private:
     // Y and X dimensions for the occpancy grid
     const static int MAX_Y = 80;
@@ -301,7 +308,8 @@ private:
     //https://www.geeksforgeeks.org/priority-queue-in-cpp-stl/ and  https://cplusplus.com/reference/queue/priority_queue/
     std::priority_queue<GraphNode> frontier; // priority queue (aka heap, heapqueue, etc) of all the points we need to explore next for A* (priority queue is used because it is fast and good)
     std::vector<GraphNode> closed; // nodes we have explored
-    std::vector<signed char, std::allocator<signed char>> map; // local map data
+    // std::vector<std::vector<int>> map; // local map data
+    std::vector<signed char, std::allocator<signed char>> map; //FIXME ?????
     GPSPoint position; // position of robot (lat, lon)
     std::vector<GPSPoint> waypoints; // gps waypoints we're PIDing to
 
@@ -317,10 +325,6 @@ private:
     rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr expandedSubscriber; // subscirbes to the output of expandification
     rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr poseSubscriber; // subscribes to sensor fusion position output
     
-    // subscriber callbacks
-    // void onOccupancyGridReceived(nav_msgs::msg::OccupancyGrid msg);
-    // void onPositionReceived(geometry_msgs::msg::Pose msg);
-
     // publishers
     rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pathPublisher;
 };
