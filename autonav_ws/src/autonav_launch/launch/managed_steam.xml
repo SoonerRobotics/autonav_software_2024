@@ -20,4 +20,5 @@
     </node>
     <node pkg="autonav_manual" exec="steam.py" />
     <node pkg="autonav_manual" exec="steamremote" />
+    <node pkg="autonav_display" exec="display.py" />
 </launch>

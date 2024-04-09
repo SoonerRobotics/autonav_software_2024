@@ -36,8 +36,7 @@ class CameraNode(Node):
         self.camera_thread.start()
 
     def config_updated(self, jsonObject):
-        self.config = json.loads(json.dumps(jsonObject), object_hook=lambda d: SimpleNamespace(**d))
-        self.log(json.dumps(self.config.__dict__))
+        self.config = json.loads(self.jdump(jsonObject), object_hook=lambda d: SimpleNamespace(**d))
 
     def get_default_config(self):
         return CameraNodeConfig()
