@@ -40,6 +40,8 @@ class Node(ROSNode):
         self.device_state = DeviceStateEnum.OFF
         self.system_state = SystemStateEnum.DISABLED
         self.system_mode = SystemModeEnum.COMPETITION
+        self.device_states = {}
+        self.node_configs = {}
         self.mobility = False
         self.perf_measurements = {}
 
@@ -66,6 +68,7 @@ class Node(ROSNode):
         :param msg: The device state message.
         """
 
+        self.device_states[msg.device] = msg.state
         if msg.device is None or msg.device != self.identifier:
             return
 
@@ -113,6 +116,7 @@ class Node(ROSNode):
         self.mobility = msg.mobility
 
     def on_config_updated(self, msg: ConfigUpdated):
+        self.node_configs[msg.device] = json.loads(msg.json)
         if msg.device is None or msg.device != self.identifier:
             return
         
@@ -144,7 +148,6 @@ class Node(ROSNode):
         Called when the configuration is updated.
         """
 
-        self.get_logger().warn("Config updated method not overridden: config_updated(json)")
         pass
 
     def get_default_config(self):
@@ -152,7 +155,6 @@ class Node(ROSNode):
         Gets the default configuration for the node.
         """
 
-        self.get_logger().warn("Default config method not overridden: get_default_config()")
         return {}
 
     def set_device_state(self, state: DeviceStateEnum):
@@ -267,6 +269,20 @@ class Node(ROSNode):
         executor.add_node(node)
         executor.spin()
         executor.remove_node(node)
+
+    def run_nodes(nodes):
+        """
+        Runs the nodes with the correct ROS parameters and specifications
+
+        :param nodes: The nodes to run.
+        """
+
+        executor = MultiThreadedExecutor()
+        for node in nodes:
+            executor.add_node(node)
+        executor.spin()
+        for node in nodes:
+            executor.remove_node(node)
 
     def log(self, message: str):
         rclpy.logging.get_logger("scr." + self.identifier).info(message)

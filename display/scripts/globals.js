@@ -16,6 +16,7 @@ var deviceStates = {};
 var logs = [];
 var iterator = 0;
 var iterators = [];
+var debug = false;
 
 var addressKeys = {
 	"autonav_serial_imu": {
@@ -34,14 +35,24 @@ var addressKeys = {
 	"autonav_vision_transformer": {
 		"internal_title": "[Vision] Transformer",
 		"lower_hue": "int",
-		"lower_saturation": "int",
-		"lower_value": "int",
+		"lower_sat": "int",
+		"lower_val": "int",
 		"upper_hue": "int",
-		"upper_saturation": "int",
-		"upper_value": "int",
-		"blur": "int",
+		"upper_sat": "int",
+		"upper_val": "int",
+		"blur_weight": "int",
 		"blur_iterations": "int",
-		"region_of_disinterest_offset": "int"
+		"rod_offset": "int",
+		"map_res": "int",
+		"image_warp_tl": "float",
+		"image_warp_tr": "float"
+	},
+
+	"autonav_vision_expandifier": {
+		"internal_title": "[Vision] Expandifier",
+		"horizontal_fov": "int",
+		"map_res": "int",
+		"vertical_fov": "float"
 	},
 
 	"autonav_filters": {
@@ -66,8 +77,8 @@ var addressKeys = {
 
 	"autonav_nav_astar": {
 		"internal_title": "[Navigation] A*",
-		"pop_distance": "float",
-		"direction": {
+		"waypointPopDistance": "float",
+		"waypointDirection": {
 			0: "North",
 			1: "South",
 			2: "Misc 1",
@@ -76,8 +87,8 @@ var addressKeys = {
 			5: "Misc 4",
 			6: "Misc 5",
 		},
-		"use_only_waypoints": "bool",
-		"waypoint_delay": "float",
+		"useOnlyWaypoints": "bool",
+		"waypointDelay": "float",
 	},
 
 	"autonav_nav_resolver": {
@@ -91,17 +102,10 @@ var addressKeys = {
 		"max_angular_speed": "float"
 	},
 
-	"autonav_playback": {
-		"internal_title": "[Playback]",
-		"record_imu": "bool",
-		"record_gps": "bool",
-		"record_position": "bool",
-		"record_feedback": "bool",
-		"record_objectdetection": "bool",
-		"record_manual": "bool",
-		"record_autonomous": "bool",
-		"record_input": "bool",
-		"record_debugfeedback": "bool",
+	"autonav_image_combiner": {
+		"internal_title": "[Image Combiner]",
+		"overlap": "int",
+		"map_res": "int"
 	}
 }
 

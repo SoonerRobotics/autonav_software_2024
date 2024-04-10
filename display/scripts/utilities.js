@@ -121,7 +121,7 @@ const radiansToDegrees = (radians) => {
 }
 
 const deviceStateToName = (state) => {
-	return state == 0 ? "Off" : state == 1 ? "Standby" : state == 2 ? "Ready" : "Operating";
+	return ["Off", "Booting", "Standby", "Ready", "Operating", "Errored"][state];
 }
 
 const clearGlobals = () => {

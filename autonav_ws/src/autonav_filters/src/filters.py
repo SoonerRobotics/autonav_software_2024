@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import json
+from types import SimpleNamespace
 from autonav_msgs.msg import MotorFeedback, GPSFeedback, Position, IMUData
 from scr.states import DeviceStateEnum, SystemStateEnum, SystemModeEnum
 from particlefilter import ParticleFilter
@@ -15,16 +17,11 @@ class FilterType(IntEnum):
     PARTICLE_FILTER = 1
 
 
-CONFIG_FILTER_TYPE = "filter_type"
-CONFIG_DEGREE_OFFSET = "degree_offset"
-CONFIG_SEED_HEADING = "seed_heading"
-
-
 class FiltersNodeConfig:
     def __init__(self):
-        self.filterType = FilterType.PARTICLE_FILTER
-        self.degreeOffset = 107.0
-        self.seedHeading = False
+        self.filter_type = FilterType.PARTICLE_FILTER
+        self.degree_offset = 107.0
+        self.seed_heading = False
 
 
 class FiltersNode(Node):
@@ -40,9 +37,15 @@ class FiltersNode(Node):
         
         self.pf = ParticleFilter(self.latitudeLength, self.longitudeLength)
         self.reckoning = DeadReckoningFilter()
-        self.config = FiltersNodeConfig()
+        self.config = self.get_default_config()
         
         self.onReset()
+
+    def config_updated(self, jsonObject):
+        self.config = json.loads(self.jdump(jsonObject), object_hook=lambda d: SimpleNamespace(**d))
+
+    def get_default_config(self):
+        return FiltersNodeConfig()
 
     def init(self):
         self.create_subscription(GPSFeedback, "/autonav/gps", self.onGPSReceived, 20)
@@ -59,11 +62,11 @@ class FiltersNode(Node):
         if heading < 0:
             heading = 360 + -heading
         
-        heading += self.config.degreeOffset
+        heading += self.config.degree_offset
         return heading
 
     def onReset(self):
-        if self.lastIMUReceived is not None and self.config.seedHeading:
+        if self.lastIMUReceived is not None and self.config.seed_heading:
             self.reckoning.reset(self.getRealHeading(self.lastIMUReceived.heading))
             self.pf.init_particles(self.getRealHeading(self.lastIMUReceived.heading), True)
         else:
@@ -90,15 +93,14 @@ class FiltersNode(Node):
 
         self.lastGps = msg
 
-        filterType = self.config.filterType
+        filterType = self.config.filter_type
         if filterType == FilterType.PARTICLE_FILTER:
             self.pf.gps(msg)
         '''elif filterType == FilterType.DEAD_RECKONING:
             self.reckoning.gps(msg)
         '''
     def onMotorFeedbackReceived(self, msg: MotorFeedback):
-        #self.get_logger().info("received motorfeedback")
-        filterType = self.config.filterType
+        filterType = self.config.filter_type
         averages = None
         if filterType == FilterType.PARTICLE_FILTER:
             averages = self.pf.feedback(msg)

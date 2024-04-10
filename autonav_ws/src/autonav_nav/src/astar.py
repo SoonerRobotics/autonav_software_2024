@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import json
+from types import SimpleNamespace
 from autonav_msgs.msg import Position, IMUData, PathingDebug, SafetyLights
 from scr_msgs.msg import SystemState
 from scr.node import Node
@@ -78,8 +80,14 @@ class AStarNode(Node):
 
         self.latitudeLength = self.declare_parameter("latitude_length", 111086.2).get_parameter_value().double_value
         self.longitudeLength = self.declare_parameter("longitude_length", 81978.2).get_parameter_value().double_value
-        self.config = AStarNodeConfig()
+        self.config = self.get_default_config()
         self.onReset()
+
+    def config_updated(self, jsonObject):
+        self.config = json.loads(self.jdump(jsonObject), object_hook=lambda d: SimpleNamespace(**d))
+
+    def get_default_config(self):
+        return AStarNodeConfig()
 
     def init(self):
         self.configSpaceSubscriber = self.create_subscription(OccupancyGrid, "/autonav/cfg_space/expanded", self.onConfigSpaceReceived, 20)

@@ -45,8 +45,8 @@ public:
     json get_default_config() override
     {
         SteamJoyNodeConfig defaultConfig;
-        defaultConfig.throttle_deadzone = 0.03f;
-        defaultConfig.steering_deadzone = 0.03f;
+        defaultConfig.throttle_deadzone = 0.15f;
+        defaultConfig.steering_deadzone = 0.15f;
         defaultConfig.forward_speed = 1.8f;
         defaultConfig.turn_speed = 1.0f;
         defaultConfig.max_turn_speed = 3.14159265f;
@@ -66,6 +66,11 @@ public:
             set_device_state(SCR::DeviceState::READY);
         }
     }
+    
+    float lerp(float a, float b, float t)
+    {
+        return a + (b - a) * t;
+    }
 
     void onSteamDataReceived(const autonav_msgs::msg::SteamInput &msg)
     {
@@ -82,18 +87,39 @@ public:
 
         if (abs(msg.ltrig) > throttleDeadzone || abs(msg.rtrig) > throttleDeadzone)
         {
-            throttle = msg.rtrig;
-            throttle = throttle - msg.ltrig;
+            target_throttle = msg.rtrig - msg.ltrig;
+            is_working = true;
         }
 
         if (abs(msg.lpad_x) > steeringDeadzone)
         {
-            steering = msg.lpad_x;
+            target_steering = msg.lpad_x;
+            is_working = true;
         }
 
+        if (abs(msg.ltrig) < throttleDeadzone && abs(msg.rtrig) < throttleDeadzone)
+        {
+            target_throttle = 0;
+            is_working = false;
+        }
+
+        if (abs(msg.lpad_x) < steeringDeadzone)
+        {
+            target_steering = 0;
+            is_working = false;
+        }
+
+        // Generate a forward/angular velocity command that ramps up/down smoothly
+        const float throttleRate = 0.03;
+        const float steeringRate = 0.01;
+        current_throttle = lerp(current_throttle, target_throttle * config.forward_speed, throttleRate * (is_working ? 1 : 1.8));
+        current_steering = lerp(current_steering, target_steering * config.turn_speed, steeringRate * (is_working ? 1 : 1.8));
+
         autonav_msgs::msg::MotorInput input;
-        input.forward_velocity = SCR::Utilities::clamp(throttle * config.forward_speed, -config.max_forward_speed, config.max_forward_speed);
-        input.angular_velocity = -1 * SCR::Utilities::clamp(steering * config.turn_speed, -config.max_turn_speed, config.max_turn_speed);
+        // input.forward_velocity = SCR::Utilities::clamp(throttle * config.forward_speed, -config.max_forward_speed, config.max_forward_speed);
+        // input.angular_velocity = -1 * SCR::Utilities::clamp(steering * config.turn_speed, -config.max_turn_speed, config.max_turn_speed);
+        input.forward_velocity = SCR::Utilities::clamp(current_throttle, -config.max_forward_speed, config.max_forward_speed);
+        input.angular_velocity = -1 * SCR::Utilities::clamp(current_steering * config.turn_speed, -config.max_turn_speed, config.max_turn_speed);
         motor_publisher->publish(input);
     }
 
@@ -104,6 +130,11 @@ public:
 
 private:
     SteamJoyNodeConfig config;
+    float target_throttle = 0;
+    float target_steering = 0;
+    float current_throttle = 0;
+    float current_steering = 0;
+    bool is_working = false;
 };
 
 int main(int argc, char *argv[])

@@ -97,7 +97,7 @@ public:
             return;
         }
 
-        std::vector<int8_t> cfg_space = std::vector<int8_t>(config.map_res * config.map_res);
+        std::vector<int8_t> cfg_space = std::vector<int8_t>((config.map_res) * config.map_res);
         std::fill(cfg_space.begin(), cfg_space.end(), 0);
 
         for (int x = 0; x < config.map_res; x++)
@@ -153,8 +153,8 @@ private:
 
     nav_msgs::msg::MapMetaData map;
 
-    float maxRange = 0.65;
-    float noGoPercent = 0.70;
+    float maxRange = 0.10;
+    float noGoPercent = 0.38;
     int noGoRange = 0;
     std::vector<Circle> circles;
     ExpandifyConfig config;
