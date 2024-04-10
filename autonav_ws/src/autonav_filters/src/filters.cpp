@@ -1,3 +1,5 @@
+#pragma once
+
 #include "autonav_filters/filters.hpp"
 #include "autonav_msgs/msg/motor_feedback.hpp"
 #include "autonav_msgs/msg/gps_feedback.hpp"
@@ -119,3 +121,10 @@ rclcpp::Subscription<autonav_msgs::msg::GPSFeedback>::SharedPtr gps_subscription
 rclcpp::Subscription<autonav_msgs::msg::MotorFeedback>::SharedPtr motor_subscription;
 rclcpp::Publisher<autonav_msgs::msg::Position>::SharedPtr positionPublisher;
 size_t count_;
+
+int main (int argc, char * argv[]) {
+    rclcpp::init(argc, argv);
+    SCR::Node::run_node(std::make_shared<FiltersNode>());
+    rclcpp::shutdown();
+    return 0;
+}

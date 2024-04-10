@@ -34,7 +34,7 @@ include_directories(include)
 # Create Cpp executables
 #add_executable(executable_name /path_to_executable/executable.cpp)
 #ament_target_dependencies(executable_name rclcpp other_dependencies)
-add_executable(filters_node src/filters_node.cpp src/filters.cpp)
+add_executable(filters_node src/filters.cpp)
 ament_target_dependencies(filters_node rclcpp autonav_msgs scr)
 
 add_executable(motor_feedback_example_node src/motor_feedback_example_node.cpp src/motor_feedback_example.cpp)
