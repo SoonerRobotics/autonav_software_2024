@@ -74,7 +74,7 @@ class CameraNode(Node):
                 time.sleep(self.config.scan_rate)
                 continue
 
-            while rclpy.ok() and self.getSystemState().state != SystemStateEnum.SHUTDOWN:
+            while rclpy.ok() and self.system_state != SystemStateEnum.SHUTDOWN:
                 if self.device_state != DeviceStateEnum.OPERATING:
                     continue
 

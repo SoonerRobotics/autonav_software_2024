@@ -29,7 +29,8 @@ var addressKeys = {
 		"refresh_rate": "int",
 		"output_width": "int",
 		"output_height": "int",
-		"camera_index": "int"
+		"camera_index_left": "int",
+		"camera_index_right": "int"
 	},
 
 	"autonav_vision_transformer": {
