@@ -397,9 +397,9 @@ $(document).ready(function () {
             return;
         }
 
-        if (topic == "/autonav/camera/compressed/right") {
+        if (topic == "/autonav/camera/compressed") {
             // Set to 
-            const imgElement = document.getElementById("target_raw_camera_right");
+            const imgElement = document.getElementById("target_raw_camera");
             imgElement.src = `data:image/jpeg;base64,${msg.data}`;
             return;
         }
@@ -410,8 +410,8 @@ $(document).ready(function () {
             return;
         }
 
-        if (topic == "/autonav/cfg_space/raw/image/right") {
-            const imgElement = document.getElementById("target_filtered_camera_right");
+        if (topic == "/autonav/cfg_space/raw/image") {
+            const imgElement = document.getElementById("target_filtered_camera");
             imgElement.src = `data:image/jpeg;base64,${msg.data}`;
             return;
         }
