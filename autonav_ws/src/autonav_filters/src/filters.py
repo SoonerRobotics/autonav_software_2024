@@ -138,7 +138,7 @@ class FiltersNode(Node):
         
         #self.get_logger().info(f"averages 0: {averages[0]}, averages 1: {averages[1]}, averages 2: {averages[2]}")
         #self.get_logger().info(f"publishing position x: {position.x}, y: {position.y}, {position.theta}")
-        #self.get_logger().info(f"position latitude: {position.latitude}, longitude {position.longitude}")
+        self.get_logger().info(f"position latitude: {position.latitude}, longitude {position.longitude}")
         self.positionPublisher.publish(position)
 
 
