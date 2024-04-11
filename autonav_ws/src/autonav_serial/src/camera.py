@@ -20,14 +20,16 @@ class CameraNodeConfig:
         self.refresh_rate = 8
         self.output_width = 640
         self.output_height = 480
-        self.camera_index = 0
+        self.camera_index_left = 0
+        self.camera_index_right = 1
         self.scan_rate = 1.0
 
 
 class CameraNode(Node):
     def __init__(self):
         super().__init__("autonav_serial_camera")
-        self.camera_publisher = self.create_publisher(CompressedImage, "/autonav/camera/compressed", 20)
+        self.camera_publisher_left = self.create_publisher(CompressedImage, "/autonav/camera/compressed/left", 20)
+        self.camera_publisher_right = self.create_publisher(CompressedImage, "/autonav/camera/compressed/right", 20)
         self.camera_thread = threading.Thread(target=self.camera_worker)
         self.camera_thread.daemon = True
 
@@ -35,17 +37,27 @@ class CameraNode(Node):
         self.get_logger().info("Initializing camera node...")
         self.camera_thread.start()
 
+    def create_threads(self):
+        self.camera_thread_left = threading.Thread(target=self.camera_worker, args=("left",))
+        self.camera_thread_left.daemon = True
+
+        self.camera_thread_right = threading.Thread(target=self.camera_worker, args=("right",))
+        self.camera_thread_right.daemon = True
+
     def config_updated(self, jsonObject):
         self.config = json.loads(self.jdump(jsonObject), object_hook=lambda d: SimpleNamespace(**d))
 
     def get_default_config(self):
         return CameraNodeConfig()
 
-    def camera_worker(self):
+    def camera_worker(self, *args, **kwargs):
+        index_name = args[0] if len(args) > 0 else ""
+        camera_index = self.config.camera_index_left if index_name == "left" else self.config.camera_index_right
+
         capture = None
         while rclpy.ok() and self.system_state != SystemStateEnum.SHUTDOWN:
             try:
-                if not os.path.exists("/dev/video" + str(self.config.camera_index)):
+                if not os.path.exists("/dev/video" + str(camera_index)):
                     time.sleep(self.config.scan_rate)
                     continue
 
@@ -79,7 +91,10 @@ class CameraNode(Node):
                 if not ret or frame is None:
                     continue
 
-                self.camera_publisher.publish(bridge.cv2_to_compressed_imgmsg(frame))
+                if index_name == "left":
+                    self.camera_publisher_left.publish(bridge.cv2_to_compressed_imgmsg(frame))
+                else:
+                    self.camera_publisher_right.publish(bridge.cv2_to_compressed_imgmsg(frame))
                 time.sleep(1.0 / self.config.refresh_rate)
 
 
