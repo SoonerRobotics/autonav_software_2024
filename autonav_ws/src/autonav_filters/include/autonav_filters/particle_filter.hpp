@@ -192,6 +192,11 @@ class ParticleFilter {
                 int index = discrete(generator);
                 //index = 0;
                 //printf("index %i\n", index);
+                std::ofstream index_log_file;
+                //index_log_file.open("/home/tony/Documents/index_log_file.txt", std::ios::app);
+                //index_log_file << index << std::endl;
+                //index_log_file.close();
+
                 Particle selected_particle = this->particles[index];
                 new_particles.push_back(selected_particle);
             }
@@ -271,7 +276,7 @@ class ParticleFilter {
 
     private:
         std::mt19937 generator;
-        static const int num_particles = 10;
+        static const int num_particles = 750;
         double gps_noise[1] = {0.45};
         double odom_noise[3] = {0.05, 0.05, 0.01};
         std::vector<Particle> particles;
