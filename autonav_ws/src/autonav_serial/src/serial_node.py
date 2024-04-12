@@ -2,6 +2,7 @@
 
 from ctypes import Structure, c_bool, c_uint8
 import rclpy
+import time
 import can
 import threading
 import struct
@@ -71,6 +72,9 @@ class SerialMotors(Node):
                         self.onCanMessageReceived(msg)
                 except can.CanError:
                     pass
+
+    def getClockMs(self):
+        return time.time() * 1000.0
 
     def onCanMessageReceived(self, msg):
         arb_id = msg.arbitration_id

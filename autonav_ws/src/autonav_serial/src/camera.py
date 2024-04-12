@@ -20,7 +20,7 @@ class CameraNodeConfig:
         self.refresh_rate = 8
         self.output_width = 640
         self.output_height = 480
-        self.camera_index_left = 1
+        self.camera_index_left = 0
         self.camera_index_right = 2
         self.scan_rate = 1.0
 
@@ -30,19 +30,19 @@ class CameraNode(Node):
         super().__init__("autonav_serial_camera")
         self.camera_publisher_left = self.create_publisher(CompressedImage, "/autonav/camera/compressed/left", 20)
         self.camera_publisher_right = self.create_publisher(CompressedImage, "/autonav/camera/compressed/right", 20)
-        self.camera_thread = threading.Thread(target=self.camera_worker)
-        self.camera_thread.daemon = True
 
     def init(self):
         self.get_logger().info("Initializing camera node...")
-        self.camera_thread.start()
+        self.create_threads()
 
     def create_threads(self):
         self.camera_thread_left = threading.Thread(target=self.camera_worker, args=("left",))
         self.camera_thread_left.daemon = True
+        self.camera_thread_left.start()
 
         self.camera_thread_right = threading.Thread(target=self.camera_worker, args=("right",))
         self.camera_thread_right.daemon = True
+        self.camera_thread_right.start()
 
     def config_updated(self, jsonObject):
         self.config = json.loads(self.jdump(jsonObject), object_hook=lambda d: SimpleNamespace(**d))
@@ -61,26 +61,27 @@ class CameraNode(Node):
                     time.sleep(self.config.scan_rate)
                     continue
 
-                capture = cv2.VideoCapture(0)
+                capture = cv2.VideoCapture(camera_index)
                 if capture is None or not capture.isOpened():
                     time.sleep(self.config.scan_rate)
                     continue
 
                 capture.set(cv2.CAP_PROP_FRAME_WIDTH, self.config.output_width)
                 capture.set(cv2.CAP_PROP_FRAME_HEIGHT, self.config.output_height)
-                self.set_device_state(DeviceStateEnum.OPERATING)
+                # self.set_device_state(DeviceStateEnum.OPERATING)
             except:
-                self.set_device_state(DeviceStateEnum.STANDBY)
+                # self.set_device_state(DeviceStateEnum.STANDBY)
                 time.sleep(self.config.scan_rate)
                 continue
 
             while rclpy.ok() and self.system_state != SystemStateEnum.SHUTDOWN:
-                if self.device_state != DeviceStateEnum.OPERATING:
-                    continue
+                # if self.device_state != DeviceStateEnum.OPERATING:
+                #     continue
 
                 try:
                     ret, frame = capture.read()
-                    frame = cv2.flip(frame, 1)
+                    if index_name == "left":
+                        frame = cv2.flip(frame, 1)
                     frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
                     frame = cv2.resize(frame, (self.config.output_width, self.config.output_height))
                 except:
@@ -88,7 +89,7 @@ class CameraNode(Node):
                         capture.release()
                         capture = None
 
-                    self.set_device_state(DeviceStateEnum.STANDBY)
+                    # self.set_device_state(DeviceStateEnum.STANDBY)
                     break
 
                 if not ret or frame is None:
