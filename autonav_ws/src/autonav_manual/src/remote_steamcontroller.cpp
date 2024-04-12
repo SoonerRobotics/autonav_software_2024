@@ -19,14 +19,18 @@ struct SteamJoyNodeConfig
     float turn_speed;
     float max_turn_speed;
     float max_forward_speed;
+    bool invert_throttle;
+    bool invert_steering;
+    float throttle_rate;
+    float steering_rate;
 
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE(SteamJoyNodeConfig, throttle_deadzone, steering_deadzone, forward_speed, turn_speed, max_turn_speed, max_forward_speed)
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(SteamJoyNodeConfig, throttle_deadzone, steering_deadzone, forward_speed, turn_speed, max_turn_speed, max_forward_speed, invert_throttle, invert_steering, throttle_rate, steering_rate)
 };
 
 class SteamJoyNode : public SCR::Node
 {
 public:
-    SteamJoyNode() : SCR::Node("autonav_manual_steam")
+    SteamJoyNode() : SCR::Node("autonav_manual_steamcontroller")
     {
         steam_subscription = create_subscription<autonav_msgs::msg::SteamInput>("/autonav/joy/steam", 20, std::bind(&SteamJoyNode::onSteamDataReceived, this, std::placeholders::_1));
         motor_publisher = create_publisher<autonav_msgs::msg::MotorInput>("/autonav/MotorInput", 20);
@@ -48,9 +52,13 @@ public:
         defaultConfig.throttle_deadzone = 0.15f;
         defaultConfig.steering_deadzone = 0.15f;
         defaultConfig.forward_speed = 1.8f;
-        defaultConfig.turn_speed = 1.0f;
+        defaultConfig.turn_speed = 1.3f;
         defaultConfig.max_turn_speed = 3.14159265f;
         defaultConfig.max_forward_speed = 2.2f;
+        defaultConfig.invert_steering = true;
+        defaultConfig.invert_throttle = true;
+        defaultConfig.throttle_rate = 0.01f;
+        defaultConfig.steering_rate = 0.02f;
         return defaultConfig;
     }
 
@@ -110,16 +118,16 @@ public:
         }
 
         // Generate a forward/angular velocity command that ramps up/down smoothly
-        const float throttleRate = 0.03;
-        const float steeringRate = 0.01;
-        current_throttle = lerp(current_throttle, target_throttle * config.forward_speed, throttleRate * (is_working ? 1 : 1.8));
-        current_steering = lerp(current_steering, target_steering * config.turn_speed, steeringRate * (is_working ? 1 : 1.8));
+        current_throttle = lerp(current_throttle, target_throttle * config.forward_speed, config.throttle_rate * (is_working ? 1 : 2.4));
+        current_steering = lerp(current_steering, target_steering * config.turn_speed, config.steering_rate * (is_working ? 1 : 1.8));
 
         autonav_msgs::msg::MotorInput input;
         // input.forward_velocity = SCR::Utilities::clamp(throttle * config.forward_speed, -config.max_forward_speed, config.max_forward_speed);
         // input.angular_velocity = -1 * SCR::Utilities::clamp(steering * config.turn_speed, -config.max_turn_speed, config.max_turn_speed);
         input.forward_velocity = SCR::Utilities::clamp(current_throttle, -config.max_forward_speed, config.max_forward_speed);
-        input.angular_velocity = -1 * SCR::Utilities::clamp(current_steering * config.turn_speed, -config.max_turn_speed, config.max_turn_speed);
+        input.angular_velocity = SCR::Utilities::clamp(current_steering * config.turn_speed, -config.max_turn_speed, config.max_turn_speed);
+        input.forward_velocity *= config.invert_throttle ? -1 : 1;
+        input.angular_velocity *= config.invert_steering ? -1 : 1;
         motor_publisher->publish(input);
     }
 

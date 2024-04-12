@@ -1,18 +1,30 @@
 <launch>
+    <!-- Core -->
     <node pkg="scr_controller" exec="core">
         <param name="mode" value="1" /> 
         <param name="state" value="1" /> 
         <param name="mobility" value="false" /> 
     </node>
+
+    <!-- Filtering -->
     <node pkg="autonav_filters" exec="filters.py">
         <param name="latitude_length" value="111086.2" />
         <param name="longitude_length" value="81978.2" />
         <param name="default_type" value="1" />
     </node>
+
+    <!-- Vision Nodes -->
     <node pkg="autonav_vision" exec="transformations.py" />
-    <node pkg="autonav_display" exec="display.py" />
     <node pkg="autonav_vision" exec="combination.py" />
+
+    <!-- Manual Nodes -->
     <node pkg="autonav_manual" exec="steam.py" />
     <node pkg="autonav_manual" exec="steamremote" />
+
+    <!-- Serial Nodes -->
+    <node pkg="autonav_serial" exec="serial_node.py" />
     <node pkg="autonav_serial" exec="camera.py" />
+
+    <!-- Other -->
+    <node pkg="autonav_display" exec="display.py" />
 </launch>
