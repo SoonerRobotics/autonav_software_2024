@@ -72,7 +72,9 @@ var addressKeys = {
 		"max_forward_speed": "float",
 		"max_turn_speed": "float",
 		"invert_steering": "bool",
-		"invert_throttle": "bool"
+		"invert_throttle": "bool",
+		"throttle_rate": "float",
+		"steering_rate": "float"
 	},
 
 	"autonav_nav_astar": {
