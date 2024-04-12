@@ -19,10 +19,10 @@ static int PWM0 = 6; //right motor controller
 static int PWM1 = 7; //left motor controller
 
 //ENCODER
-static int ENC0A = 8; //right encoder
-static int ENC0B = 9; //right encoder
-static int ENC1A = 10; //left encoder
-static int ENC1B = 11; //left encoder
+static int ENC0A = 9; //right encoder
+static int ENC0B = 8; //right encoder
+static int ENC1A = 11; //left encoder
+static int ENC1B = 10; //left encoder
 
 //EEPROM
 static int EEPROMSDA = 0;
