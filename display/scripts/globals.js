@@ -43,9 +43,7 @@ var addressKeys = {
 		"blur_weight": "int",
 		"blur_iterations": "int",
 		"rod_offset": "int",
-		"map_res": "int",
-		"image_warp_tl": "float",
-		"image_warp_tr": "float"
+		"map_res": "int"
 	},
 
 	"autonav_vision_expandifier": {
@@ -72,7 +70,9 @@ var addressKeys = {
 		"throttle_deadzone": "float",
 		"turn_speed": "float",
 		"max_forward_speed": "float",
-		"max_turn_speed": "float"
+		"max_turn_speed": "float",
+		"invert_steering": "bool",
+		"invert_throttle": "bool"
 	},
 
 	"autonav_nav_astar": {

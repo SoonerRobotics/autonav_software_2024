@@ -19,8 +19,10 @@ struct SteamJoyNodeConfig
     float turn_speed;
     float max_turn_speed;
     float max_forward_speed;
+    bool invert_throttle;
+    bool invert_steering;
 
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE(SteamJoyNodeConfig, throttle_deadzone, steering_deadzone, forward_speed, turn_speed, max_turn_speed, max_forward_speed)
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(SteamJoyNodeConfig, throttle_deadzone, steering_deadzone, forward_speed, turn_speed, max_turn_speed, max_forward_speed, invert_throttle, invert_steering)
 };
 
 class SteamJoyNode : public SCR::Node
@@ -51,6 +53,8 @@ public:
         defaultConfig.turn_speed = 1.0f;
         defaultConfig.max_turn_speed = 3.14159265f;
         defaultConfig.max_forward_speed = 2.2f;
+        defaultConfig.invert_steering = true;
+        defaultConfig.invert_throttle = true;
         return defaultConfig;
     }
 
@@ -119,7 +123,9 @@ public:
         // input.forward_velocity = SCR::Utilities::clamp(throttle * config.forward_speed, -config.max_forward_speed, config.max_forward_speed);
         // input.angular_velocity = -1 * SCR::Utilities::clamp(steering * config.turn_speed, -config.max_turn_speed, config.max_turn_speed);
         input.forward_velocity = SCR::Utilities::clamp(current_throttle, -config.max_forward_speed, config.max_forward_speed);
-        input.angular_velocity = -1 * SCR::Utilities::clamp(current_steering * config.turn_speed, -config.max_turn_speed, config.max_turn_speed);
+        input.angular_velocity = SCR::Utilities::clamp(current_steering * config.turn_speed, -config.max_turn_speed, config.max_turn_speed);
+        input.forward_velocity *= config.invert_throttle ? -1 : 1;
+        input.angular_velocity *= config.invert_steering ? -1 : 1;
         motor_publisher->publish(input);
     }
 
