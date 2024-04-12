@@ -52,13 +52,13 @@ public:
         defaultConfig.throttle_deadzone = 0.15f;
         defaultConfig.steering_deadzone = 0.15f;
         defaultConfig.forward_speed = 1.8f;
-        defaultConfig.turn_speed = 1.0f;
+        defaultConfig.turn_speed = 1.3f;
         defaultConfig.max_turn_speed = 3.14159265f;
         defaultConfig.max_forward_speed = 2.2f;
         defaultConfig.invert_steering = true;
         defaultConfig.invert_throttle = true;
         defaultConfig.throttle_rate = 0.01f;
-        defaultConfig.steering_rate = 0.01f;
+        defaultConfig.steering_rate = 0.02f;
         return defaultConfig;
     }
 
