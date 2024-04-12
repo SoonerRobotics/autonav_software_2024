@@ -28,7 +28,7 @@ struct SteamJoyNodeConfig
 class SteamJoyNode : public SCR::Node
 {
 public:
-    SteamJoyNode() : SCR::Node("autonav_manual_steam")
+    SteamJoyNode() : SCR::Node("autonav_manual_steamcontroller")
     {
         steam_subscription = create_subscription<autonav_msgs::msg::SteamInput>("/autonav/joy/steam", 20, std::bind(&SteamJoyNode::onSteamDataReceived, this, std::placeholders::_1));
         motor_publisher = create_publisher<autonav_msgs::msg::MotorInput>("/autonav/MotorInput", 20);
