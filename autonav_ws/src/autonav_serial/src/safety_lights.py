@@ -20,7 +20,8 @@ class SafetyLightsPacket(Structure):
         ("brightness", c_uint8, 8),
         ("red", c_uint8, 8),
         ("green", c_uint8, 8),
-        ("blue", c_uint8, 8)
+        ("blue", c_uint8, 8),
+        ("blink_period", c_uint8, 8)
     ]
 
 
@@ -70,6 +71,8 @@ class SafetyLightsSerial(Node):
         data["red"] = lights.red
         data["green"] = lights.green
         data["blue"] = lights.blue
+        data["blink_period"] = 500
+
         self.writeQueueLock.acquire()
         self.writeQueue.append(data)
         self.writeQueueLock.release()
