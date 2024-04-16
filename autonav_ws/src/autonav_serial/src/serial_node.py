@@ -31,7 +31,8 @@ class SafetyLightsPacket(Structure):
         ("brightness", c_uint8, 8),
         ("red", c_uint8, 8),
         ("green", c_uint8, 8),
-        ("blue", c_uint8, 8)
+        ("blue", c_uint8, 8),
+        ("blink_period", c_uint8, 8)
     ]
 
 
@@ -165,6 +166,7 @@ class SerialMotors(Node):
         packed_data.red = lights.red
         packed_data.green = lights.green
         packed_data.blue = lights.blue
+        packed_data.blink_period = 500
         can_msg = can.Message(
             arbitration_id=SAFETY_LIGHTS_ID, data=bytes(packed_data))
         try:
