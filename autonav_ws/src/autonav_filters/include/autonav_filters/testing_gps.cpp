@@ -12,7 +12,7 @@
 int num_generator() {
     std::random_device rd;
     std::mt19937 generator(rd());
-    std::vector<int> range = {1, 5, 10, 15, 20, 25};
+    std::vector<int> range = {1, 1, 1, 1, 1, 100};
     std::discrete_distribution<int> discrete(range.begin(), range.end());
     int index = discrete(generator);
     int value = range[index];
@@ -42,7 +42,7 @@ int main() {
 
     std::random_device rd;
     std::mt19937 generator(rd());
-    std::vector<int> range = {1, 5, 10, 15, 20, 25};
+    std::vector<int> range = {10, 30, 20, 25, 15};
     std::discrete_distribution<int> discrete(range.begin(), range.end());
     std::vector<double> p = discrete.probabilities();
     double sum = 0.0;
@@ -50,19 +50,51 @@ int main() {
         sum = sum + n;
         std::cout << n << ' ';
     }
+    std::cout << "sum: " << sum << std::endl;
     
+    std::vector<int> indices;
     std::cout << '\n';
     std::cout << sum;
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i < 1000; i++) {
         int index = discrete(generator);
         int value = range[index];
-        printf("index: %d\n", index);
-        printf("value: %d\n", value);
+        indices.push_back(index);
+        //printf("index: %d\n", index);
+        //printf("value: %d\n", value);
     }
-    std::vector<int> indexes;
-    for (int i = 0; i < 10; i++) {
-        indexes.push_back(num_generator());
+
+    int one_count;
+    int twos_count;
+    int threes_count;
+    int fours_count;
+    int fives_count;
+    for (int idx : indices) {
+        if (idx == 0) {
+            one_count++;
+        }
+        else if (idx == 1) {
+            twos_count++;
+        }
+        else if (idx == 2) {
+            threes_count++;
+        }  
+        else if (idx == 3) {
+            fours_count++;
+        }
+        else if (idx == 4) {
+            fives_count++;
+        }
     }
+
+    std::cout << "number of ones: " << one_count << std::endl;
+    std::cout << "number of twos: " << twos_count << std::endl;
+    std::cout << "number of threes: " << threes_count << std::endl;
+    std::cout << "number of fours: " << fours_count << std::endl;    
+    std::cout << "number of fives: " << fives_count << std::endl;    
+    //std::vector<int> indexes;
+    //for (int i = 0; i < 10; i++) {
+    //    indexes.push_back(num_generator());
+    // }
 
     // accumulate
     std::vector<double> weights;
@@ -85,4 +117,13 @@ int main() {
         //theta = 2.0;
         printf("theta: %f\n", theta);
     }
+
+    std::vector<int> test_vec;
+
+    test_vec.push_back(1);
+    test_vec.push_back(2);
+
+    std::cout << test_vec[0] << std::endl;
+    std::cout << test_vec[1] << std::endl;
+
 }

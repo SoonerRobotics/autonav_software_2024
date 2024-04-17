@@ -118,7 +118,7 @@ class ParticleFilter {
             //printf("new particles in feedback: %f, %f, %f, %f\n", this->particles[i].x, this->particles[i].y, this->particles[i].theta, this->particles[i].weight);
             //printf("\n====== END FEEDBACK ======\n\n");
             return feedback_vector;
-        }
+        };
 
         std::vector<double> gps(autonav_msgs::msg::GPSFeedback gps) {
             if (this->first_gps_received == false) {
@@ -132,6 +132,7 @@ class ParticleFilter {
             //printf("gps_x, gps_y: %f, %f\n", gps_x, gps_y);
 
             for (int i = 0; i < this->particles.size(); i++) {
+                //printf("particle %d \n", i);
                 //printf("particle_x, particle_y: %f, %f\n", this->particles[i].x, this->particles[i].y);
                 double distance = sqrt(pow((this->particles[i].x - gps_x), double(2)) + pow((this->particles[i].y - gps_y), double(2)));
                 //printf("distance: %f\n", distance);
@@ -190,6 +191,8 @@ class ParticleFilter {
 
             for (int i = 0;i < num_particles; i++) {
                 int index = discrete(generator);
+                //printf("index: %d\n", index);
+                //printf("weight before selecting new particles: %f\n", this->particles[i].weight);
                 //index = 0;
                 //printf("index %i\n", index);
                 std::ofstream index_log_file;
@@ -202,6 +205,7 @@ class ParticleFilter {
             }
 
             for (int i = 0; i < int(std::size(new_particles)); i++) {
+                //printf("weight after selecting new particles: %f\n", this->particles[i].weight);
                 //printf("new particles: %f, %f, %f, %f\n", new_particles[i].x, new_particles[i].y, new_particles[i].theta, new_particles[i].weight);
             }
 
@@ -224,7 +228,7 @@ class ParticleFilter {
 
                 std::normal_distribution<> normal_distribution_theta{new_particles[i].theta, this->odom_noise[2]};
                 double theta = pymod(normal_distribution_theta(generator), (2 * M_PI));
-                //double theta = 6.0;
+                //theta = 6.0;
                 //printf("theta: %f\n", theta);
                 this->particles.push_back(Particle(x, y, theta, new_particles[i].weight));
             }
@@ -277,7 +281,7 @@ class ParticleFilter {
     private:
         std::mt19937 generator;
         static const int num_particles = 750;
-        double gps_noise[1] = {0.45};
+        double gps_noise[1] = {0.80};
         double odom_noise[3] = {0.05, 0.05, 0.01};
         std::vector<Particle> particles;
         double latitudeLength;

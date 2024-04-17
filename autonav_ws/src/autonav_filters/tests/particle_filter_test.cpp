@@ -10,6 +10,7 @@
 #include "autonav_filters/rapidcsv.h"
 
 TEST(ParticleFilterTests, initialization_test) {
+    //GTEST_SKIP() << "skipping init test";
     double latitudeLength = 111086.2;
     double longitudeLength = 81978.2;
     ParticleFilter particle_filter = ParticleFilter(latitudeLength, longitudeLength);
@@ -33,6 +34,7 @@ TEST(ParticleFilterTests, initialization_test) {
 }
 
 TEST(ParticleFilterTests, feedback_test) {
+    //GTEST_SKIP() << "skipping feedback test";
     rapidcsv::Document motor_feedback_sheet("/home/tony/autonav_software_2024/autonav_ws/src/autonav_filters/tests/ENTRY_FEEDBACK.csv");
 
     std::vector<double> delta_xs = motor_feedback_sheet.GetColumn<double>(2);
@@ -129,7 +131,7 @@ TEST(ParticleFilterTests, complete_test) {
     // cut down the deltas until they are the same length as the gps values
     
     int n = latitudes.size();
-    //n = 5;
+    //n = 1;
 
     std::vector sliced_delta_xs(delta_xs.begin(), delta_xs.begin() + n);
     std::vector sliced_delta_ys(delta_ys.begin(), delta_ys.begin() + n);
