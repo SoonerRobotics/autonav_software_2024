@@ -4,7 +4,7 @@
     <node pkg="scr_controller" exec="core">
         <param name="mode" value="1" /> 
         <param name="state" value="1" /> 
-        <param name="mobility" value="false" /> 
+        <param name="mobility" value="true" /> 
     </node>
     <node pkg="scr_controller" exec="logging" />
 

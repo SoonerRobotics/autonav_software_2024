@@ -1,8 +1,8 @@
 <launch>
     <!-- Core -->
     <node pkg="scr_controller" exec="core">
-        <param name="mode" value="1" /> 
-        <param name="state" value="1" /> 
+        <param name="mode" value="0" /> 
+        <param name="state" value="0" /> 
         <param name="mobility" value="false" /> 
     </node>
     <node pkg="scr_controller" exec="logging" />
