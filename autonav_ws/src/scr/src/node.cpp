@@ -19,6 +19,7 @@ namespace SCR
 
         // Create publishers
         publishers.performance_track = this->create_publisher<std_msgs::msg::Float64>(Constants::Topics::PERFORMANCE_TRACK, 10);
+        publishers.logging = this->create_publisher<scr_msgs::msg::Log>(Constants::Topics::LOGGING, 10);
 
         // Create clients
         clients.system_state = this->create_client<scr_msgs::srv::UpdateSystemState>(Constants::Services::SYSTEM_STATE, rmw_qos_profile_services_default, callback_groups.system_state);
@@ -35,6 +36,14 @@ namespace SCR
 
     Node::~Node()
     {
+    }
+
+    void Node::log(std::string data)
+    {
+        scr_msgs::msg::Log msg;
+        msg.node = identifier;
+        msg.data = data;
+        publishers.logging->publish(msg);
     }
 
     void Node::system_state_callback(const scr_msgs::msg::SystemState msg)

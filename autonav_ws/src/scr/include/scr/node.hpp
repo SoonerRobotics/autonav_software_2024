@@ -8,6 +8,7 @@
 #include "scr_msgs/msg/config_updated.hpp"
 #include "scr_msgs/msg/device_state.hpp"
 #include "scr_msgs/msg/system_state.hpp"
+#include "scr_msgs/msg/log.hpp"
 #include "states.hpp"
 #include "structs.hpp"
 #include "constants.hpp"
@@ -28,6 +29,7 @@ namespace SCR
     struct NodePublishers
     {
         rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr performance_track;
+        rclcpp::Publisher<scr_msgs::msg::Log>::SharedPtr logging;
     };
 
     struct NodeClients
@@ -104,6 +106,7 @@ namespace SCR
         void device_state_callback(const scr_msgs::msg::DeviceState msg);
         void config_updated_callback(const scr_msgs::msg::ConfigUpdated msg);
         void set_system_total_state(SCR::SystemState state, SCR::SystemMode mode, bool mobility);
+        void log(std::string data);
 
     protected:
         /// @brief The current system mode

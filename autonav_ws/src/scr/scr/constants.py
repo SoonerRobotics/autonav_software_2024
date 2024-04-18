@@ -3,6 +3,7 @@ class Topics:
 	DEVICE_STATE = "/scr/device_state"
 	CONFIG_UPDATE = "/scr/config_updated"
 	PERFORMANCE_TRACK = "/scr/performance"
+	LOGGING = "/scr/logging"
 
 class Services:
 	SYSTEM_STATE = "/scr/system_state_client"
