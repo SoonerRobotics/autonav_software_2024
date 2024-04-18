@@ -5,9 +5,11 @@
         <param name="state" value="1" /> 
         <param name="mobility" value="true" /> 
     </node>
+    <node pkg="scr_controller" exec="logging" />
     <node pkg="scr_logging" exec="logging">
         <param name="log_to_console" value="true" />
     </node>
+
     <node pkg="scr_configuration" exec="config">
         <param name="preset" value="simulation" />
     </node>
