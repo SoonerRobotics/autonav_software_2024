@@ -100,13 +100,16 @@ namespace SCR
         /// @brief Returns the default current configuration of the node
         /// @return The default configuration
         virtual json get_default_config() = 0;
+        
+        /// @brief Logs a message to the logging topic
+        /// @param data The message to log
+        void log(std::string data);
 
     private:
         void system_state_callback(const scr_msgs::msg::SystemState msg);
         void device_state_callback(const scr_msgs::msg::DeviceState msg);
         void config_updated_callback(const scr_msgs::msg::ConfigUpdated msg);
         void set_system_total_state(SCR::SystemState state, SCR::SystemMode mode, bool mobility);
-        void log(std::string data);
 
     protected:
         /// @brief The current system mode
