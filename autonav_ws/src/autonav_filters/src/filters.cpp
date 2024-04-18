@@ -114,6 +114,7 @@ void FiltersNode::on_MotorFeedback_received(const autonav_msgs::msg::MotorFeedba
     //RCLCPP_INFO(this->get_logger(), "average 0: %f, average 1: %f, average 2: %f", averages[0], averages[1], averages[2]);
     //RCLCPP_INFO(this->get_logger(), "publishing position x: %f, y: %f, theta: %f", position.x, position.y, position.theta);
     RCLCPP_INFO(this->get_logger(), "position latitude: %f, longitude: %f", position.latitude, position.longitude);
+
     positionPublisher->publish(position);
 }
 
