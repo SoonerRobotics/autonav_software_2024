@@ -19,19 +19,13 @@ bash vnav.sh
 # Steam Controller Dependencies
 bash steam.sh
 
-# Music Dependencies
-bash jams.sh
-
-# ImGUI Dependencies
-sudo apt install libglfw3-dev libglew-dev -y
-
 # Python deps
 sudo apt install python3-pip -y
 pip3 install python-can[serial]
 pip3 install websockets
 
 # Copy the udev rules to the correct location
-sudo cp autonav.rules /etc/udev/rules.d/autonav.rules
+sudo cp etc/autonav.rules /etc/udev/rules.d/autonav.rules
 
 # Reload udev
 sudo service udev reload
@@ -39,8 +33,8 @@ sleep 2
 sudo service udev restart
 
 # Copy services
-sudo cp autonav.service /etc/systemd/system/autonav.service
-sudo cp autonav_service.sh /usr/bin/autonav_service.sh
+sudo cp etc/autonav.service /etc/systemd/system/autonav.service
+sudo cp etc/autonav_service.sh /usr/bin/autonav_service.sh
 
 # chmod time :D
 sudo chmod +x /usr/bin/autonav_service.sh
