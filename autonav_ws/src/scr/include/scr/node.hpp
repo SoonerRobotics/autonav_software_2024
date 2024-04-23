@@ -8,6 +8,7 @@
 #include "scr_msgs/msg/config_updated.hpp"
 #include "scr_msgs/msg/device_state.hpp"
 #include "scr_msgs/msg/system_state.hpp"
+#include "scr_msgs/msg/log.hpp"
 #include "states.hpp"
 #include "structs.hpp"
 #include "constants.hpp"
@@ -28,6 +29,7 @@ namespace SCR
     struct NodePublishers
     {
         rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr performance_track;
+        rclcpp::Publisher<scr_msgs::msg::Log>::SharedPtr logging;
     };
 
     struct NodeClients
@@ -98,6 +100,10 @@ namespace SCR
         /// @brief Returns the default current configuration of the node
         /// @return The default configuration
         virtual json get_default_config() = 0;
+        
+        /// @brief Logs a message to the logging topic
+        /// @param data The message to log
+        void log(std::string data);
 
     private:
         void system_state_callback(const scr_msgs::msg::SystemState msg);

@@ -5,6 +5,7 @@
         <param name="state" value="0" /> 
         <param name="mobility" value="false" /> 
     </node>
+    <node pkg="scr_controller" exec="logging" />
 
     <!-- Filtering -->
     <node pkg="autonav_filters" exec="filters.py">

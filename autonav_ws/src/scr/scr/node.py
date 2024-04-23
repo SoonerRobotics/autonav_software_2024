@@ -1,7 +1,7 @@
 import threading
 from scr.states import DeviceStateEnum, SystemStateEnum, SystemModeEnum
 from scr_msgs.srv import UpdateDeviceState, UpdateSystemState, UpdateConfig
-from scr_msgs.msg import DeviceState, SystemState, ConfigUpdated
+from scr_msgs.msg import DeviceState, SystemState, ConfigUpdated, Log
 from std_msgs.msg import Float64
 from rclpy.node import Node as ROSNode
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
@@ -36,6 +36,7 @@ class Node(ROSNode):
         self.config_updated_client = self.create_client(UpdateConfig, scr.constants.Services.CONFIG_UPDATE, callback_group=self.config_updated_callback_group)
         
         self.performance_publisher = self.create_publisher(Float64, scr.constants.Topics.PERFORMANCE_TRACK, 10)
+        self.logging_publisher = self.create_publisher(Log, scr.constants.Topics.LOGGING, 10)
 
         self.device_state = DeviceStateEnum.OFF
         self.system_state = SystemStateEnum.DISABLED
@@ -60,6 +61,18 @@ class Node(ROSNode):
             return json.dumps(obj.__dict__)
         else:
             return json.dumps(obj)
+        
+    def log(self, data):
+        """
+        Logs a message to the logging topic.
+
+        :param data: The message to log.
+        """
+
+        log_packet = Log()
+        log_packet.data = data
+        log_packet.node = self.identifier
+        self.logging_publisher.publish(log_packet)
 
     def on_device_state(self, msg: DeviceState):
         """
@@ -283,6 +296,3 @@ class Node(ROSNode):
         executor.spin()
         for node in nodes:
             executor.remove_node(node)
-
-    def log(self, message: str):
-        rclpy.logging.get_logger("scr." + self.identifier).info(message)
