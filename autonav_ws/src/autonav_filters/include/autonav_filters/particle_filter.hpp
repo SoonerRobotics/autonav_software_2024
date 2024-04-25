@@ -281,7 +281,7 @@ class ParticleFilter {
     private:
         std::mt19937 generator;
         static const int num_particles = 750;
-        double gps_noise[1] = {0.75};
+        double gps_noise[1] = {0.8};
         double odom_noise[3] = {0.05, 0.05, 0.01};
         std::vector<Particle> particles;
         double latitudeLength;

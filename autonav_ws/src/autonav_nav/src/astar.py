@@ -298,7 +298,7 @@ class AStarNode(Node):
 
                 if len(self.waypoints) > 0:
                     heading_err_to_gps = abs(self.getAngleDifference(self.position.theta + math.atan2(40 - x, 80 - y), heading_to_gps)) * 180 / math.pi
-                    cost -= max(heading_err_to_gps, 10)
+                    cost -= max(heading_err_to_gps, 5)
 
                 if cost > best_pos_cost:
                     best_pos_cost = cost
