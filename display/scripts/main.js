@@ -644,6 +644,47 @@ $(document).ready(function () {
             div.appendChild(input);
             return div;
         }
+        else if (type == "point.int") {
+            // x, y point for two integers
+            const div = document.createElement("div");
+            div.classList.add("input-group");
+            div.classList.add("mb-3");
+
+            const inputX = document.createElement("input");
+            inputX.type = "number";
+            inputX.classList.add("form-control");
+            inputX.value = data[0];
+            inputX.onchange = function () {
+                config[device][text][0] = parseInt(inputX.value);
+                send({
+                    op: "configuration",
+                    device: device,
+                    json: config[device],
+                });
+            }
+
+            const inputY = document.createElement("input");
+            inputY.type = "number";
+            inputY.classList.add("form-control");
+            inputY.value = data[1];
+            inputY.onchange = function () {
+                config[device][text][1] = parseInt(inputY.value);
+                send({
+                    op: "configuration",
+                    device: device,
+                    json: config[device],
+                });
+            }
+
+            const span = document.createElement("span");
+            span.classList.add("input-group-text");
+            span.innerText = text;
+            
+            div.appendChild(span);
+            div.appendChild(inputX);
+            div.appendChild(inputY);
+            return div;
+        }
         else {
             const options = addressKeys[device][text];
     

@@ -37,8 +37,6 @@ class ImageTransformerConfig:
         self.blur_iterations = 3
         self.rod_offset = 130
         self.map_res = 80
-        self.image_warp_tl = 0.26
-        self.image_warp_tr = 0.26
 
 
 class ImageTransformer(Node):

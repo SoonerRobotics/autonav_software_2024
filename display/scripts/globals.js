@@ -107,8 +107,11 @@ var addressKeys = {
 
 	"autonav_image_combiner": {
 		"internal_title": "[Image Combiner]",
-		"overlap": "int",
-		"map_res": "int"
+		"map_res": "int",
+		"top_left": "point.int",
+		"top_right": "point.int",
+		"bottom_right": "point.int",
+		"bottom_left": "point.int"
 	}
 }
 

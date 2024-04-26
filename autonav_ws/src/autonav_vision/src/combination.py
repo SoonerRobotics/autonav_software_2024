@@ -31,9 +31,11 @@ IMAGE_HEIGHT = 480
 
 class ImageCombinerConfig:
     def __init__(self):
-        self.overlap = 0
         self.map_res = 80
-
+        self.top_left = [147, 287]
+        self.top_right = [851, 232]
+        self.bottom_right = [955, 678]
+        self.bottom_left = [0, 678]
 
 class ImageCombiner(Node):
     def __init__(self):
@@ -119,7 +121,8 @@ class ImageCombiner(Node):
         cv2img_left = g_bridge.compressed_imgmsg_to_cv2(self.image_left)
         cv2img_right = g_bridge.compressed_imgmsg_to_cv2(self.image_right)
         combined = cv2.hconcat([cv2img_left, cv2img_right])
-        pts = [(147, 287), (851, 232), (955, 678), (0, 678)]
+        # ordered as: top-left, top-right, bottom-right, bottom-left
+        pts = [self.config.top_left, self.config.top_right, self.config.bottom_right, self.config.bottom_left]
         combined = self.four_point_transform(combined, np.array(pts))
         datamap = cv2.resize(combined, dsize=(self.config.map_res, self.config.map_res), interpolation=cv2.INTER_LINEAR) / 2
         flat = list(datamap.flatten().astype(int))
