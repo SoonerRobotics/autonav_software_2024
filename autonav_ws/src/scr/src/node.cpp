@@ -26,6 +26,9 @@ namespace SCR
         clients.device_state = this->create_client<scr_msgs::srv::UpdateDeviceState>(Constants::Services::DEVICE_STATE, rmw_qos_profile_services_default, callback_groups.device_state);
         clients.config_update = this->create_client<scr_msgs::srv::UpdateConfig>(Constants::Services::CONFIG_UPDATE, rmw_qos_profile_services_default, callback_groups.config_updated);
 
+        rmw_qos_profile_t q = rmw_qos_profile_sensor_data;
+        qos_profile = rclcpp::QoS(rclcpp::QoSInitialization(q.history, 1), q);
+
         // Create a thread to wait a sec for the node to boot without blocking the main thread
         std::thread booting_thread([this]()
                                    {

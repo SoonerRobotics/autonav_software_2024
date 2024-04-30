@@ -43,9 +43,9 @@ public:
 
         build_circles();
 
-        raw_map_subscriber = create_subscription<nav_msgs::msg::OccupancyGrid>("/autonav/cfg_space/raw", 20, std::bind(&ExpandifyNode::onConfigSpaceReceived, this, std::placeholders::_1));
-        expanded_map_publisher = create_publisher<nav_msgs::msg::OccupancyGrid>("/autonav/cfg_space/expanded", 20);
-        debug_publisher = create_publisher<sensor_msgs::msg::CompressedImage>("/autonav/cfg_space/expanded/image", 20);
+        raw_map_subscriber = create_subscription<nav_msgs::msg::OccupancyGrid>("/autonav/cfg_space/raw", qos_profile, std::bind(&ExpandifyNode::onConfigSpaceReceived, this, std::placeholders::_1));
+        expanded_map_publisher = create_publisher<nav_msgs::msg::OccupancyGrid>("/autonav/cfg_space/expanded", qos_profile);
+        debug_publisher = create_publisher<sensor_msgs::msg::CompressedImage>("/autonav/cfg_space/expanded/image", qos_profile);
 
         set_device_state(SCR::DeviceState::OPERATING);
     }

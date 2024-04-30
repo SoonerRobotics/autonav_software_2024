@@ -6,6 +6,7 @@ import cv2
 import numpy as np
 
 from nav_msgs.msg import MapMetaData, OccupancyGrid
+import rclpy.qos
 from sensor_msgs.msg import CompressedImage
 from geometry_msgs.msg import Pose
 from cv_bridge import CvBridge
@@ -48,9 +49,9 @@ class ImageTransformer(Node):
         return topic + "/" + self.dir
 
     def init(self):
-        self.cameraSubscriber = self.create_subscription(CompressedImage, self.directionify("/autonav/camera/compressed") , self.onImageReceived, 1)
-        self.rawMapPublisher = self.create_publisher(OccupancyGrid, self.directionify("/autonav/cfg_space/preraw"), 1)
-        self.filteredImagePublisher = self.create_publisher(CompressedImage, self.directionify("/autonav/cfg_space/raw/image"), 1)
+        self.cameraSubscriber = self.create_subscription(CompressedImage, self.directionify("/autonav/camera/compressed") , self.onImageReceived, self.qos_profile)
+        self.rawMapPublisher = self.create_publisher(OccupancyGrid, self.directionify("/autonav/cfg_space/preraw"), self.qos_profile)
+        self.filteredImagePublisher = self.create_publisher(CompressedImage, self.directionify("/autonav/cfg_space/raw/image"), self.qos_profile)
 
         self.set_device_state(DeviceStateEnum.OPERATING)
 

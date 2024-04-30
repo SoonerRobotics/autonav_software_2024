@@ -90,12 +90,12 @@ class BroadcastNode(Node):
 
 		self.systemStateService = self.create_client(SetSystemState, "/scr/state/set_system_state")
 
-		self.cameraSubscriberLeft = self.create_subscription(CompressedImage, "/autonav/camera/compressed/left", self.cameraCallbackLeft, 20)
-		self.cameraSubscriberRight = self.create_subscription(CompressedImage, "/autonav/camera/compressed/right", self.cameraCallbackRight, 20)
-		self.filteredSubscriber = self.create_subscription(CompressedImage, "/autonav/cfg_space/raw/image/left", self.filteredCallbackLeft, 20)
-		self.filteredSubscriber = self.create_subscription(CompressedImage, "/autonav/cfg_space/raw/image/right", self.filteredCallbackRight, 20)
-		self.bigboiSubscriber = self.create_subscription(CompressedImage, "/autonav/cfg_space/raw/debug", self.bigboiCallback, 20)
-		self.debugAStarSubscriber = self.create_subscription(CompressedImage, "/autonav/cfg_space/expanded/image", self.debugAStarCallback, 20)
+		self.cameraSubscriberLeft = self.create_subscription(CompressedImage, "/autonav/camera/compressed/left", self.cameraCallbackLeft, self.qos_profile)
+		self.cameraSubscriberRight = self.create_subscription(CompressedImage, "/autonav/camera/compressed/right", self.cameraCallbackRight, self.qos_profile)
+		self.filteredSubscriber = self.create_subscription(CompressedImage, "/autonav/cfg_space/raw/image/left", self.filteredCallbackLeft, self.qos_profile)
+		self.filteredSubscriber = self.create_subscription(CompressedImage, "/autonav/cfg_space/raw/image/right", self.filteredCallbackRight, self.qos_profile)
+		self.bigboiSubscriber = self.create_subscription(CompressedImage, "/autonav/cfg_space/raw/debug", self.bigboiCallback, self.qos_profile)
+		self.debugAStarSubscriber = self.create_subscription(CompressedImage, "/autonav/debug/astar/image", self.debugAStarCallback, self.qos_profile)
 		
 		self.get_logger().info("Starting event loop")
 

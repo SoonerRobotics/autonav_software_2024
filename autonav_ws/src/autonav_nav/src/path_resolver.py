@@ -3,6 +3,7 @@
 import json
 from types import SimpleNamespace
 from autonav_msgs.msg import MotorInput, Position, SafetyLights
+import rclpy.qos
 from scr_msgs.msg import SystemState
 from scr.node import Node
 from scr.states import DeviceStateEnum, SystemStateEnum
@@ -56,10 +57,10 @@ class PathResolverNode(Node):
         self.pure_pursuit = PurePursuit()
         self.backCount = -1
         self.status = -1
-        self.path_subscriber = self.create_subscription(Path, "/autonav/path", self.on_path_received, 20)
-        self.position_subscriber = self.create_subscription(Position, "/autonav/position", self.on_position_received, 20)
-        self.motor_publisher = self.create_publisher(MotorInput, "/autonav/MotorInput", 20)
-        self.safety_lights_publisher = self.create_publisher(SafetyLights, "/autonav/SafetyLights", 20)
+        self.path_subscriber = self.create_subscription(Path, "/autonav/path", self.on_path_received, self.qos_profile)
+        self.position_subscriber = self.create_subscription(Position, "/autonav/position", self.on_position_received, self.qos_profile)
+        self.motor_publisher = self.create_publisher(MotorInput, "/autonav/MotorInput", 1)
+        self.safety_lights_publisher = self.create_publisher(SafetyLights, "/autonav/SafetyLights", self.qos_profile)
         self.config = self.get_default_config()
 
         self.create_timer(0.05, self.onResolve)

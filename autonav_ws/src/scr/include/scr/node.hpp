@@ -133,6 +133,9 @@ namespace SCR
         /// @brief The current map of device configurations
         std::map<std::string, SCR::DeviceState> device_states;
 
+        /// @brief The current qos profile
+        rclcpp::QoS qos_profile = rclcpp::QoS(rclcpp::KeepLast(10));
+
     private:
         NodeSubscriptions subscriptions;
         NodePublishers publishers;

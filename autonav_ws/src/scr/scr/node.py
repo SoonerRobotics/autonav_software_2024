@@ -5,6 +5,7 @@ from scr_msgs.msg import DeviceState, SystemState, ConfigUpdated, Log
 from std_msgs.msg import Float64
 from rclpy.node import Node as ROSNode
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
+from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSHistoryPolicy
 import scr.constants
 import time
 import rclpy
@@ -20,6 +21,11 @@ class Node(ROSNode):
     def __init__(self, node_name):
         super().__init__(node_name)
         self.identifier = node_name
+        self.qos_profile = QoSProfile(
+            reliability = QoSReliabilityPolicy.BEST_EFFORT,
+            history = QoSHistoryPolicy.KEEP_LAST,
+            depth = 1
+        )
 
         # Create the callback groups
         self.device_state_callback_group = MutuallyExclusiveCallbackGroup()

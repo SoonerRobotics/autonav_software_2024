@@ -44,10 +44,10 @@ class ImageCombiner(Node):
     def init(self):
         self.image_left = None
         self.image_right = None
-        self.image_left_subscriber = self.create_subscription(CompressedImage, "/autonav/cfg_space/raw/image/left", self.image_received_left, 10)
-        self.image_right_subscriber = self.create_subscription(CompressedImage, "/autonav/cfg_space/raw/image/right", self.image_received_right, 10)
-        self.combined_image_publisher = self.create_publisher(OccupancyGrid, "/autonav/cfg_space/raw", 10)
-        self.combined_image_publisher_debug = self.create_publisher(CompressedImage, "/autonav/cfg_space/raw/debug", 10)
+        self.image_left_subscriber = self.create_subscription(CompressedImage, "/autonav/cfg_space/raw/image/left", self.image_received_left, self.qos_profile)
+        self.image_right_subscriber = self.create_subscription(CompressedImage, "/autonav/cfg_space/raw/image/right", self.image_received_right, self.qos_profile)
+        self.combined_image_publisher = self.create_publisher(OccupancyGrid, "/autonav/cfg_space/raw", self.qos_profile)
+        self.combined_image_publisher_debug = self.create_publisher(CompressedImage, "/autonav/cfg_space/raw/debug", self.qos_profile)
         self.set_device_state(DeviceStateEnum.OPERATING)
 
     def image_received_left(self, msg):

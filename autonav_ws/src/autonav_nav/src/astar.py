@@ -90,13 +90,13 @@ class AStarNode(Node):
         return AStarNodeConfig()
 
     def init(self):
-        self.configSpaceSubscriber = self.create_subscription(OccupancyGrid, "/autonav/cfg_space/expanded", self.onConfigSpaceReceived, 20)
-        self.poseSubscriber = self.create_subscription(Position, "/autonav/position", self.onPoseReceived, 20)
-        self.imuSubscriber = self.create_subscription(IMUData, "/autonav/imu", self.onImuReceived, 20)
-        self.debugPublisher = self.create_publisher(PathingDebug, "/autonav/debug/astar", 20)
-        self.pathPublisher = self.create_publisher(Path, "/autonav/path", 20)
-        self.safetyLightsPublisher = self.create_publisher(SafetyLights, "/autonav/SafetyLights", 20)
-        self.pathDebugImagePublisher = self.create_publisher(CompressedImage, "/autonav/debug/astar/image", 20)
+        self.configSpaceSubscriber = self.create_subscription(OccupancyGrid, "/autonav/cfg_space/expanded", self.onConfigSpaceReceived, self.qos_profile)
+        self.poseSubscriber = self.create_subscription(Position, "/autonav/position", self.onPoseReceived, self.qos_profile)
+        self.imuSubscriber = self.create_subscription(IMUData, "/autonav/imu", self.onImuReceived, self.qos_profile)
+        self.debugPublisher = self.create_publisher(PathingDebug, "/autonav/debug/astar", self.qos_profile)
+        self.pathPublisher = self.create_publisher(Path, "/autonav/path", self.qos_profile)
+        self.safetyLightsPublisher = self.create_publisher(SafetyLights, "/autonav/SafetyLights", self.qos_profile)
+        self.pathDebugImagePublisher = self.create_publisher(CompressedImage, "/autonav/debug/astar/image", self.qos_profile)
         self.mapTimer = self.create_timer(0.1, self.createPath)
 
         self.resetWhen = -1.0
