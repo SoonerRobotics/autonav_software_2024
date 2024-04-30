@@ -161,20 +161,25 @@ class BroadcastNode(Node):
 					"op": "get_nodes_callback",
 					"nodes": nodes,
 					"states": node_states,
-					"configs": self.node_configs
+					"configs": self.node_configs,
+					"system": {
+						"state": self.system_state,
+						"mode": self.system_mode,
+						"mobility": self.mobility
+					}
 				}), unique_id)
 
 			if obj["op"] == "set_system_state":
 				self.set_system_total_state(int(obj["state"]), self.system_mode, bool(obj["mobility"]))
 
-			# if obj["op"] == "conbus":
-			# 	id = int(obj["id"])
-			# 	data = list(map(lambda x: int(x), obj["data"]))
-			# 	msg = Conbus()
-			# 	msg.id = id
-			# 	msg.data = data
-			# 	msg.iterator = int(obj["iterator"]) if "iterator" in obj else 0
-			# 	self.conbusPublisher.publish(msg)
+			if obj["op"] == "conbus":
+				id = int(obj["id"])
+				data = list(map(lambda x: int(x), obj["data"]))
+				msg = Conbus()
+				msg.id = id
+				msg.data = data
+				msg.iterator = int(obj["iterator"]) if "iterator" in obj else 0
+				self.conbusPublisher.publish(msg)
 
 	async def handler(self, websocket):
 		unique_id = self.getUserIdFromSocket(websocket)

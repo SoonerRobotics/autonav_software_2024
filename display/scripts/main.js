@@ -94,6 +94,12 @@ $(document).ready(function () {
                         config[key] = obj.configs[key];
                     }
                     regenerateConfig();
+
+                    // Update system state
+                    let system = obj["system"];
+                    $("#var_system_state").text(system["state"] == 0 ? "Diabled" : system["state"] == 1 ? "Autonomous" : system["state"] == 2 ? "Manual" : "Shutdown");
+                    $("#var_system_mode").text(system["mode"] == 0 ? "Competition" : system["mode"] == 1 ? "Simulation" : "Practice");
+                    $("#var_system_mobility").text(system["mobility"] ? "Enabled" : "Disabled");
                 }
             }
         };
@@ -124,7 +130,6 @@ $(document).ready(function () {
         send({
             op: "set_system_state",
             state: systemState.state,
-            estop: systemState.estop,
             mobility: systemState.mobility,
         });
     }
@@ -285,22 +290,19 @@ $(document).ready(function () {
         }
 
         if (topic == "/scr/state/system") {
-            const { state, mode, mobility, estop } = msg;
+            const { state, mode, mobility } = msg;
 
             $("#var_system_state").text(state == 0 ? "Diabled" : state == 1 ? "Autonomous" : state == 2 ? "Manual" : "Shutdown");
             $("#var_system_mode").text(mode == 0 ? "Competition" : mode == 1 ? "Simulation" : "Practice");
             $("#var_system_mobility").text(mobility ? "Enabled" : "Disabled");
-            $("#var_system_estop").text(estop ? "Yes" : "No");
 
             systemState.state = state;
             systemState.mode = mode;
             systemState.mobility = mobility;
-            systemState.estop = estop;
 
             $("#input_system_state").val(state);
             $("#input_system_mode").val(mode);
             $("#input_system_mobility").prop("checked", mobility);
-            $("#input_system_estop").prop("checked", estop);
             return;
         }
 
@@ -517,11 +519,6 @@ $(document).ready(function () {
             preferences.gpsFormat = $(this).attr("data-value");
             savePreferences();
         }
-    });
-
-    $("#checkbox_system_estop").on("change", function () {
-        systemState.estop = $(this).is(":checked");
-        setSystemState();
     });
 
     $("#checkbox_system_mobility").on("change", function () {
