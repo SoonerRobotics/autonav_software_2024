@@ -11,8 +11,11 @@ struct ExpandifyConfig
     float vertical_fov;
     float horizontal_fov;
     float map_res;
+    float max_range;
+    float no_go_percent;
+    float no_go_range;
 
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE(ExpandifyConfig, vertical_fov, horizontal_fov, map_res)
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(ExpandifyConfig, vertical_fov, horizontal_fov, map_res, max_range, no_go_percent, no_go_range)
 };
 
 struct Circle
@@ -38,21 +41,7 @@ public:
         map.origin.position.x = -10.0;
         map.origin.position.y = -10.0;
 
-        auto tempRange = maxRange * noGoPercent;
-        maxRange = (int)(maxRange / (config.horizontal_fov / config.map_res));
-        noGoRange = (int)(tempRange / (config.horizontal_fov / config.map_res));
-
-        circles.push_back(Circle{0, 0, 0});
-        for (int x = -maxRange; x <= maxRange; x++)
-        {
-            for (int y = -maxRange; y <= maxRange; y++)
-            {
-                if (maxRange * noGoPercent <= sqrt(x * x + y * y) && sqrt(x * x + y * y) < maxRange)
-                {
-                    circles.push_back(Circle{x, y, sqrt(x * x + y * y)});
-                }
-            }
-        }
+        build_circles();
 
         raw_map_subscriber = create_subscription<nav_msgs::msg::OccupancyGrid>("/autonav/cfg_space/raw", 20, std::bind(&ExpandifyNode::onConfigSpaceReceived, this, std::placeholders::_1));
         expanded_map_publisher = create_publisher<nav_msgs::msg::OccupancyGrid>("/autonav/cfg_space/expanded", 20);
@@ -61,9 +50,42 @@ public:
         set_device_state(SCR::DeviceState::OPERATING);
     }
 
+    void build_circles()
+    {
+        // Reset variables
+        maxRange = config.max_range;
+        noGoPercent = config.no_go_percent;
+        noGoRange = config.no_go_range;
+
+        // Calculate the range of the circles
+        auto tempRange = maxRange * noGoPercent;
+        maxRange = (int)(maxRange / (config.horizontal_fov / config.map_res));
+        noGoRange = (int)(tempRange / (config.horizontal_fov / config.map_res));
+
+        // Build the circles
+        std::vector<Circle> newCircles;
+        newCircles.push_back(Circle{0, 0, 0});
+        for (int x = -maxRange; x <= maxRange; x++)
+        {
+            for (int y = -maxRange; y <= maxRange; y++)
+            {
+                // Check if the point is within the circle
+                if (maxRange * noGoPercent <= sqrt(x * x + y * y) && sqrt(x * x + y * y) < maxRange)
+                {
+                    // Add the point to the circle
+                    newCircles.push_back(Circle{x, y, sqrt(x * x + y * y)});
+                }
+            }
+        }
+
+        circles = newCircles;
+    }
+
     void config_updated(json newConfig) override
     {
         config = newConfig.template get<ExpandifyConfig>();
+        RCLCPP_INFO(this->get_logger(), "Config updated: vertical_fov: %f, horizontal_fov: %f, map_res: %f", config.vertical_fov, config.horizontal_fov, config.map_res);
+        build_circles();
     }
 
     json get_default_config() override
@@ -72,6 +94,9 @@ public:
         newConfig.vertical_fov = 2.75;
         newConfig.horizontal_fov = 3;
         newConfig.map_res = 80.0f;
+        newConfig.max_range = 0.65;
+        newConfig.no_go_percent = 0.70;
+        newConfig.no_go_range = 0;
         return newConfig;
     }
 
@@ -151,8 +176,8 @@ private:
 
     nav_msgs::msg::MapMetaData map;
 
-    float maxRange = 0.10;
-    float noGoPercent = 0.38;
+    float maxRange = 0.65;
+    float noGoPercent = 0.70;
     int noGoRange = 0;
     std::vector<Circle> circles;
     ExpandifyConfig config;

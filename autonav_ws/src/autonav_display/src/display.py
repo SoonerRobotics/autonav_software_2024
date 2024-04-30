@@ -82,7 +82,7 @@ class BroadcastNode(Node):
 		self.motorInputSubscriber = self.create_subscription(MotorInput, "/autonav/MotorInput", self.motorInputCallback, 20)
 		self.motorControllerDebugSubscriber = self.create_subscription(MotorControllerDebug, "/autonav/MotorControllerDebug", self.motorControllerDebugCallback, 20)
 		self.objectDetectionSubscriber = self.create_subscription(ObjectDetection, "/autonav/ObjectDetection", self.objectDetectionCallback, 20)
-		self.pathingDebugSubscriber = self.create_subscription(PathingDebug, "/autonav/debug/astar", self.pathingDebugCallback, 20)
+		self.pathingDebugSubscriber = self.create_subscription(PathingDebug, "/autonav/cfg_space/expanded/image", self.pathingDebugCallback, 20)
 		self.gpsFeedbackSubscriber = self.create_subscription(GPSFeedback, "/autonav/gps", self.gpsFeedbackCallback, 20)
 		self.imuDataSubscriber = self.create_subscription(IMUData, "/autonav/imu", self.imuDataCallback, 20)
 		self.conbusSubscriber = self.create_subscription(Conbus, "/autonav/conbus/data", self.conbusCallback, 100)

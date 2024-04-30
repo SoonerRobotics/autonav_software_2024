@@ -51,7 +51,10 @@ var addressKeys = {
 		"internal_title": "[Vision] Expandifier",
 		"horizontal_fov": "int",
 		"map_res": "int",
-		"vertical_fov": "float"
+		"vertical_fov": "float",
+		"max_range": "float",
+		"no_go_percent": "float",
+		"no_go_range": "float",
 	},
 
 	"autonav_filters": {
