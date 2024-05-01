@@ -64,6 +64,8 @@ class BroadcastNode(Node):
 		self.limiter.setLimit("/autonav/camera/compressed/right", 2)
 		self.limiter.setLimit("/autonav/cfg_space/raw/image/left", 5)
 		self.limiter.setLimit("/autonav/cfg_space/raw/image/right", 5)
+		self.limiter.setLimit("/autonav/cfg_space/raw/image/left_small", 5)
+		self.limiter.setLimit("/autonav/cfg_space/raw/image/right_small", 5)
 		self.limiter.setLimit("/autonav/cfg_space/raw/debug", 5)
 		self.limiter.setLimit("/autonav/debug/astar/image", 5)
 
@@ -92,8 +94,11 @@ class BroadcastNode(Node):
 
 		self.cameraSubscriberLeft = self.create_subscription(CompressedImage, "/autonav/camera/compressed/left", self.cameraCallbackLeft, self.qos_profile)
 		self.cameraSubscriberRight = self.create_subscription(CompressedImage, "/autonav/camera/compressed/right", self.cameraCallbackRight, self.qos_profile)
-		self.filteredSubscriber = self.create_subscription(CompressedImage, "/autonav/cfg_space/raw/image/left", self.filteredCallbackLeft, self.qos_profile)
-		self.filteredSubscriber = self.create_subscription(CompressedImage, "/autonav/cfg_space/raw/image/right", self.filteredCallbackRight, self.qos_profile)
+		self.filteredSubscriberLeft = self.create_subscription(CompressedImage, "/autonav/cfg_space/raw/image/left", self.filteredCallbackLeft, self.qos_profile)
+		self.filteredSubscriberRight = self.create_subscription(CompressedImage, "/autonav/cfg_space/raw/image/right", self.filteredCallbackRight, self.qos_profile)
+		self.filteredSubscriberLeft = self.create_subscription(CompressedImage, "/autonav/cfg_space/raw/image/left_small", self.filteredCallbackLeftSmall, self.qos_profile)
+		self.filteredSubscriberRight = self.create_subscription(CompressedImage, "/autonav/cfg_space/raw/image/right_small", self.filteredCallbackRightSmall, self.qos_profile)
+		self.filteredSubscriberCombined = self.create_subscription(CompressedImage, "/autonav/cfg_space/combined/image", self.filteredCallbackCombined, self.qos_profile)
 		self.bigboiSubscriber = self.create_subscription(CompressedImage, "/autonav/cfg_space/raw/debug", self.bigboiCallback, self.qos_profile)
 		self.debugAStarSubscriber = self.create_subscription(CompressedImage, "/autonav/debug/astar/image", self.debugAStarCallback, self.qos_profile)
 		
@@ -402,6 +407,48 @@ class BroadcastNode(Node):
 		self.pushSendQueue(json.dumps({
 			"op": "data",
 			"topic": "/autonav/cfg_space/raw/image/right",
+			"format": msg.format,
+			"data": base64_str
+		}))
+
+	def filteredCallbackLeftSmall(self, msg: CompressedImage):
+		if not self.limiter.use("/autonav/cfg_space/raw/image/left_small"):
+			return
+
+		byts = msg.data.tobytes()
+		base64_str = base64.b64encode(byts).decode("utf-8")
+
+		self.pushSendQueue(json.dumps({
+			"op": "data",
+			"topic": "/autonav/cfg_space/raw/image/left_small",
+			"format": msg.format,
+			"data": base64_str
+		}))
+
+	def filteredCallbackRightSmall(self, msg: CompressedImage):
+		if not self.limiter.use("/autonav/cfg_space/raw/image/right_small"):
+			return
+
+		byts = msg.data.tobytes()
+		base64_str = base64.b64encode(byts).decode("utf-8")
+
+		self.pushSendQueue(json.dumps({
+			"op": "data",
+			"topic": "/autonav/cfg_space/raw/image/right_small",
+			"format": msg.format,
+			"data": base64_str
+		}))
+
+	def filteredCallbackCombined(self, msg: CompressedImage):
+		if not self.limiter.use("/autonav/cfg_space/combined/image"):
+			return
+
+		byts = msg.data.tobytes()
+		base64_str = base64.b64encode(byts).decode("utf-8")
+
+		self.pushSendQueue(json.dumps({
+			"op": "data",
+			"topic": "/autonav/cfg_space/combined/image",
 			"format": msg.format,
 			"data": base64_str
 		}))

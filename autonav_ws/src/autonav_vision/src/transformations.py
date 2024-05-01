@@ -40,14 +40,14 @@ class ImageTransformerConfig:
 
         # Default to entire image
         self.left_topleft = [0, 0]
-        self.left_topright = [640, 0]
-        self.left_bottomright = [640, 480]
-        self.left_bottomleft = [0, 480]
+        self.left_topright = [480, 0]
+        self.left_bottomright = [480, 640]
+        self.left_bottomleft = [0, 640]
         
         self.right_topleft = [0, 0]
-        self.right_topright = [640, 0]
-        self.right_bottomright = [640, 480]
-        self.right_bottomleft = [0, 480]
+        self.right_topright = [480, 0]
+        self.right_bottomright = [480, 640]
+        self.right_bottomleft = [0, 640]
 
         self.disable_blur = False
         self.disable_hsv = False
@@ -66,7 +66,7 @@ class ImageTransformer(Node):
     def init(self):
         self.cameraSubscriber = self.create_subscription(CompressedImage, self.directionify("/autonav/camera/compressed") , self.onImageReceived, self.qos_profile)
         self.rawMapPublisher = self.create_publisher(OccupancyGrid, self.directionify("/autonav/cfg_space/raw"), self.qos_profile)
-        self.filteredImagePublisher = self.create_publisher(CompressedImage, self.directionify("/autonav/cfg_space/raw/image"), self.qos_profile)
+        self.smallImagePublisher = self.create_publisher(CompressedImage, self.directionify("/autonav/cfg_space/raw/image") + "_small", self.qos_profile)
 
         self.set_device_state(DeviceStateEnum.OPERATING)
 
@@ -147,6 +147,12 @@ class ImageTransformer(Node):
         msg = OccupancyGrid(info=g_mapData, data=flat)
         self.rawMapPublisher.publish(msg)
 
+        # Publish msg as a 80x80 image
+        preview_image = cv2.resize(img, dsize=(80, 80), interpolation=cv2.INTER_LINEAR)
+        preview_msg = g_bridge.cv2_to_compressed_imgmsg(preview_image)
+        preview_msg.format = "jpeg"
+        self.smallImagePublisher.publish(preview_msg)
+
     def onImageReceived(self, image = CompressedImage):
         # Decompressify
         cv_image = g_bridge.compressed_imgmsg_to_cv2(image)
@@ -192,15 +198,6 @@ class ImageTransformer(Node):
 
         # Actually generate the map
         self.publishOccupancyMap(mask)
-
-        # Preview the image
-        preview_image = cv2.cvtColor(mask, cv2.COLOR_GRAY2RGB)
-        preview_msg = g_bridge.cv2_to_compressed_imgmsg(preview_image)
-        preview_msg.header = image.header
-        preview_msg.format = "jpeg"
-
-        # Publish the preview
-        self.filteredImagePublisher.publish(preview_msg)
 
 
 def main():

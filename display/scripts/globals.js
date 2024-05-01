@@ -43,8 +43,19 @@ var addressKeys = {
 		"upper_val": "int",
 		"blur_weight": "int",
 		"blur_iterations": "int",
-		"rod_offset": "int",
-		"map_res": "int"
+		"map_res": "int",
+		"left_bottomleft": "point.int",
+		"left_bottomright": "point.int",
+		"left_topleft": "point.int",
+		"left_topright": "point.int",
+		"right_bottomleft": "point.int",
+		"right_bottomright": "point.int",
+		"right_topleft": "point.int",
+		"right_topright": "point.int",
+		"disable_blur": "bool",
+		"disable_hsv": "bool",
+		"disable_perspective_transform": "bool",
+		"disable_region_of_disinterest": "bool"
 	},
 
 	"autonav_vision_expandifier": {
@@ -110,11 +121,7 @@ var addressKeys = {
 
 	"autonav_image_combiner": {
 		"internal_title": "[Image Combiner]",
-		"map_res": "int",
-		"top_left": "point.int",
-		"top_right": "point.int",
-		"bottom_right": "point.int",
-		"bottom_left": "point.int"
+		"map_res": "int"
 	}
 }
 

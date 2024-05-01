@@ -418,6 +418,24 @@ $(document).ready(function () {
             return;
         }
 
+        if (topic == "/autonav/cfg_space/raw/image/left_small") {
+            const imgElement = document.getElementById("target_filtered_left");
+            imgElement.src = `data:image/jpeg;base64,${msg.data}`;
+            return;
+        }
+
+        if (topic == "/autonav/cfg_space/raw/image/right_small") {
+            const imgElement = document.getElementById("target_filtered_right");
+            imgElement.src = `data:image/jpeg;base64,${msg.data}`;
+            return;
+        }
+
+        if (topic == "/autonav/cfg_space/combined/image") {
+            const imgElement = document.getElementById("target_combined");
+            imgElement.src = `data:image/jpeg;base64,${msg.data}`;
+            return;
+        }
+
         if (topic == "/autonav/cfg_space/raw/debug") {
             const imgElement = document.getElementById("target_camera_raw");
             imgElement.src = `data:image/jpeg;base64,${msg.data}`;
@@ -425,7 +443,7 @@ $(document).ready(function () {
         }
 
         if (topic == "/autonav/debug/astar/image") {
-            const imgElement = document.getElementById("target_astar_path");
+            const imgElement = document.getElementById("target_expandified");
             imgElement.src = `data:image/jpeg;base64,${msg.data}`;
             return;
         }

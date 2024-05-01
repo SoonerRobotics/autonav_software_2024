@@ -163,9 +163,14 @@ span[data-state="5"] {
     height: 480px !important;
 }
 
-#images > canas[data-type="bigboy"] {
+#images > canvas[data-type="bigboy"] {
     width: 800px !important;
     height: 800px !important;
+}
+
+#images > canvas[data-type="small"] {
+    width: 80px !important;
+    height: 80px !important;
 }
 
 #logging {
