@@ -66,6 +66,7 @@ class BroadcastNode(Node):
 		self.limiter.setLimit("/autonav/cfg_space/raw/image/right", 5)
 		self.limiter.setLimit("/autonav/cfg_space/raw/image/left_small", 5)
 		self.limiter.setLimit("/autonav/cfg_space/raw/image/right_small", 5)
+		self.limiter.setLimit("/autonav/cfg_space/combined/image", 5)
 		self.limiter.setLimit("/autonav/cfg_space/raw/debug", 5)
 		self.limiter.setLimit("/autonav/debug/astar/image", 5)
 

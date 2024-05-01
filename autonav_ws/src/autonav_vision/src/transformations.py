@@ -38,16 +38,27 @@ class ImageTransformerConfig:
         self.blur_iterations = 3
         self.map_res = 80
 
-        # Default to entire image
-        self.left_topleft = [0, 0]
-        self.left_topright = [480, 0]
-        self.left_bottomright = [480, 640]
-        self.left_bottomleft = [0, 640]
+        # # Default to entire image
+        # self.left_topleft = [0, 0]
+        # self.left_topright = [480, 0]
+        # self.left_bottomright = [480, 640]
+        # self.left_bottomleft = [0, 640]
         
-        self.right_topleft = [0, 0]
-        self.right_topright = [480, 0]
-        self.right_bottomright = [480, 640]
-        self.right_bottomleft = [0, 640]
+        # self.right_topleft = [0, 0]
+        # self.right_topright = [480, 0]
+        # self.right_bottomright = [480, 640]
+        # self.right_bottomleft = [0, 640]
+
+        # Default to entire image
+        self.left_topleft = [0, 150]
+        self.left_topright = [640, 150]
+        self.left_bottomright = [640, 350]
+        self.left_bottomleft = [0, 350]
+        
+        self.right_topleft = [0, 150]
+        self.right_topright = [640, 150]
+        self.right_bottomright = [640, 350]
+        self.right_bottomleft = [0, 350]
 
         self.disable_blur = False
         self.disable_hsv = False
