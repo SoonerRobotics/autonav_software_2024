@@ -17,6 +17,7 @@
     <!-- Vision Nodes -->
     <node pkg="autonav_vision" exec="transformations.py" />
     <node pkg="autonav_vision" exec="combination.py" />
+    <node pkg="autonav_vision" exec="expandify" />
 
     <!-- Manual Nodes -->
     <node pkg="autonav_manual" exec="steam.py" />
@@ -28,4 +29,8 @@
 
     <!-- Other -->
     <node pkg="autonav_display" exec="display.py" />
+    
+    <!-- Robot -->
+    <node pkg="autonav_nav" exec="path_resolver.py" />
+    <node pkg="autonav_nav" exec="astar.py" />
 </launch>
