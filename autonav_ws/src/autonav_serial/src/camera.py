@@ -82,6 +82,7 @@ class CameraNode(Node):
                     ret, frame = capture.read()
                     if index_name == "left":
                         frame = cv2.flip(frame, 1)
+                        frame = cv2.flip(frame, 0)
                     frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
                     frame = cv2.resize(frame, (self.config.output_width, self.config.output_height))
                 except:
