@@ -50,15 +50,15 @@ class ImageTransformerConfig:
         # self.right_bottomleft = [0, 640]
 
         # Default to entire image
-        self.left_topleft = [0, 150]
-        self.left_topright = [640, 150]
-        self.left_bottomright = [640, 350]
-        self.left_bottomleft = [0, 350]
+        self.left_topleft = [0, 225]
+        self.left_topright = [640, 225]
+        self.left_bottomright = [640, 480]
+        self.left_bottomleft = [0, 480]
         
-        self.right_topleft = [0, 150]
-        self.right_topright = [640, 150]
-        self.right_bottomright = [640, 350]
-        self.right_bottomleft = [0, 350]
+        self.right_topleft = [0, 225]
+        self.right_topright = [640, 225]
+        self.right_bottomright = [640, 480]
+        self.right_bottomleft = [0, 480]
 
         self.disable_blur = False
         self.disable_hsv = False
