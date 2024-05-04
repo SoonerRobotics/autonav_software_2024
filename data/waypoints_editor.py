@@ -4,6 +4,7 @@ from tkinter import filedialog
 # matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
+from math import pi
 
 # https://matplotlib.org/stable/gallery/event_handling/poly_editor.html
 # https://matplotlib.org/stable/gallery/widgets/buttons.html
@@ -86,7 +87,14 @@ with open("data/waypoints.csv", "r") as f:
             waypoints[label].append((float(lat), float(lon)))
 # === /waypoints.csv ===
 
-LABEL = "compNorth" #FIXME
+# data[4] is theta, this code below is stolen from autonav_nav/astar.py
+heading_degrees = abs(data[4][10] * 180 / pi)
+if heading_degrees > 120 and heading_degrees < 240:
+    direction_index = 1
+else:
+    direction_index = 0
+
+LABEL = "compNorth" if direction_index == 0 else "compSouth"
 
 waypoints_x = []
 waypoints_y = []
@@ -96,11 +104,23 @@ for lat, lon in waypoints[LABEL]:
     waypoints_x.append(lon)
 
 # display logged robot data
-plt.figure()
+# plt.figure()
+
+img = plt.imread("data/igvcMap.png")
+fig, ax = plt.subplots()
+ax.imshow(img, origin="upper", extent=(-83.218835, -83.21944, 42.667870, 42.66835))
 
 # data[5] is lat, data[6] is lon, but matplotlib expects (x, y), so it's x=lon and y=lat (aka 6 then 5) instead of (data[5], data[6]) being passed into here
 plt.scatter(data[6], data[5])
 plt.scatter(waypoints_x, waypoints_y) # scatter the waypoints on there (temporary until they are editable)
+
+LABEL = "givenWaypts"
+waypoints_x = []
+waypoints_y = []
+for lat, lon in waypoints[LABEL]:
+    waypoints_y.append(lat)
+    waypoints_x.append(lon)
+plt.scatter(waypoints_x, waypoints_y, color="#00FF88") # scatter the waypoints on there (temporary until they are editable)
 
 #FIXME ???
 # handler = GuiHandler()
