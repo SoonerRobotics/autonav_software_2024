@@ -1,26 +1,56 @@
 import tkinter
 from tkinter import filedialog
-# import matplotlib
-# matplotlib.use('TkAgg')
+
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
+
 from math import pi
 
-# https://matplotlib.org/stable/gallery/event_handling/poly_editor.html
-# https://matplotlib.org/stable/gallery/widgets/buttons.html
-# is cool too https://matplotlib.org/stable/gallery/widgets/cursor.html
-# this is almost what we need? https://matplotlib.org/stable/gallery/event_handling/path_editor.html
-# https://github.com/SoonerRobotics/autonav_software_2024/blob/f1738c778a39729ceb984aa869a9ae290d2b720f/autonav_ws/src/autonav_filters/include/autonav_filters/position_graph.py
-# https://github.com/SoonerRobotics/autonav_software_2024/blob/f1738c778a39729ceb984aa869a9ae290d2b720f/autonav_ws/src/autonav_filters/src/particlefilter.py
+# copied/pasted from https://github.com/SoonerRobotics/autonav_software_2024/blob/feat/waypoints_file/autonav_ws/src/autonav_nav/src/astar.py
+def loadWaypointsFile():
+    waypoints = {}
 
+    # read GPS waypoints data from file
+    with open("data/waypoints.csv", "r") as f:
+        for line in f.readlines()[1:]: # skip the first line because that's the CSV headers
+            label, lat, lon = line.split(",")
 
-class GuiHandler():
-    def __init__(self):
-        # I think everything needs to be class variables (think static, eg declared outside this function in class definition) instead of instance variables? idk
-        pass
+            try:
+                # add the waypoint to the appropriate list in the dictionary
+                waypoints[label].append((float(lat), float(lon)))
+            except KeyError:
+                # if it doesn't exist then create it
+                waypoints[label] = []
+                waypoints[label].append((float(lat), float(lon)))
+    
+    return waypoints
 
-    def delete_callback(self, event):
-        pass
+def drawPlot(listOfWaypoints):
+    pass
+
+def main():
+    waypts = loadWaypointsFile()
+
+    drawPlot()
+
+    registerDropdownCallback()
+
+# detect which direction we're heading and return the right waypoint label
+def getWaypointsDirection(run_waypoints):
+    # code below is stolen from autonav_nav/astar.py
+    heading_degrees = abs(run_waypoints[10] * 180 / pi)
+
+    # if it's mostly on the south side of the compass
+    if heading_degrees > 120 and heading_degrees < 240:
+        north = False # then it's south
+    else:
+        north = True # otherwise north
+
+    return "compNorth" if north else "compSouth"
+
+if __name__ == "__main__":
+    main()
+
 
 
 # === file dialog box (copied/pasted from https://github.com/Team-OKC-Robotics/FRC-2023/blob/master/process_wpilib_logs.py)===
@@ -30,26 +60,6 @@ root.withdraw()
 log_path = filedialog.askopenfilename()
 # === /file dialog box ===
 
-# alright so we're gonna store the data like this:
-# [
-#   [time1, time2, time3, ...],
-#   [x1, x2, x3, ...],
-#   [y1, y2, y3],
-#   [theta1, theta2, theta3],
-#   ...
-# ]
-# to hopefully make it easier to plot
-data = [
-    [],
-    [],
-    [],
-    [],
-    [],
-    [],
-    []
-]
-
-#FIXME
 # open the log csv file
 with open(log_path) as f:
     # # for each line in the file (no headers so don't have to worry about those)
@@ -71,48 +81,18 @@ with open(log_path) as f:
 
 
 
-# === read waypoints.csv for existing waypoints ===
-#TODO throw these in a dropdown list or something? unless we want to parse the master log.csv and see if we log the waypoints we used. idk.
-waypoints = {}
 
-# read GPS waypoints data from file
-with open("data/waypoints.csv", "r") as f:
-    for line in f.readlines()[1:]: # skip the first line because that's the CSV headers
-        label, lat, lon = line.split(",")
-
-        try:
-            waypoints[label].append((float(lat), float(lon)))
-        except KeyError:
-            waypoints[label] = []
-            waypoints[label].append((float(lat), float(lon)))
-# === /waypoints.csv ===
-
-# data[4] is theta, this code below is stolen from autonav_nav/astar.py
-heading_degrees = abs(data[4][10] * 180 / pi)
-if heading_degrees > 120 and heading_degrees < 240:
-    direction_index = 1
-else:
-    direction_index = 0
-
-LABEL = "compNorth" if direction_index == 0 else "compSouth"
-
-waypoints_x = []
-waypoints_y = []
-
-for lat, lon in waypoints[LABEL]:
-    waypoints_y.append(lat)
-    waypoints_x.append(lon)
 
 # display logged robot data
 # plt.figure()
 
-img = plt.imread("data/igvcMap.png")
+# img = plt.imread("data/igvcMap.png")
 fig, ax = plt.subplots()
-ax.imshow(img, origin="upper", extent=(-83.218835, -83.21944, 42.667870, 42.66835))
-
+# ax.imshow(img, origin="upper", extent=(-83.218835, -83.21944, 42.667870, 42.66835))
+# 
 # data[5] is lat, data[6] is lon, but matplotlib expects (x, y), so it's x=lon and y=lat (aka 6 then 5) instead of (data[5], data[6]) being passed into here
-plt.scatter(data[6], data[5])
-plt.scatter(waypoints_x, waypoints_y) # scatter the waypoints on there (temporary until they are editable)
+ax.scatter(data[6], data[5])
+ax.scatter(waypoints_x, waypoints_y) # scatter the waypoints on there (temporary until they are editable)
 
 LABEL = "givenWaypts"
 waypoints_x = []
@@ -120,16 +100,6 @@ waypoints_y = []
 for lat, lon in waypoints[LABEL]:
     waypoints_y.append(lat)
     waypoints_x.append(lon)
-plt.scatter(waypoints_x, waypoints_y, color="#00FF88") # scatter the waypoints on there (temporary until they are editable)
-
-#FIXME ???
-# handler = GuiHandler()
-# fig, ax = plt.subplots(2) #FIXME ???
-# 
-# ax1 = fig.add_axes((1, 1, 1, 1)) #FIXME
-# deleteButton = Button(ax1, 'delete')
-# deleteButton.on_clicked(handler.delete_callback)
-#TODO gui stuff
-#TODO callbacks
+ax.scatter(waypoints_x, waypoints_y, color="#00FF88") # scatter the waypoints on there (temporary until they are editable)
 
 plt.show()
