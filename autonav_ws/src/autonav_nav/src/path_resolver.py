@@ -39,12 +39,12 @@ def toSafetyLights(autonomous: bool, eco: bool, mode: int, brightness: int, colo
 
 class PathResolverNodeConfig:
     def __init__(self):
-        self.forward_speed = 2.1
+        self.forward_speed = 1.0
         self.reverse_speed = -0.4
         self.radius_multiplier = 1.2
         self.radius_max = 4.0
         self.radius_start = 0.7
-        self.angular_aggression = 2.2
+        self.angular_aggression = 1.2
         self.max_angular_speed = 0.5
 
 
