@@ -42,12 +42,12 @@ class ImageTransformerConfig:
         self.map_res = 80
 
         # Perspective transform
-        self.left_topleft = [160, 225]
-        self.left_topright = [400, 225]
+        self.left_topleft = [160, 165]
+        self.left_topright = [400, 165]
         self.left_bottomright = [640, 480]
         self.left_bottomleft = [0, 480]
-        self.right_topleft = [160, 225]
-        self.right_topright = [400, 225]
+        self.right_topleft = [160, 165]
+        self.right_topright = [400, 165]
         self.right_bottomright = [640, 480]
         self.right_bottomleft = [0, 480]
 

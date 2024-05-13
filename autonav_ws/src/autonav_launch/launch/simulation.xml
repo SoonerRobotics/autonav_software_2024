@@ -26,4 +26,5 @@
 
     <!-- Other -->
     <node pkg="autonav_display" exec="display.py" />
+    <node pkg="autonav_playback" exec="playback.py" />
 </launch>
