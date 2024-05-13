@@ -55,7 +55,9 @@ var addressKeys = {
 		"disable_blur": "bool",
 		"disable_hsv": "bool",
 		"disable_perspective_transform": "bool",
-		"disable_region_of_disinterest": "bool"
+		"disable_region_of_disinterest": "bool",
+		"rodi_offsetx": "float",
+		"rodi_offsety": "float"
 	},
 
 	"autonav_vision_expandifier": {

@@ -28,38 +28,34 @@ g_mapData.origin.position.y = -10.0
 
 class ImageTransformerConfig:
     def __init__(self):
+        # HSV
         self.lower_hue = 0
         self.lower_sat = 0
         self.lower_val = 0
         self.upper_hue = 255
         self.upper_sat = 95
         self.upper_val = 210
+
+        # Blur
         self.blur_weight = 5
         self.blur_iterations = 3
         self.map_res = 80
 
-        # # Default to entire image
-        # self.left_topleft = [0, 0]
-        # self.left_topright = [480, 0]
-        # self.left_bottomright = [480, 640]
-        # self.left_bottomleft = [0, 640]
-        
-        # self.right_topleft = [0, 0]
-        # self.right_topright = [480, 0]
-        # self.right_bottomright = [480, 640]
-        # self.right_bottomleft = [0, 640]
-
-        # Default to entire image
-        self.left_topleft = [0, 225]
-        self.left_topright = [640, 225]
+        # Perspective transform
+        self.left_topleft = [160, 225]
+        self.left_topright = [400, 225]
         self.left_bottomright = [640, 480]
         self.left_bottomleft = [0, 480]
-        
-        self.right_topleft = [0, 225]
-        self.right_topright = [640, 225]
+        self.right_topleft = [160, 225]
+        self.right_topright = [400, 225]
         self.right_bottomright = [640, 480]
         self.right_bottomleft = [0, 480]
 
+        # Region of disinterest
+        self.rodi_offsetx = 0
+        self.rodi_offsety = 0
+
+        # Disabling
         self.disable_blur = False
         self.disable_hsv = False
         self.disable_region_of_disinterest = False
@@ -69,6 +65,7 @@ class ImageTransformerConfig:
 class ImageTransformer(Node):
     def __init__(self, dir = "left"):
         super().__init__("autonav_vision_transformer")
+        self.config = self.get_default_config()
         self.dir = dir
 
     def directionify(self, topic):
@@ -195,8 +192,8 @@ class ImageTransformer(Node):
                 ]
             else:
                 region_of_disinterest_vertices = [
-                    (0, height),
-                    (0, height / 1.8),
+                    (self.config.rodi_offsetx, height),
+                    (0, height / 1.8 - self.config.rodi_offsety),
                     (width, height)
                 ]
             mask = self.regionOfDisinterest(mask, np.array([region_of_disinterest_vertices], np.int32))
