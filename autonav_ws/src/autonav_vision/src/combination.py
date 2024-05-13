@@ -56,13 +56,13 @@ class ImageCombiner(Node):
         scaled_grid.info = grid.info
         scaled_grid.info.width = 40
         scaled_grid.data = [0] * (80 * 80)
-        
+
         # Copy every second column from the original grid to the new grid
         for y in range(80):
             for x in range(40):
                 # Take every second element from the row
                 scaled_grid.data[y * 40 + x] = grid.data[y * 80 + (2 * x)]
-        
+
         return scaled_grid
 
     def try_combine_grids(self):
@@ -72,14 +72,14 @@ class ImageCombiner(Node):
         # Scale down grids
         scaled_left = self.scale_grid(self.grid_left)
         scaled_right = self.scale_grid(self.grid_right)
-        
+
         # Create a new 80x80 grid for the combined result
         combined_grid = OccupancyGrid()
         combined_grid.info = g_mapData
         combined_grid.info.width = 80
         combined_grid.info.height = 80
         combined_grid.data = [0] * (80 * 80)
-        
+
         # Place each grid in the combined grid
         for y in range(80):
             for x in range(40):  # Fill from left scaled grid
