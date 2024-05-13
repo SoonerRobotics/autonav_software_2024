@@ -188,13 +188,13 @@ class ImageTransformer(Node):
                 region_of_disinterest_vertices = [
                     (width, height),
                     (width, height / 1.8),
-                    (0, height)
+                    (width / 3, height)
                 ]
             else:
                 region_of_disinterest_vertices = [
-                    (self.config.rodi_offsetx, height),
-                    (0, height / 1.8 - self.config.rodi_offsety),
-                    (width, height)
+                    (0, height),
+                    (0, height / 1.8),
+                    (width - (width / 3), height)
                 ]
             mask = self.regionOfDisinterest(mask, np.array([region_of_disinterest_vertices], np.int32))
             mask[mask < 250] = 0

@@ -50,35 +50,55 @@ class ImageCombiner(Node):
         self.grid_right = msg
         self.try_combine_grids()
 
+    def scale_grid(self, grid):
+        # Initialize a new grid of the same height but half the width
+        scaled_grid = OccupancyGrid()
+        scaled_grid.info = grid.info
+        scaled_grid.info.width = 40
+        scaled_grid.data = [0] * (80 * 80)
+        
+        # Copy every second column from the original grid to the new grid
+        for y in range(80):
+            for x in range(40):
+                # Take every second element from the row
+                scaled_grid.data[y * 40 + x] = grid.data[y * 80 + (2 * x)]
+        
+        return scaled_grid
+
     def try_combine_grids(self):
         if self.grid_left is None or self.grid_right is None:
             return
+
+        # Scale down grids
+        scaled_left = self.scale_grid(self.grid_left)
+        scaled_right = self.scale_grid(self.grid_right)
         
+        # Create a new 80x80 grid for the combined result
         combined_grid = OccupancyGrid()
-        combined_grid.header = self.grid_left.header
-        combined_grid.info = self.grid_left.info
-        combined_grid.data = [0] * len(self.grid_left.data)
-        for i in range(len(self.grid_left.data)):
-            if self.grid_left.data[i] == 127 or self.grid_right.data[i] == 127:
-                combined_grid.data[i] = 127
-            else:
-                combined_grid.data[i] = 0
+        combined_grid.info = g_mapData
+        combined_grid.info.width = 80
+        combined_grid.info.height = 80
+        combined_grid.data = [0] * (80 * 80)
+        
+        # Place each grid in the combined grid
+        for y in range(80):
+            for x in range(40):  # Fill from left scaled grid
+                combined_grid.data[y * 80 + x] = scaled_left.data[y * 40 + x]
+            for x in range(40):  # Fill from right scaled grid
+                combined_grid.data[y * 80 + (40 + x)] = scaled_right.data[y * 40 + x]
 
         # Publish the combined grid
         self.grid_left = None
         self.grid_right = None
         self.combined_grid_publisher.publish(combined_grid)
 
-        # publish debug image, 127 = white, 0 = black
-        preview_image = np.zeros((IMAGE_HEIGHT, IMAGE_WIDTH, 3), np.uint8)
+        # Publish the combined grid as an image
+        preview_image = np.zeros((IMAGE_HEIGHT, IMAGE_WIDTH), np.uint8)
         for i in range(len(combined_grid.data)):
             x = i % combined_grid.info.width
             y = i // combined_grid.info.width
-            if combined_grid.data[i] == 127:
-                preview_image[y, x] = [255, 255, 255]
-            else:
-                preview_image[y, x] = [0, 0, 0]
-
+            if combined_grid.data[i] > 0:
+                preview_image[y, x] = 255
         compressed_image = g_bridge.cv2_to_compressed_imgmsg(preview_image)
         self.combined_grid_image_publisher.publish(compressed_image)
 
