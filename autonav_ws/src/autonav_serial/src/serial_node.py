@@ -6,7 +6,7 @@ import time
 import can
 import threading
 import struct
-from autonav_msgs.msg import MotorInput, MotorFeedback, ObjectDetection, MotorControllerDebug, SafetyLights, Conbus
+from autonav_msgs.msg import MotorInput, MotorFeedback, MotorControllerDebug, SafetyLights, Conbus
 from scr.node import Node
 from scr.states import DeviceStateEnum
 
@@ -16,7 +16,6 @@ ESTOP_ID = 0
 MOBILITY_STOP_ID = 1
 MOBILITY_START_ID = 9
 MOTOR_FEEDBACK_ID = 14
-OBJECT_DETECTION = 20
 SAFETY_LIGHTS_ID = 13
 
 CAN_50 = 50
@@ -51,7 +50,6 @@ class SerialMotors(Node):
         self.safetyLightsSubscriber = self.create_subscription(SafetyLights, "/autonav/SafetyLights", self.onSafetyLightsReceived, 20)
         self.motorInputSubscriber = self.create_subscription(MotorInput, "/autonav/MotorInput", self.onMotorInputReceived, 20)
         self.motorDebugPublisher = self.create_publisher(MotorControllerDebug, "/autonav/MotorControllerDebug", 20)
-        self.objectDetectionPublisher = self.create_publisher(ObjectDetection, "/autonav/ObjectDetection", 20)
         self.motorFeedbackPublisher = self.create_publisher(MotorFeedback, "/autonav/MotorFeedback", 20)
         self.conbuSubscriber = self.create_subscription(Conbus, "/autonav/conbus/instruction", self.onConbusReceived, 20)
         self.conbusPublisher = self.create_publisher(Conbus, "/autonav/conbus/data", 20)
@@ -119,15 +117,6 @@ class SerialMotors(Node):
             pkg.right_motor_output = rightMotorOutput
             pkg.timestamp = self.getClockMs() * 1.0
             self.motorDebugPublisher.publish(pkg)
-
-        if arb_id == OBJECT_DETECTION:
-            # Load in 4 bytes
-            zero, left, middle, right = struct.unpack("BBBB", msg.data)
-            pkg = ObjectDetection()
-            pkg.sensor_1 = left
-            pkg.sensor_2 = middle
-            pkg.sensor_3 = right
-            self.objectDetectionPublisher.publish(pkg)
 
         if arb_id >= 1000 and arb_id < 1400:
             # self.log(f"[CAN -> {arb_id}] Received ConBus message")

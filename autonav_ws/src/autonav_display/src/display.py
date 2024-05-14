@@ -7,7 +7,7 @@ from scr.states import DeviceStateEnum
 from scr_msgs.msg import SystemState, DeviceState, ConfigUpdated
 from scr_msgs.srv import SetSystemState, UpdateConfig
 from std_msgs.msg import Empty
-from autonav_msgs.msg import Position, MotorFeedback, MotorInput, MotorControllerDebug, ObjectDetection, PathingDebug, GPSFeedback, IMUData, Conbus
+from autonav_msgs.msg import Position, MotorFeedback, MotorInput, MotorControllerDebug, PathingDebug, GPSFeedback, IMUData, Conbus
 from sensor_msgs.msg import CompressedImage
 import asyncio
 import websockets

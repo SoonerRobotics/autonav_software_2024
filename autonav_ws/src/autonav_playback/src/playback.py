@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from types import SimpleNamespace
-from autonav_msgs.msg import IMUData, GPSFeedback, MotorFeedback, MotorInput, Position, MotorControllerDebug, ObjectDetection
+from autonav_msgs.msg import IMUData, GPSFeedback, MotorFeedback, MotorInput, Position, MotorControllerDebug
 from scr.states import DeviceStateEnum, SystemStateEnum
 from sensor_msgs.msg import CompressedImage
 from scr_msgs.msg import SystemState, DeviceState

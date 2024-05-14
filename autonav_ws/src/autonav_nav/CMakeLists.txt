@@ -14,6 +14,7 @@ ament_python_install_package(${PROJECT_NAME})
 
 # Install Python executables
 install(PROGRAMS
+    src/pure_pursuit.py
 	src/path_resolver.py
 	src/astar.py
 	DESTINATION lib/${PROJECT_NAME}
