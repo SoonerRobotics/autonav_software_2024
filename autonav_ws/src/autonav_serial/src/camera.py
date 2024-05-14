@@ -59,6 +59,9 @@ class CameraNode(Node):
         self.camera_thread_right.start()
 
     def destroy_threads(self):
+        if self.camera_thread_left is None or self.camera_thread_right is None:
+            return
+
         self.lock_left.acquire()
         self.left_kill = True
         self.lock_left.release()
