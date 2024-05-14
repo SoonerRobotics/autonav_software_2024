@@ -10,6 +10,7 @@ import rclpy.qos
 from sensor_msgs.msg import CompressedImage
 from geometry_msgs.msg import Pose
 from cv_bridge import CvBridge
+from scr.states import SystemModeEnum
 import json
 
 from scr.node import Node
@@ -42,18 +43,19 @@ class ImageTransformerConfig:
         self.map_res = 80
 
         # Perspective transform
-        self.left_topleft = [160, 165]
-        self.left_topright = [400, 165]
-        self.left_bottomright = [640, 480]
-        self.left_bottomleft = [0, 480]
-        self.right_topleft = [160, 165]
-        self.right_topright = [400, 165]
-        self.right_bottomright = [640, 480]
-        self.right_bottomleft = [0, 480]
+        self.left_topleft = [80, 220]
+        self.left_topright = [400, 220]
+        self.left_bottomright = [480, 640]
+        self.left_bottomleft = [0, 640]
+        self.right_topleft = [80, 220]
+        self.right_topright = [400, 220]
+        self.right_bottomright = [480, 640]
+        self.right_bottomleft = [0, 640]
 
         # Region of disinterest
-        self.rodi_offsetx = 0
-        self.rodi_offsety = 0
+        # Order: top-left, top-right, bottom-right, bottom-left
+        self.parallelogram_left = [[500, 405], [260, 400], [210, 640], [640, 640]]
+        self.parallelogram_right = [[0, 415], [195, 390], [260, 640], [0, 640]]
 
         # Disabling
         self.disable_blur = False
@@ -72,9 +74,10 @@ class ImageTransformer(Node):
         return topic + "/" + self.dir
 
     def init(self):
-        self.cameraSubscriber = self.create_subscription(CompressedImage, self.directionify("/autonav/camera/compressed") , self.onImageReceived, self.qos_profile)
-        self.rawMapPublisher = self.create_publisher(OccupancyGrid, self.directionify("/autonav/cfg_space/raw"), self.qos_profile)
-        self.smallImagePublisher = self.create_publisher(CompressedImage, self.directionify("/autonav/cfg_space/raw/image") + "_small", self.qos_profile)
+        self.camera_subscriber = self.create_subscription(CompressedImage, self.directionify("/autonav/camera/compressed") , self.onImageReceived, self.qos_profile)
+        self.camera_debug_publisher = self.create_publisher(CompressedImage, self.directionify("/autonav/camera/compressed") + "/cutout", self.qos_profile)
+        self.grid_publisher = self.create_publisher(OccupancyGrid, self.directionify("/autonav/cfg_space/raw"), 1)
+        self.grid_image_publisher = self.create_publisher(CompressedImage, self.directionify("/autonav/cfg_space/raw/image") + "_small", self.qos_profile)
 
         self.set_device_state(DeviceStateEnum.OPERATING)
 
@@ -84,7 +87,7 @@ class ImageTransformer(Node):
     def get_default_config(self):
         return ImageTransformerConfig()
 
-    def getBlur(self):
+    def get_blur_level(self):
         blur = self.config.blur_weight
         blur = max(1, blur)
         return (blur, blur)
@@ -149,63 +152,91 @@ class ImageTransformer(Node):
         masked_image = cv2.bitwise_and(img, mask)
         return masked_image
 
-    def publishOccupancyMap(self, img):
+    def publish_occupancy_grid(self, img):
         datamap = cv2.resize(img, dsize=(self.config.map_res, self.config.map_res), interpolation=cv2.INTER_LINEAR) / 2
         flat = list(datamap.flatten().astype(int))
         msg = OccupancyGrid(info=g_mapData, data=flat)
-        self.rawMapPublisher.publish(msg)
+        self.grid_publisher.publish(msg)
 
         # Publish msg as a 80x80 image
         preview_image = cv2.resize(img, dsize=(80, 80), interpolation=cv2.INTER_LINEAR)
         preview_msg = g_bridge.cv2_to_compressed_imgmsg(preview_image)
         preview_msg.format = "jpeg"
-        self.smallImagePublisher.publish(preview_msg)
+        self.grid_image_publisher.publish(preview_msg)
 
-    def onImageReceived(self, image = CompressedImage):
-        # Decompressify
-        cv_image = g_bridge.compressed_imgmsg_to_cv2(image)
+    def publish_debug_image(self, img):
+        img_copy = img.copy()
+
+        # Draw parallelogram for region of disinterest
+        parallelogram = self.config.parallelogram_left if self.dir == "left" else self.config.parallelogram_right
+        cv2.polylines(img_copy, [np.array(parallelogram)], True, (0, 255, 0), 2)
+
+        # Draw perspective transform points
+        pts = [self.config.left_topleft, self.config.left_topright, self.config.left_bottomright, self.config.left_bottomleft] if self.dir == "left" else [self.config.right_topleft, self.config.right_topright, self.config.right_bottomright, self.config.right_bottomleft]
+        cv2.polylines(img_copy, [np.array(pts)], True, (0, 0, 255), 2)
+        
+        self.camera_debug_publisher.publish(g_bridge.cv2_to_compressed_imgmsg(img_copy))
+
+    def apply_blur(self, img):
+        if self.config.disable_blur:
+            return img
+
+        for _ in range(self.config.blur_iterations):
+            img = cv2.blur(img, self.get_blur_level())
+
+        return img
+
+    def apply_hsv(self, img):
+        if self.config.disable_hsv:
+            return img
+
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+        lower = (self.config.lower_hue, self.config.lower_sat, self.config.lower_val)
+        upper = (self.config.upper_hue, self.config.upper_sat, self.config.upper_val)
+        mask = cv2.inRange(img, lower, upper)
+        mask = 255 - mask
+        return mask
+
+    def apply_region_of_disinterest(self, img):
+        if self.config.disable_region_of_disinterest:
+            return img
+
+        mask = np.ones_like(img) * 255
+        parallelogram = self.config.parallelogram_left if self.dir == "left" else self.config.parallelogram_right
+        cv2.fillPoly(mask, [np.array(parallelogram)], 0)
+        mask = cv2.bitwise_and(img, mask)
+        mask[mask < 250] = 0
+        return mask
+
+    def apply_perspective_transform(self, img):
+        if self.config.disable_perspective_transform:
+            return img
+
+        pts = [self.config.left_topleft, self.config.left_topright, self.config.left_bottomright, self.config.left_bottomleft] if self.dir == "left" else [self.config.right_topleft, self.config.right_topright, self.config.right_bottomright, self.config.right_bottomleft]
+        mask = self.four_point_transform(img, np.array(pts))
+        return mask
+
+    def onImageReceived(self, image: CompressedImage):
+        # Decompress image
+        img = g_bridge.compressed_imgmsg_to_cv2(image)
+
+        # Publish debug image
+        self.publish_debug_image(img)
 
         # Blur it up
-        if not self.config.disable_blur:
-            for _ in range(self.config.blur_iterations):
-                cv_image = cv2.blur(cv_image, self.getBlur())
+        img = self.apply_blur(img)
 
         # Apply filter and return a mask
-        img = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
-        if not self.config.disable_hsv:
-            lower = (self.config.lower_hue, self.config.lower_sat, self.config.lower_val)
-            upper = (self.config.upper_hue, self.config.upper_sat, self.config.upper_val)
-            mask = cv2.inRange(img, lower, upper)
-            mask = 255 - mask
-        else:
-            mask = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
+        img = self.apply_hsv(img)
 
         # Apply region of disinterest and flattening
-        if not self.config.disable_region_of_disinterest:
-            height = img.shape[0]
-            width = img.shape[1]
-            if self.dir == "left":
-                region_of_disinterest_vertices = [
-                    (width, height),
-                    (width, height / 1.8),
-                    (width / 3, height)
-                ]
-            else:
-                region_of_disinterest_vertices = [
-                    (0, height),
-                    (0, height / 1.8),
-                    (width - (width / 3), height)
-                ]
-            mask = self.regionOfDisinterest(mask, np.array([region_of_disinterest_vertices], np.int32))
-            mask[mask < 250] = 0
-
+        img = self.apply_region_of_disinterest(img)
+        
         # Apply perspective transform
-        if not self.config.disable_perspective_transform:
-            pts = [self.config.left_topleft, self.config.left_topright, self.config.left_bottomright, self.config.left_bottomleft] if self.dir == "left" else [self.config.right_topleft, self.config.right_topright, self.config.right_bottomright, self.config.right_bottomleft]
-            mask = self.four_point_transform(mask, np.array(pts))
+        img = self.apply_perspective_transform(img)
 
         # Actually generate the map
-        self.publishOccupancyMap(mask)
+        self.publish_occupancy_grid(img)
 
 
 def main():
