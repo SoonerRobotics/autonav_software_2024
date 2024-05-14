@@ -36,9 +36,9 @@ class ImageCombiner(Node):
     def init(self):
         self.grid_left = None
         self.grid_right = None
-        self.grid_left_subscriber = self.create_subscription(OccupancyGrid, "/autonav/cfg_space/raw/left", self.grid_received_left, self.qos_profile)
-        self.grid_right_subscriber = self.create_subscription(OccupancyGrid, "/autonav/cfg_space/raw/right", self.grid_received_right, self.qos_profile)
-        self.combined_grid_publisher = self.create_publisher(OccupancyGrid, "/autonav/cfg_space/combined", self.qos_profile)
+        self.grid_left_subscriber = self.create_subscription(OccupancyGrid, "/autonav/cfg_space/raw/left", self.grid_received_left, 1)
+        self.grid_right_subscriber = self.create_subscription(OccupancyGrid, "/autonav/cfg_space/raw/right", self.grid_received_right, 1)
+        self.combined_grid_publisher = self.create_publisher(OccupancyGrid, "/autonav/cfg_space/combined", 1)
         self.combined_grid_image_publisher = self.create_publisher(CompressedImage, "/autonav/cfg_space/combined/image", self.qos_profile)
         self.set_device_state(DeviceStateEnum.OPERATING)
 

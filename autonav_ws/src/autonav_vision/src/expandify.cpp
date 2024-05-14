@@ -43,8 +43,8 @@ public:
 
         build_circles();
 
-        raw_map_subscriber = create_subscription<nav_msgs::msg::OccupancyGrid>("/autonav/cfg_space/combined", qos_profile, std::bind(&ExpandifyNode::onConfigSpaceReceived, this, std::placeholders::_1));
-        expanded_map_publisher = create_publisher<nav_msgs::msg::OccupancyGrid>("/autonav/cfg_space/expanded", qos_profile);
+        raw_map_subscriber = create_subscription<nav_msgs::msg::OccupancyGrid>("/autonav/cfg_space/combined", 1, std::bind(&ExpandifyNode::onConfigSpaceReceived, this, std::placeholders::_1));
+        expanded_map_publisher = create_publisher<nav_msgs::msg::OccupancyGrid>("/autonav/cfg_space/expanded", 1);
         debug_publisher = create_publisher<sensor_msgs::msg::CompressedImage>("/autonav/cfg_space/expanded/image", qos_profile);
 
         set_device_state(SCR::DeviceState::OPERATING);
@@ -92,9 +92,9 @@ public:
     {
         ExpandifyConfig newConfig;
         newConfig.vertical_fov = 2.75;
-        newConfig.horizontal_fov = 3;
+        newConfig.horizontal_fov = 3.4;
         newConfig.map_res = 80.0f;
-        newConfig.max_range = 0.65;
+        newConfig.max_range = 0.73;
         newConfig.no_go_percent = 0.70;
         newConfig.no_go_range = 0;
         return newConfig;
