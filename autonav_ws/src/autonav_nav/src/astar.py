@@ -20,13 +20,11 @@ import time
 
 
 GRID_SIZE = 0.1
-VERTICAL_CAMERA_DIST = 2.75
-HORIZONTAL_CAMERA_DIST = 3
 CV_BRIDGE = cv_bridge.CvBridge()
 
 competition_waypoints = [
-    [(), (), (), ()],  # NORTH
-    [(), (), (), ()]  # SOUTH
+    [],  # NORTH
+    []  # SOUTH
 ]
 
 practice_waypoints = [
@@ -65,6 +63,10 @@ class AStarNodeConfig:
         self.waypointDirection = 0
         self.useOnlyWaypoints = False
         self.waypointDelay = 18
+        self.waypointWeight = 1.0
+        self.waypointMaxWeight = 10.0
+        self.horizontal_fov = 3.4
+        self.vertical_fov = 2.75
 
 
 class AStarNode(Node):
@@ -288,7 +290,7 @@ class AStarNode(Node):
 
                 if len(self.waypoints) > 0:
                     heading_err_to_gps = abs(self.getAngleDifference(self.position.theta + math.atan2(40 - x, 80 - y), heading_to_gps)) * 180 / math.pi
-                    cost -= max(heading_err_to_gps, 10)
+                    cost -= max(heading_err_to_gps, self.config.waypointMaxWeight) * self.config.waypointWeight
 
                 if cost > best_pos_cost:
                     best_pos_cost = cost
@@ -312,8 +314,8 @@ class AStarNode(Node):
         self.best_pos = temp_best_pos
 
     def path_to_global(self, pp0, pp1):
-        x = (80 - pp1) * VERTICAL_CAMERA_DIST / 80
-        y = (40 - pp0) * HORIZONTAL_CAMERA_DIST / 80
+        x = (80 - pp1) * self.config.vertical_fov / 80
+        y = (40 - pp0) * self.config.horizontal_fov / 80
 
         new_x = x * math.cos(0) + y * math.sin(0)
         new_y = x * math.sin(0) + y * math.cos(0)
