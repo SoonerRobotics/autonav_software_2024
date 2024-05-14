@@ -20,8 +20,8 @@ class CameraNodeConfig:
         self.refresh_rate = 8
         self.output_width = 480
         self.output_height = 640
-        self.camera_index_left = 0
-        self.camera_index_right = 2
+        self.camera_index_left = 1
+        self.camera_index_right = 3
         self.scan_rate = 1.0
 
         self.left_flip_horizontal = True
