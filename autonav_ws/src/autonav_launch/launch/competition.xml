@@ -1,17 +1,12 @@
 <launch>
     <!-- Core -->
-    <node pkg="scr_controller" exec="core">
-        <param name="mode" value="1" /> 
-        <param name="state" value="1" /> 
-        <param name="mobility" value="false" /> 
-    </node>
+    <node pkg="scr_controller" exec="core" />
     <node pkg="scr_controller" exec="logging" />
 
     <!-- Filtering -->
     <node pkg="autonav_filters" exec="filters.py">
         <param name="latitude_length" value="111086.2" />
         <param name="longitude_length" value="81978.2" />
-        <param name="default_type" value="1" />
     </node>
 
     <!-- Vision Nodes -->
