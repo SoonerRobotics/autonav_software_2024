@@ -30,7 +30,14 @@ var addressKeys = {
 		"output_width": "int",
 		"output_height": "int",
 		"camera_index_left": "int",
-		"camera_index_right": "int"
+		"camera_index_right": "int",
+		"right_flip_horizontal": "bool",
+		"right_flip_vertical": "bool",
+		"rotate_right_clockwise": "bool",
+		"left_flip_horizontal": "bool",
+		"left_flip_vertical": "bool",
+		"rotate_left_clockwise": "bool",
+		"scan_rate": "int",
 	},
 
 	"autonav_vision_transformer": {

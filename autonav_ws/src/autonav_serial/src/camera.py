@@ -18,8 +18,8 @@ bridge = CvBridge()
 class CameraNodeConfig:
     def __init__(self):
         self.refresh_rate = 8
-        self.output_width = 640
-        self.output_height = 480
+        self.output_width = 480
+        self.output_height = 640
         self.camera_index_left = 0
         self.camera_index_right = 2
         self.scan_rate = 1.0
