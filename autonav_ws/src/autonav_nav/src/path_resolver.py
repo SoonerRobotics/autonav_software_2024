@@ -63,7 +63,7 @@ class PathResolverNode(Node):
         self.safety_lights_publisher = self.create_publisher(SafetyLights, "/autonav/SafetyLights", 1)
         self.config = self.get_default_config()
 
-        self.create_timer(0.05, self.onResolve)
+        self.create_timer(0.05, self.resolve)
         self.set_device_state(DeviceStateEnum.READY)
 
     def config_updated(self, jsonObject):
@@ -108,7 +108,7 @@ class PathResolverNode(Node):
         self.points = [x.pose.position for x in msg.poses]
         self.pure_pursuit.set_points([(point.x, point.y)for point in self.points])
 
-    def onResolve(self):
+    def resolve(self):
         if self.position is None or self.device_state != DeviceStateEnum.OPERATING or self.system_state != SystemStateEnum.AUTONOMOUS or not self.mobility:
             return
 
