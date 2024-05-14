@@ -701,119 +701,94 @@ $(document).ready(function () {
             return div;
         }
         else if (type == "parallelogram.int") {
-            // 4 boxes with 2 integers each
             const div = document.createElement("div");
-            div.classList.add("input-group");
-            div.classList.add("mb-3");
-
-            const inputX1 = document.createElement("input");
-            inputX1.type = "number";
-            inputX1.classList.add("form-control");
-            inputX1.value = data[0][0];
-            inputX1.onchange = function () {
+            div.classList.add("input-group", "mb-3");
+            
+            function createCoordinateInput(value, onChangeHandler) {
+                const input = document.createElement("input");
+                input.type = "number";
+                input.classList.add("form-control", "coordinate-input");
+                input.value = value;
+                input.onchange = onChangeHandler;
+                return input;
+            }
+            
+            const inputX1 = createCoordinateInput(data[0][0], function () {
                 config[device][text][0][0] = parseInt(inputX1.value);
                 send({
                     op: "configuration",
                     device: device,
                     json: config[device],
                 });
-            }
-
-            const inputY1 = document.createElement("input");
-            inputY1.type = "number";
-            inputY1.classList.add("form-control");
-            inputY1.value = data[0][1];
-            inputY1.onchange = function () {
+            });
+            
+            const inputY1 = createCoordinateInput(data[0][1], function () {
                 config[device][text][0][1] = parseInt(inputY1.value);
                 send({
                     op: "configuration",
                     device: device,
                     json: config[device],
                 });
-            }
-
-            const inputX2 = document.createElement("input");
-            inputX2.type = "number";
-            inputX2.classList.add("form-control");
-            inputX2.value = data[1][0];
-            inputX2.onchange = function () {
+            });
+            
+            const inputX2 = createCoordinateInput(data[1][0], function () {
                 config[device][text][1][0] = parseInt(inputX2.value);
                 send({
                     op: "configuration",
                     device: device,
                     json: config[device],
                 });
-            }
-
-            const inputY2 = document.createElement("input");
-            inputY2.type = "number";
-            inputY2.classList.add("form-control");
-            inputY2.value = data[1][1];
-            inputY2.onchange = function () {
+            });
+            
+            const inputY2 = createCoordinateInput(data[1][1], function () {
                 config[device][text][1][1] = parseInt(inputY2.value);
                 send({
                     op: "configuration",
                     device: device,
                     json: config[device],
                 });
-            }
-
-            const inputX3 = document.createElement("input");
-            inputX3.type = "number";
-            inputX3.classList.add("form-control");
-            inputX3.value = data[2][0];
-            inputX3.onchange = function () {
+            });
+            
+            const inputX3 = createCoordinateInput(data[2][0], function () {
                 config[device][text][2][0] = parseInt(inputX3.value);
                 send({
                     op: "configuration",
                     device: device,
                     json: config[device],
                 });
-            }
-
-            const inputY3 = document.createElement("input");
-            inputY3.type = "number";
-            inputY3.classList.add("form-control");
-            inputY3.value = data[2][1];
-            inputY3.onchange = function () {
+            });
+            
+            const inputY3 = createCoordinateInput(data[2][1], function () {
                 config[device][text][2][1] = parseInt(inputY3.value);
                 send({
                     op: "configuration",
                     device: device,
                     json: config[device],
                 });
-            }
-
-            const inputX4 = document.createElement("input");
-            inputX4.type = "number";
-            inputX4.classList.add("form-control");
-            inputX4.value = data[3][0];
-            inputX4.onchange = function () {
+            });
+            
+            const inputX4 = createCoordinateInput(data[3][0], function () {
                 config[device][text][3][0] = parseInt(inputX4.value);
                 send({
                     op: "configuration",
                     device: device,
                     json: config[device],
                 });
-            }
-
-            const inputY4 = document.createElement("input");
-            inputY4.type = "number";
-            inputY4.classList.add("form-control");
-            inputY4.value = data[3][1];
-            inputY4.onchange = function () {
+            });
+            
+            const inputY4 = createCoordinateInput(data[3][1], function () {
                 config[device][text][3][1] = parseInt(inputY4.value);
                 send({
                     op: "configuration",
                     device: device,
                     json: config[device],
                 });
-            }
-
+            });
+            
             const span = document.createElement("span");
             span.classList.add("input-group-text");
             span.innerText = text;
-
+            
             div.appendChild(span);
             div.appendChild(inputX1);
             div.appendChild(inputY1);
@@ -823,7 +798,7 @@ $(document).ready(function () {
             div.appendChild(inputY3);
             div.appendChild(inputX4);
             div.appendChild(inputY4);
-            return div;
+            return div;            
         }
         else {
             const options = addressKeys[device][text];

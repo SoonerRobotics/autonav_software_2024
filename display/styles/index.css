@@ -176,3 +176,11 @@ span[data-state="5"] {
 #logging {
     margin: 1rem;
 }
+
+.coordinate-input {
+    width: 60px;
+    margin-right: 5px;
+    text-align: center;
+    border-radius: 5px;
+    border: 1px solid #ced4da;
+}
