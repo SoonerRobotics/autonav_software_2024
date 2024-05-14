@@ -94,7 +94,7 @@ public:
         newConfig.vertical_fov = 2.75;
         newConfig.horizontal_fov = 3.4;
         newConfig.map_res = 80.0f;
-        newConfig.max_range = 0.73;
+        newConfig.max_range = 1.0;
         newConfig.no_go_percent = 0.70;
         newConfig.no_go_range = 0;
         return newConfig;
