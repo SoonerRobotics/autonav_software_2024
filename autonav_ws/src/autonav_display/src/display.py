@@ -69,6 +69,7 @@ class BroadcastNode(Node):
 		self.limiter.setLimit("/autonav/cfg_space/combined/image", 5)
 		self.limiter.setLimit("/autonav/cfg_space/raw/debug", 5)
 		self.limiter.setLimit("/autonav/debug/astar/image", 5)
+		self.limiter.setLimit("/autonav/debug/astar", 5)
 
 		self.get_logger().info("Broadcasting on ws://{}:{}".format(self.host, self.port))
 
@@ -84,8 +85,7 @@ class BroadcastNode(Node):
 		self.motorFeedbackSubscriber = self.create_subscription(MotorFeedback, "/autonav/MotorFeedback", self.motorFeedbackCallback, 20)
 		self.motorInputSubscriber = self.create_subscription(MotorInput, "/autonav/MotorInput", self.motorInputCallback, 20)
 		self.motorControllerDebugSubscriber = self.create_subscription(MotorControllerDebug, "/autonav/MotorControllerDebug", self.motorControllerDebugCallback, 20)
-		self.objectDetectionSubscriber = self.create_subscription(ObjectDetection, "/autonav/ObjectDetection", self.objectDetectionCallback, 20)
-		self.pathingDebugSubscriber = self.create_subscription(PathingDebug, "/autonav/cfg_space/expanded/image", self.pathingDebugCallback, 20)
+		self.pathingDebugSubscriber = self.create_subscription(PathingDebug, "/autonav/debug/astar", self.pathingDebugCallback, 20)
 		self.gpsFeedbackSubscriber = self.create_subscription(GPSFeedback, "/autonav/gps", self.gpsFeedbackCallback, 20)
 		self.imuDataSubscriber = self.create_subscription(IMUData, "/autonav/imu", self.imuDataCallback, 20)
 		self.conbusSubscriber = self.create_subscription(Conbus, "/autonav/conbus/data", self.conbusCallback, 100)
@@ -93,8 +93,8 @@ class BroadcastNode(Node):
 
 		self.systemStateService = self.create_client(SetSystemState, "/scr/state/set_system_state")
 
-		self.cameraSubscriberLeft = self.create_subscription(CompressedImage, "/autonav/camera/compressed/left", self.cameraCallbackLeft, self.qos_profile)
-		self.cameraSubscriberRight = self.create_subscription(CompressedImage, "/autonav/camera/compressed/right", self.cameraCallbackRight, self.qos_profile)
+		self.cameraSubscriberLeft = self.create_subscription(CompressedImage, "/autonav/camera/compressed/left/cutout", self.cameraCallbackLeft, self.qos_profile)
+		self.cameraSubscriberRight = self.create_subscription(CompressedImage, "/autonav/camera/compressed/right/cutout", self.cameraCallbackRight, self.qos_profile)
 		self.filteredSubscriberLeft = self.create_subscription(CompressedImage, "/autonav/cfg_space/raw/image/left", self.filteredCallbackLeft, self.qos_profile)
 		self.filteredSubscriberRight = self.create_subscription(CompressedImage, "/autonav/cfg_space/raw/image/right", self.filteredCallbackRight, self.qos_profile)
 		self.filteredSubscriberLeft = self.create_subscription(CompressedImage, "/autonav/cfg_space/raw/image/left_small", self.filteredCallbackLeftSmall, self.qos_profile)
@@ -327,18 +327,6 @@ class BroadcastNode(Node):
 			"distance_to_destination": msg.distance_to_destination,
 			"waypoints": msg.waypoints.tolist(),
 			"time_until_use_waypoints": msg.time_until_use_waypoints,
-		}))
-
-	def objectDetectionCallback(self, msg: ObjectDetection):
-		if not self.limiter.use("/autonav/ObjectDetection"):
-			return
-
-		self.pushSendQueue(json.dumps({
-			"op": "data",
-			"topic": "/autonav/ObjectDetection",
-			"sensor_1": msg.sensor_1,
-			"sensor_2": msg.sensor_2,
-			"sensor_3": msg.sensor_3
 		}))
 
 	def motorControllerDebugCallback(self, msg: MotorControllerDebug):
