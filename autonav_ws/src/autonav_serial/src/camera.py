@@ -37,8 +37,6 @@ class CameraNode(Node):
         self.camera_publisher_left = self.create_publisher(CompressedImage, "/autonav/camera/compressed/left", 20)
         self.camera_publisher_right = self.create_publisher(CompressedImage, "/autonav/camera/compressed/right", 20)
 
-        self.lock_left = threading.Lock()
-        self.lock_right = threading.Lock()
         self.left_kill = False
         self.right_kill = False
 
@@ -65,24 +63,14 @@ class CameraNode(Node):
         if self.camera_thread_left is None or self.camera_thread_right is None:
             return
 
-        self.lock_left.acquire()
         self.left_kill = True
-        self.lock_left.release()
-
-        self.lock_right.acquire()
         self.right_kill = True
-        self.lock_right.release()
 
         self.camera_thread_left.join()
         self.camera_thread_right.join()
 
-        self.lock_left.acquire()
         self.left_kill = False
-        self.lock_left.release()
-
-        self.lock_right.acquire()
         self.right_kill = False
-        self.lock_right.release()
 
     def config_updated(self, jsonObject):
         self.config = json.loads(self.jdump(jsonObject), object_hook=lambda d: SimpleNamespace(**d))
