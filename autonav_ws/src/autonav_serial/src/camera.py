@@ -42,6 +42,9 @@ class CameraNode(Node):
         self.left_kill = False
         self.right_kill = False
 
+        self.camera_thread_left = None
+        self.camera_thread_right = None
+
         self.autofocus = 0
         self.autoexposure = 0
 
