@@ -39,13 +39,13 @@ def toSafetyLights(autonomous: bool, eco: bool, mode: int, brightness: int, colo
 
 class PathResolverNodeConfig:
     def __init__(self):
-        self.forward_speed = 1.0
+        self.forward_speed = 1.5
         self.reverse_speed = -0.4
         self.radius_multiplier = 1.2
         self.radius_max = 4.0
         self.radius_start = 0.7
-        self.angular_aggression = 1.2
-        self.max_angular_speed = 0.5
+        self.angular_aggression = 1.8
+        self.max_angular_speed = 0.8
 
 
 class PathResolverNode(Node):
@@ -57,10 +57,10 @@ class PathResolverNode(Node):
         self.pure_pursuit = PurePursuit()
         self.backCount = -1
         self.status = -1
-        self.path_subscriber = self.create_subscription(Path, "/autonav/path", self.on_path_received, self.qos_profile)
-        self.position_subscriber = self.create_subscription(Position, "/autonav/position", self.on_position_received, self.qos_profile)
+        self.path_subscriber = self.create_subscription(Path, "/autonav/path", self.on_path_received, 1)
+        self.position_subscriber = self.create_subscription(Position, "/autonav/position", self.on_position_received, 1)
         self.motor_publisher = self.create_publisher(MotorInput, "/autonav/MotorInput", 1)
-        self.safety_lights_publisher = self.create_publisher(SafetyLights, "/autonav/SafetyLights", self.qos_profile)
+        self.safety_lights_publisher = self.create_publisher(SafetyLights, "/autonav/SafetyLights", 1)
         self.config = self.get_default_config()
 
         self.create_timer(0.05, self.onResolve)
