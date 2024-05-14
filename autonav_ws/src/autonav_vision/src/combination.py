@@ -93,12 +93,11 @@ class ImageCombiner(Node):
         self.combined_grid_publisher.publish(combined_grid)
 
         # Publish the combined grid as an image
-        preview_image = np.zeros((IMAGE_HEIGHT, IMAGE_WIDTH), np.uint8)
-        for i in range(len(combined_grid.data)):
-            x = i % combined_grid.info.width
-            y = i // combined_grid.info.width
-            if combined_grid.data[i] > 0:
-                preview_image[y, x] = 255
+        preview_image = np.zeros((80, 80), dtype=np.uint8)
+        for i in range(80):
+            for j in range(80):
+                preview_image[i, j] = 255 - combined_grid.data[i * 80 + j] * 255 / 100
+        preview_image = cv2.cvtColor(preview_image, cv2.COLOR_GRAY2RGB)
         compressed_image = g_bridge.cv2_to_compressed_imgmsg(preview_image)
         self.combined_grid_image_publisher.publish(compressed_image)
 
