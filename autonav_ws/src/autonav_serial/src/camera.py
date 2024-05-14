@@ -18,8 +18,8 @@ bridge = CvBridge()
 class CameraNodeConfig:
     def __init__(self):
         self.refresh_rate = 8
-        self.output_width = 640
-        self.output_height = 480
+        self.output_width = 480
+        self.output_height = 640
         self.camera_index_left = 0
         self.camera_index_right = 2
         self.scan_rate = 1.0
@@ -83,6 +83,7 @@ class CameraNode(Node):
                     if index_name == "left":
                         frame = cv2.flip(frame, 1)
                         frame = cv2.flip(frame, 0)
+                    frame = cv2.flip(frame, 0)
                     frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
                     frame = cv2.resize(frame, (self.config.output_width, self.config.output_height))
                 except:
