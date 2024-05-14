@@ -143,7 +143,9 @@ class AStarNode(Node):
             global_path = Path()
             global_path.poses = [self.path_to_global(pp[0], pp[1]) for pp in path]
             self.last_path = path
-            self.pathPublisher.publish(global_path)
+
+            if self.system_state == SystemStateEnum.AUTONOMOUS and self.mobility:
+                self.pathPublisher.publish(global_path)
 
             # Draw the cost map onto a debug iamge
             cvimg = np.zeros((80, 80), dtype=np.uint8)
@@ -224,7 +226,7 @@ class AStarNode(Node):
                         heappush(next_current, (fScore[neighbor], neighbor))
 
     def cfg_space_Received(self, msg: OccupancyGrid):
-        if self.position is None or self.system_state != SystemStateEnum.AUTONOMOUS:
+        if self.position is None:
             return
 
         grid_data = msg.data
