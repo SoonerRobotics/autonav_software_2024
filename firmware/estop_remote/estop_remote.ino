@@ -1,30 +1,52 @@
-
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1351.h>
 #include <SPI.h>
 #include <RH_RF95.h>
-#include <LiquidCrystal_PCF8574.h>
-#include <Wire.h>
 #include "estop_common.h"
 
-#define RFM95_CS 8
-#define RFM95_RST 4
-#define RFM95_INT 3
-
-#define ESTOP_BUTTON_PIN 10
-#define MOBSTOP_BUTTON_PIN 11
-#define MOBSTART_BUTTON_PIN 12
+// RFM95 Definitions
+#define RFM95_CS   16
+#define RFM95_INT  21
+#define RFM95_RST  17
 #define RF95_FREQ 915.0
 
-#define LED_PIN 13
-#define VBATPIN A7
+// Screen dimensions
+#define SCREEN_WIDTH  128
+#define SCREEN_HEIGHT 128 // Change this to 96 for 1.27" OLED.
+
+// SPI
+#define SCLK_PIN 14
+#define MOSI_PIN 15
+#define DC_PIN   12
+#define CS_PIN   25
+#define RST_PIN  11
+
+// Buttons
+#define BTN_MSTART 24
+#define BTN_MSTOP 29
+#define BTN_ESTOP 28
+
+#define BTN_CENTER 13
+#define BTN_UP 10
+#define BTN_DOWN 6
+#define BTN_LEFT 9
+#define BTN_RIGHT 5
+
+// Other
+#define BATT_READ 26
+
+// Color definitions
+#define	BLACK           0x0000
+#define WHITE           0xFFFF
 
 RH_RF95 rf95(RFM95_CS, RFM95_INT);
 
-LiquidCrystal_PCF8574 lcd(0x27); // set the LCD address to 0x27 for a 16 chars and 2 line display
+Adafruit_SSD1351 tft = Adafruit_SSD1351(SCREEN_WIDTH, SCREEN_HEIGHT, &SPI1, CS_PIN, DC_PIN, RST_PIN);
 
 // Parameters
 float battery_min_voltage = 3.5f;
 float battery_max_voltage = 3.9f;
-int screen_refresh_period_ms = 250;
+int screen_refresh_period_ms = 1000;
 int heartbeat_period_ms = 250;
 int handshake_period_ms = 500;
 int message_resend_period_ms = 500;
@@ -38,7 +60,7 @@ unsigned long last_received_message = 0;
 unsigned long last_sent_message = 0;
 int current_resends = 0;
 
-int led_status = 0;
+// int led_status = 0;
 float battery_percentage_smoothed = -1.0f;
 uint8_t expecting_response_id = MSG_NONE_ID;
 bool is_connected = false;
@@ -77,16 +99,22 @@ void setup()
 {
   Serial.begin(115200);
 
-  // display init to blank screen
-  lcd.begin(16, 2); // initialize the lcd
-  lcd.setBacklight(255);
-  lcd.home();
-  lcd.clear();
-  lcd.noBlink();
-  lcd.noCursor();
+  // Setup SPI
+  SPI1.setTX(MOSI_PIN);
+  SPI1.setSCK(SCLK_PIN);
+  SPI1.setCS(CS_PIN);
+  SPI1.begin();
 
-  pinMode(LED_PIN, OUTPUT);
-  digitalWrite(LED_PIN, led_status);
+  // display init to blank screen
+  tft.begin(62500000);
+
+  tft.setTextSize(1);
+  tft.setTextColor(WHITE, BLACK);
+  tft.fillScreen(BLACK);
+
+  // LED
+  // pinMode(LED_PIN, OUTPUT);
+  // digitalWrite(LED_PIN, led_status);
 
   // reset rfm95
   pinMode(RFM95_RST, OUTPUT);
@@ -101,22 +129,24 @@ void setup()
   rf95.setTxPower(23, false);
 
   // button interrupt setup
-  pinMode(ESTOP_BUTTON_PIN, INPUT);
-  attachInterrupt(digitalPinToInterrupt(ESTOP_BUTTON_PIN), estopButtonInterrupt, FALLING);
+  pinMode(BTN_ESTOP, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(BTN_ESTOP), estopButtonInterrupt, FALLING);
 
-  pinMode(MOBSTOP_BUTTON_PIN, INPUT);
-  attachInterrupt(digitalPinToInterrupt(MOBSTOP_BUTTON_PIN), mobilityStopButtonInterrupt, FALLING);
+  pinMode(BTN_MSTOP, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(BTN_MSTOP), mobilityStopButtonInterrupt, FALLING);
 
-  pinMode(MOBSTART_BUTTON_PIN, INPUT);
-  attachInterrupt(digitalPinToInterrupt(MOBSTART_BUTTON_PIN), mobilityStartButtonInterrupt, FALLING);
+  pinMode(BTN_MSTART, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(BTN_MSTART), mobilityStartButtonInterrupt, FALLING);
 
   strncpy(outgoing_message.password, GLOBAL_PASSWORD, sizeof(GLOBAL_PASSWORD));
+
+  pinMode(BATT_READ, INPUT);
 
 }
 
 void updateBatteryDisplay() {
   // Battery status
-  float battery_volage = analogRead(VBATPIN);
+  float battery_volage = analogRead(BATT_READ);
   battery_volage *= 2;    // we divided by 2, so multiply back
   battery_volage *= 3.3;  // Multiply by 3.3V, our reference voltage
   battery_volage /= 1024; // convert to voltage
@@ -138,42 +168,38 @@ void updateBatteryDisplay() {
     battery_percentage_smoothed = 0.7 * battery_percentage_smoothed + 0.3 * estimated_battery_percentage;
   }
 
-  // Allow space for the "1" in "100"
-  if (battery_percentage_smoothed < 99.5) {
-    lcd.setCursor(13, 0);
-  } else {
-    lcd.setCursor(12, 0);
-  }
- 
+  tft.setCursor(100, 0);
+
   // Print leading 0
   if (battery_percentage_smoothed < 10) {
-    lcd.print("LOW");
+    tft.printf("LOW");
     return;
   }
 
-  lcd.print(battery_percentage_smoothed, 0);
-  lcd.print("%");
+  // lcd.print(battery_percentage_smoothed, 0);
+  // lcd.print("%");
+  tft.printf("%3.0f%%", battery_percentage_smoothed);
 }
 
 void updateDisplay() {
-  lcd.home();
-  lcd.clear();
 
   if (error_state != NO_ERROR) {
-    lcd.print("ERROR!");
-    lcd.setCursor(0, 1);
-    lcd.print("Code: ");
-    lcd.print((float)error_state, 0);
+    tft.setCursor(0, 0);
+    tft.print("ERROR!");
+    tft.setCursor(0, 10);
+    tft.print("Code: ");
+    tft.print((float)error_state, 0);
 
     updateBatteryDisplay();
     return;
   }
 
   if (is_connected && signal_to_send != NONE_SIGNAL) {
-    lcd.print("Connected.   ");
-    lcd.setCursor(0, 1);
-    lcd.print("Sending: ");
-    lcd.print((float)signal_to_send, 0);
+    tft.setCursor(0, 0);
+    tft.print("Connected.   ");
+    tft.setCursor(0, 10);
+    tft.print("Sending: ");
+    tft.print((float)signal_to_send, 0);
 
     updateBatteryDisplay();
     return;
@@ -181,14 +207,16 @@ void updateDisplay() {
 
   // Connection status
   if (is_connected) {
-    lcd.print("Connected.   ");
+    tft.setCursor(0, 0);
+    tft.print("Connected.   ");
     if (current_resends > 0) {
-        lcd.setCursor(0, 1);
-        lcd.print("Resends: ");
-        lcd.print((float)current_resends, 0);
+        tft.setCursor(0, 10);
+        tft.print("Resends: ");
+        tft.print((float)current_resends, 0);
     }
   } else {
-    lcd.print("Waiting...");
+    tft.setCursor(0, 0);
+    tft.print("Waiting...");
   }
 
   updateBatteryDisplay();
@@ -210,8 +238,8 @@ void loop()
   if (rf95.available())
   {
     // Blink LED on receive
-    led_status = !led_status;
-    digitalWrite(LED_PIN, led_status);
+    // led_status = !led_status;
+    // digitalWrite(LED_PIN, led_status);
 
     uint8_t buf[sizeof(RadioPacket)];
     uint8_t len = sizeof(buf);
