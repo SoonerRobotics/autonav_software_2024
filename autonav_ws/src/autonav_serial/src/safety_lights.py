@@ -71,7 +71,7 @@ class SafetyLightsSerial(Node):
         data["red"] = lights.red
         data["green"] = lights.green
         data["blue"] = lights.blue
-        data["blink_period"] = 500
+        data["blink_period"] = 500 / 10
 
         self.writeQueueLock.acquire()
         self.writeQueue.append(data)
