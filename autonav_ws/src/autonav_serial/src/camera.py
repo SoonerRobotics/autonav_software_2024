@@ -112,9 +112,9 @@ class CameraNode(Node):
 
 def main():
     rclpy.init()
-    node_left = CameraNode("left", "/dev/autonav_camera_left")
-    node_right = CameraNode("right", "/dev/autonav_camera_right")
-    Node.run_nodes([node_left, node_right])
+    # node_left = CameraNode("left", "/dev/autonav_camera_left")
+    node_right = CameraNode("right", "/dev/v4l/by-id/usb-046d_HD_Pro_Webcam_C920_3F47331F-video-index0")
+    Node.run_nodes([node_right])
     rclpy.shutdown()
 
 
