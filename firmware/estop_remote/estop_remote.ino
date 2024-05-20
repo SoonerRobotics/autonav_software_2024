@@ -22,8 +22,8 @@ RH_RF95 rf95(RFM95_CS, RFM95_INT);
 LiquidCrystal_PCF8574 lcd(0x27); // set the LCD address to 0x27 for a 16 chars and 2 line display
 
 // Parameters
-float battery_min_voltage = 3.4f;
-float battery_max_voltage = 3.75f;
+float battery_min_voltage = 3.5f;
+float battery_max_voltage = 3.9f;
 int screen_refresh_period_ms = 250;
 int heartbeat_period_ms = 250;
 int handshake_period_ms = 500;
@@ -147,7 +147,8 @@ void updateBatteryDisplay() {
  
   // Print leading 0
   if (battery_percentage_smoothed < 10) {
-    lcd.print("0");
+    lcd.print("LOW");
+    return;
   }
 
   lcd.print(battery_percentage_smoothed, 0);
