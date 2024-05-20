@@ -16,7 +16,8 @@ var deviceStates = {};
 var logs = [];
 var iterator = 0;
 var iterators = [];
-var debug = false;
+var development_mode = false;
+var current_preset = "ERROR_NO_PRESET_AUTODETECTED";
 
 var addressKeys = {
 	"autonav_serial_imu": {
@@ -75,7 +76,7 @@ var addressKeys = {
 
 	"autonav_vision_expandifier": {
 		"internal_title": "[Vision] Expandifier",
-		"horizontal_fov": "int",
+		"horizontal_fov": "float",
 		"map_res": "int",
 		"vertical_fov": "float",
 		"max_range": "float",
@@ -88,9 +89,7 @@ var addressKeys = {
 		"filter_type": {
 			0: "Deadreckoning",
 			1: "Particle Filter"
-		},
-		"degree_offset": "float",
-		"seed_heading": "bool",
+		}
 	},
 
 	"autonav_manual_steamcontroller": {
@@ -121,6 +120,10 @@ var addressKeys = {
 		},
 		"useOnlyWaypoints": "bool",
 		"waypointDelay": "float",
+        "vertical_fov": "float",
+        "horizontal_fov": "float",
+        "waypointMaxWeight": "float",
+        "waypointWeight": "float",
 	},
 
 	"autonav_nav_resolver": {
@@ -137,7 +140,22 @@ var addressKeys = {
 	"autonav_image_combiner": {
 		"internal_title": "[Image Combiner]",
 		"map_res": "int"
-	}
+	},
+
+    "autonav_playback": {
+        "internal_title": "[Playback]",
+        "record_imu": "bool",
+        "record_gps": "bool",
+        "record_position": "bool",
+        "record_feedback": "bool",
+        "record_motor_debug": "bool",
+        "record_raw_cameras": "bool",
+        "record_filtered_cameras": "bool",
+        "record_astar": "bool",
+        "record_autonomous": "bool",
+        "record_manual": "bool",
+        "frame_rate": "int"
+    }
 }
 
 var conbusDevices = {

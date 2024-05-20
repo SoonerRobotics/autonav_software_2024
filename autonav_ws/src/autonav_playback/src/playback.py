@@ -13,6 +13,7 @@ import rclpy
 import cv2
 import os
 import json
+import subprocess
 
 
 class ImageTransformerConfig:
@@ -64,6 +65,7 @@ class PlaybackNode(Node):
 
     def config_updated(self, jsonObject):
         self.config = json.loads(self.jdump(jsonObject), object_hook=lambda d: SimpleNamespace(**d))
+        self.get_logger().info(f"Updated config: {self.jdump(jsonObject)}")
 
     def get_default_config(self):
         return ImageTransformerConfig()
@@ -80,7 +82,8 @@ class PlaybackNode(Node):
     def create_video(self, folder, name):
         IMAGES_PATH = os.path.join(self.home_dir, ".scr", "playback", self.file_name, "images", folder)
         SAVE_PATH = os.path.join(self.home_dir, ".scr", "playback", self.file_name)
-        os.system(f"ffmpeg -r {self.config.frame_rate} -i {IMAGES_PATH}/%d.jpg -vcodec libx264 -crf 18  -pix_fmt yuv420p -y {SAVE_PATH}/{name}.mp4")
+        with open(os.devnull, "wb") as devnull:
+            subprocess.call(["ffmpeg", "-r", f"{self.config.frame_rate}", "-i", f"{IMAGES_PATH}/%d.jpg", "-vcodec", "libx264", "-crf", "18", "-pix_fmt", "yuv420p", "-y", f"{SAVE_PATH}/{name}.mp4"], stdout=devnull, stderr=devnull)
 
     def create_entry(self):
         self.file_name = self.create_file()
@@ -99,7 +102,7 @@ class PlaybackNode(Node):
         self.astar_index = 0
         self.camera_index = 0
 
-        self.log(f"Recording playback data at {BASE_PATH}")
+        self.get_logger().info(f"Recording playback data at {BASE_PATH}")
 
     def close_entry(self):
         if self.file is None:
@@ -129,8 +132,9 @@ class PlaybackNode(Node):
         shutil.make_archive(BASE_PATH, "zip", BASE_PATH)
         SIZE_OF_ZIP = os.path.getsize(BASE_PATH + ".zip") / 1024 / 1024
         TIME_ELAPSED = datetime.now().timestamp() - self.startTime
-        self.log(f"Saved playback data to {self.file_name}.zip ({SIZE_OF_ZIP:.3f} MB) over {TIME_ELAPSED:.3f} seconds")
         shutil.rmtree(BASE_PATH, ignore_errors=True)
+
+        self.get_logger().info(f"Finished recording playback data at {BASE_PATH}. Size of zip: {SIZE_OF_ZIP:.2f} MB. Time elapsed: {TIME_ELAPSED:.2f} seconds")
 
     def write_file(self, msg: str):
         if self.file is None:
@@ -147,6 +151,7 @@ class PlaybackNode(Node):
         cv2.imwrite(os.path.join(IMAGE_PATH, f"{idx}.jpg"), cv2Image)
 
     def system_state_transition(self, old: SystemState, updated: SystemState):
+        self.get_logger().info(f"System state transitioned from {old.state} to {updated.state}")
         if old.state == SystemStateEnum.AUTONOMOUS and updated.state != SystemStateEnum.AUTONOMOUS:
             self.close_entry()
 

@@ -27,6 +27,10 @@ set(srv_files
   "srv/UpdateDeviceState.srv"
   "srv/UpdateConfig.srv"
   "srv/UpdateSystemState.srv"
+  "srv/SaveActivePreset.srv"
+  "srv/SetActivePreset.srv"
+  "srv/GetPresets.srv"
+  "srv/DeletePreset.srv"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}

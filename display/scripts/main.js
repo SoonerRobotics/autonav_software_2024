@@ -24,6 +24,7 @@ $(document).ready(function () {
 
             send({ op: "broadcast" });
             send({ op: "get_nodes" });
+            send({ op: "get_presets" });
 
             const waitInterval = setInterval(() => {
                 if (deviceStates["autonav_serial_can"] != 3) {
@@ -48,19 +49,47 @@ $(document).ready(function () {
                 $(".connecting").hide();
                 $("#main").show();
             }, 1000);
+
+            setTimeout(() => {
+                if(websocket.readyState == 1)
+                {
+                    send({ op: "get_presets" });
+                }
+            }, 3000);
         };
 
         websocket.onmessage = function (event) {
             const messages = event.data.split("\n");
-            for (const message of messages)
-            {
+            for (const message of messages) {
                 const obj = JSON.parse(message);
                 const { op, topic } = obj;
-    
+
                 if (op == "data") {
                     onTopicData(topic, obj);
                 }
-    
+
+                if (op == "get_presets_callback") {
+                    const presets = obj.presets;
+                    const presetElement = $("#dropdown_elements");
+                    presetElement.empty();
+                    for (const preset of presets) {
+                        const dropdownItem = $(`<li><a class="dropdown-item" data-value="${preset}">${preset}</a></li>`);
+                        presetElement.append(dropdownItem);
+
+                        dropdownItem.on("click", function () {
+                            const preset_name = $(this).children().attr("data-value");
+                            send({
+                                op: "set_active_preset",
+                                preset: preset_name
+                            });
+                            send({ op: "get_presets" });
+                        });
+                    }
+
+                    current_preset = obj.active_preset;
+                    $("#active_preset_value").text(current_preset);
+                }
+
                 if (op == "get_nodes_callback") {
                     console.log(obj);
                     for (let i = 0; i < obj.nodes.length; i++) {
@@ -74,8 +103,7 @@ $(document).ready(function () {
 
                         const statemap = obj.states;
                         if (node in statemap) {
-                            if (node == "rosbridge_websocket" || node == "rosapi" || node == "scr_core" || node == "rosapi_params")
-                            {
+                            if (node == "rosbridge_websocket" || node == "rosapi" || node == "scr_core" || node == "rosapi_params") {
                                 continue;
                             }
 
@@ -89,8 +117,7 @@ $(document).ready(function () {
                         }
                     }
 
-                    for (const key in obj.configs)
-                    {
+                    for (const key in obj.configs) {
                         config[key] = obj.configs[key];
                     }
                     regenerateConfig();
@@ -100,6 +127,10 @@ $(document).ready(function () {
                     $("#var_system_state").text(system["state"] == 0 ? "Diabled" : system["state"] == 1 ? "Autonomous" : system["state"] == 2 ? "Manual" : "Shutdown");
                     $("#var_system_mode").text(system["mode"] == 0 ? "Competition" : system["mode"] == 1 ? "Simulation" : "Practice");
                     $("#var_system_mobility").text(system["mobility"] ? "Enabled" : "Disabled");
+
+                    // Update some buttons
+                    $("#checkbox_system_mobility").prop("checked", system["mobility"]);
+                    $("#input_system_state").val(system["state"]);
                 }
             }
         };
@@ -122,7 +153,14 @@ $(document).ready(function () {
         };
     }
 
-    createWebsocket();
+    if (!development_mode) {
+        createWebsocket();
+    } else {
+        $("#connecting-state").text("Updating Data");
+        $(".connecting-input").hide();
+        $(".connecting").hide();
+        $("#main").show();
+    }
 
     var sendQueue = [];
 
@@ -320,7 +358,9 @@ $(document).ready(function () {
         }
 
         if (topic == "/scr/configuration") {
-            console.log(msg);
+            const { device, json } = msg;
+            config[device] = JSON.parse(json);
+            regenerateConfig();
             return;
         }
 
@@ -520,6 +560,7 @@ $(document).ready(function () {
 
     $(".dropdown-menu a").on("click", function () {
         const parentDataTarget = $(this).parents(".dropdown").attr("data-target");
+        console.log(parentDataTarget);
         if (parentDataTarget == "system_state") {
             const id = $(this).attr("data-value");
             systemState.state = parseInt(id);
@@ -537,6 +578,31 @@ $(document).ready(function () {
             preferences.gpsFormat = $(this).attr("data-value");
             savePreferences();
         }
+    });
+
+    $("#save_preset_mode").on("click", function () {
+        send({
+            op: "save_preset_mode"
+        });
+        send({ op: "get_presets" });
+    });
+
+    $("#save_preset_as").on("click", function () {
+        const preset_name = $("#preset_save_name").val();
+        send({
+            op: "save_preset_as",
+            preset: preset_name
+        });
+        send({ op: "get_presets" });
+        $("#preset_save_name").val("");
+    });
+
+    $("#delete_preset").on("click", function () {
+        send({
+            op: "delete_preset",
+            preset: current_preset
+        });
+        send({ op: "get_presets" });
     });
 
     $("#checkbox_system_mobility").on("change", function () {
@@ -569,40 +635,40 @@ $(document).ready(function () {
     function generateElementForConfiguration(data, type, device, text) {
         if (type == "bool") {
             const checked = data == 1;
-    
+
             // Create a dropdown
             const div = document.createElement("div");
             div.classList.add("input-group");
             div.classList.add("mb-3");
-    
+
             const select = document.createElement("select");
             select.classList.add("form-select");
             select.onchange = function () {
-                config[device][text] = select.value;
+                config[device][text] = select.value == 1 ? true : false;
                 send({
                     op: "configuration",
                     device: device,
                     json: config[device],
                 });
             }
-    
+
             const optionTrue = document.createElement("option");
             optionTrue.value = 1;
             optionTrue.innerText = "True";
             optionTrue.selected = checked;
-    
+
             const optionFalse = document.createElement("option");
             optionFalse.value = 0;
             optionFalse.innerText = "False";
             optionFalse.selected = !checked;
-    
+
             select.appendChild(optionTrue);
             select.appendChild(optionFalse);
-    
+
             const span = document.createElement("span");
             span.classList.add("input-group-text");
             span.innerText = text;
-    
+
             div.appendChild(span);
             div.appendChild(select);
             return div;
@@ -611,7 +677,7 @@ $(document).ready(function () {
             const div = document.createElement("div");
             div.classList.add("input-group");
             div.classList.add("mb-3");
-    
+
             const input = document.createElement("input");
             input.type = "number";
             input.classList.add("form-control");
@@ -624,11 +690,11 @@ $(document).ready(function () {
                     json: config[device],
                 });
             }
-    
+
             const span = document.createElement("span");
             span.classList.add("input-group-text");
             span.innerText = text;
-    
+
             div.appendChild(span);
             div.appendChild(input);
             return div;
@@ -637,7 +703,7 @@ $(document).ready(function () {
             const div = document.createElement("div");
             div.classList.add("input-group");
             div.classList.add("mb-3");
-    
+
             const input = document.createElement("input");
             input.type = "number";
             input.classList.add("form-control");
@@ -650,11 +716,11 @@ $(document).ready(function () {
                     json: config[device],
                 });
             }
-    
+
             const span = document.createElement("span");
             span.classList.add("input-group-text");
             span.innerText = text;
-    
+
             div.appendChild(span);
             div.appendChild(input);
             return div;
@@ -694,7 +760,7 @@ $(document).ready(function () {
             const span = document.createElement("span");
             span.classList.add("input-group-text");
             span.innerText = text;
-            
+
             div.appendChild(span);
             div.appendChild(inputX);
             div.appendChild(inputY);
@@ -703,7 +769,7 @@ $(document).ready(function () {
         else if (type == "parallelogram.int") {
             const div = document.createElement("div");
             div.classList.add("input-group", "mb-3");
-            
+
             function createCoordinateInput(value, onChangeHandler) {
                 const input = document.createElement("input");
                 input.type = "number";
@@ -712,7 +778,7 @@ $(document).ready(function () {
                 input.onchange = onChangeHandler;
                 return input;
             }
-            
+
             const inputX1 = createCoordinateInput(data[0][0], function () {
                 config[device][text][0][0] = parseInt(inputX1.value);
                 send({
@@ -721,7 +787,7 @@ $(document).ready(function () {
                     json: config[device],
                 });
             });
-            
+
             const inputY1 = createCoordinateInput(data[0][1], function () {
                 config[device][text][0][1] = parseInt(inputY1.value);
                 send({
@@ -730,7 +796,7 @@ $(document).ready(function () {
                     json: config[device],
                 });
             });
-            
+
             const inputX2 = createCoordinateInput(data[1][0], function () {
                 config[device][text][1][0] = parseInt(inputX2.value);
                 send({
@@ -739,7 +805,7 @@ $(document).ready(function () {
                     json: config[device],
                 });
             });
-            
+
             const inputY2 = createCoordinateInput(data[1][1], function () {
                 config[device][text][1][1] = parseInt(inputY2.value);
                 send({
@@ -748,7 +814,7 @@ $(document).ready(function () {
                     json: config[device],
                 });
             });
-            
+
             const inputX3 = createCoordinateInput(data[2][0], function () {
                 config[device][text][2][0] = parseInt(inputX3.value);
                 send({
@@ -757,7 +823,7 @@ $(document).ready(function () {
                     json: config[device],
                 });
             });
-            
+
             const inputY3 = createCoordinateInput(data[2][1], function () {
                 config[device][text][2][1] = parseInt(inputY3.value);
                 send({
@@ -766,7 +832,7 @@ $(document).ready(function () {
                     json: config[device],
                 });
             });
-            
+
             const inputX4 = createCoordinateInput(data[3][0], function () {
                 config[device][text][3][0] = parseInt(inputX4.value);
                 send({
@@ -775,7 +841,7 @@ $(document).ready(function () {
                     json: config[device],
                 });
             });
-            
+
             const inputY4 = createCoordinateInput(data[3][1], function () {
                 config[device][text][3][1] = parseInt(inputY4.value);
                 send({
@@ -784,11 +850,11 @@ $(document).ready(function () {
                     json: config[device],
                 });
             });
-            
+
             const span = document.createElement("span");
             span.classList.add("input-group-text");
             span.innerText = text;
-            
+
             div.appendChild(span);
             div.appendChild(inputX1);
             div.appendChild(inputY1);
@@ -798,19 +864,19 @@ $(document).ready(function () {
             div.appendChild(inputY3);
             div.appendChild(inputX4);
             div.appendChild(inputY4);
-            return div;            
+            return div;
         }
         else {
             const options = addressKeys[device][text];
-    
+
             if (typeof options == "object") {
                 const index = data;
-    
+
                 // Create a dropdown
                 const div = document.createElement("div");
                 div.classList.add("input-group");
                 div.classList.add("mb-3");
-    
+
                 const select = document.createElement("select");
                 select.classList.add("form-select");
                 select.onchange = function () {
@@ -821,7 +887,7 @@ $(document).ready(function () {
                         json: config[device],
                     });
                 }
-    
+
                 for (let i = 0; i < Object.keys(options).length; i++) {
                     const option = document.createElement("option");
                     option.value = i;
@@ -829,22 +895,22 @@ $(document).ready(function () {
                     option.innerText = options[i];
                     select.appendChild(option);
                 }
-    
+
                 const span = document.createElement("span");
                 span.classList.add("input-group-text");
                 span.innerText = text;
-    
+
                 div.appendChild(span);
                 div.appendChild(select);
                 return div;
             }
         }
     }
-    
+
     const regenerateConfig = () => {
-        const configElement = $("#configuration");
+        const configElement = $("#options");
         configElement.empty();
-    
+
         for (const deviceId in config) {
             const deviceConfig = config[deviceId];
             if (addressKeys[deviceId] == undefined) {
@@ -853,13 +919,13 @@ $(document).ready(function () {
                 // configElement.append(alert);
                 continue;
             }
-    
+
             const title = addressKeys[deviceId]["internal_title"];
             const deviceElement = $(`<div class="card" style="margin-bottom: 10px;"></div>`);
             deviceElement.append(`<div class="card-header"><h5>${title}</h5></div>`);
             const deviceBody = $(`<div class="card-body"></div>`);
             deviceElement.append(deviceBody);
-    
+
             for (const address of Object.keys(deviceConfig).sort()) {
                 const data = deviceConfig[address];
                 const type = addressKeys[deviceId][address];
@@ -868,24 +934,24 @@ $(document).ready(function () {
                     deviceBody.append(alert);
                     continue;
                 }
-    
+
                 const inputElement = generateElementForConfiguration(data, type, deviceId, address);
                 deviceBody.append(inputElement);
             }
-    
+
             for (const address in addressKeys[deviceId]) {
                 if (address in deviceConfig || address == "internal_title") {
                     continue;
                 }
-    
+
                 const alert = $(`<div class="alert alert-danger" role="alert">Unknown Configuration Entry: ${address}</div>`);
                 deviceBody.append(alert);
             }
-    
+
             configElement.append(deviceElement);
         }
     }
-    
+
     function send(obj) {
         sendQueue.push(obj);
     }

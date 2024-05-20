@@ -21,21 +21,21 @@
                 <li class="nav-item">
                     <a class="nav-link active" data-page-id="dashboard">Dashboard</a>
                 </li>
-                <li class="nav-item">
+                <!-- <li class="nav-item">
                     <a class="nav-link" data-page-id="vision">Vision</a>
-                </li>
-                <li class="nav-item">
+                </li> -->
+                <!-- <li class="nav-item">
                     <a class="nav-link" data-page-id="logging">Logging</a>
-                </li>
+                </li> -->
                 <li class="nav-item">
                     <a class="nav-link" data-page-id="configuration">Configuration</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" data-page-id="conbus">Conbus</a>
                 </li>
-                <li class="nav-item">
+                <!-- <li class="nav-item">
                     <a class="nav-link" data-page-id="preferences">Preferences</a>
-                </li>
+                </li> -->
                 <li class="nav-item">
                     <a class="nav-link" data-page-id="debug">Debug</a>
                 </li>
@@ -104,6 +104,25 @@
                     <h5>Waypoints: <span id="var_astar_waypoints"></span></h5>
                 </div>
             </div>
+            <div class="col" id="vtest">
+                <div class="divider">
+                    <h3>Vision</h3>
+                </div>
+                <div class="section" id="images">
+                    <div class="row">
+                        <img width="480" height="640" id="target_raw_camera_left" data-type="regular">
+                        <img width="480" height="640" id="target_raw_camera_right" data-type="regular">
+                    </div>
+                    <div class="row">
+                        <img width="80" height="80" id="target_filtered_left" data-type="small">
+                        <img width="80" height="80" id="target_filtered_right" data-type="small">
+                    </div>
+                    <div class="row">
+                        <img width="80" height="80" id="target_combined" data-type="small">
+                        <img width="80" height="80" id="target_expandified" data-type="small">
+                    </div>
+                </div>
+            </div>
             <div class="col">
                 <div class="divider">
                     <h3>Device States</h3>
@@ -116,23 +135,37 @@
             </div>
         </div>
 
-        <div class="page" id="vision">
-            <div class="divider">
-                <h3>Camera / Filtered</h3>
-            </div>
-            <div class="section" id="images">
-                <img width="480" height="640" id="target_raw_camera_left" data-type="regular">
-                <img width="480" height="640" id="target_raw_camera_right" data-type="regular">
-                <img width="480" height="640" id="target_filtered_camera_left" data-type="regular">
-                <img width="480" height="640" id="target_filtered_camera_right" data-type="regular">
-                <img width="80" height="80" id="target_filtered_left" data-type="small">
-                <img width="80" height="80" id="target_filtered_right" data-type="small">
-                <img width="80" height="80" id="target_combined" data-type="small">
-                <img width="80" height="80" id="target_expandified" data-type="regular">
-            </div>
-        </div>
-
         <div class="page" id="configuration">
+            <div id="controls">
+                <h4 id="active_preset_header">
+                    Active Preset: <span id="active_preset_value">None</span>
+                </h4>
+                <div class="controls-row">
+                    <button type="button" class="btn btn-outline-success" id="save_preset_as">Save As</button>
+                    <input id="preset_save_name" type="text" class="form-control" placeholder="Configuration Name" aria-label="Configuration Name">
+                </div>
+                <div class="controls-row">
+                    <button type="button" class="btn btn-outline-primary" id="save_preset_mode">Save Mode</button>
+                    <button type="button" class="btn btn-outline-danger" id="delete_preset">Delete Preset</button>
+                </div>
+                <div class="dropdown" data-target="preset">
+                    <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdown_config"
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                        Load Preset
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="dropdown_preset" id="dropdown_elements">
+                        <li><a class="dropdown-item" data-value="alpha">Alpha</a></li>
+                        <li><a class="dropdown-item" data-value="beta">Beta</a></li>
+                        <li><a class="dropdown-item" data-value="charlie">Charlie</a></li>
+                        <li><a class="dropdown-item" data-value="delta">Delta</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="divider">
+            </div>
+            <div id="options">
+
+            </div>
         </div>
 
         <div class="page" id="conbus">

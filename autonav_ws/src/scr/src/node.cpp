@@ -68,11 +68,11 @@ namespace SCR
         SCR::SystemMode newMode = static_cast<SCR::SystemMode>(msg.mode);
         SCR::SystemMode oldMode = static_cast<SCR::SystemMode>(oldState.mode);
 
-        system_state_transition(oldState, msg);
-
         system_mode = static_cast<SCR::SystemMode>(msg.mode);
         mobility = msg.mobility;
         system_state = static_cast<SCR::SystemState>(msg.state);
+
+        system_state_transition(oldState, msg);
     }
 
     void Node::device_state_callback(const scr_msgs::msg::DeviceState msg)
