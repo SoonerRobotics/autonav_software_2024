@@ -21,6 +21,7 @@
     <node pkg="autonav_serial" exec="serial_node.py" />
     <node pkg="autonav_serial" exec="camera.py" />
     <node pkg="autonav_serial" exec="vectornav_node" />
+     <node pkg="autonav_serial" exec="vectornav" />
 
     <!-- Other -->
     <node pkg="autonav_display" exec="display.py" />
