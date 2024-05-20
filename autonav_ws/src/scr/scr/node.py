@@ -127,7 +127,8 @@ class Node(ROSNode):
 
         # If the system state is shutdown, kill this node killing the proces
         if msg.state == SystemStateEnum.SHUTDOWN:
-            os.kill(os.getpid(), signal.SIGINT)
+            self.get_logger().info("Received shutdown signal, shutting down")
+            os.kill(os.getpid(), signal.SIGKILL)
             return
 
         oldState = SystemState()
