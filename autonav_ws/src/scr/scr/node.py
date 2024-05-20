@@ -11,6 +11,8 @@ import time
 import rclpy
 from rclpy.executors import MultiThreadedExecutor
 import json
+import os
+import signal
 
 
 class Node(ROSNode):
@@ -122,6 +124,11 @@ class Node(ROSNode):
 
         :param msg: The system state message.
         """
+        
+        # If the system state is shutdown, kill this node killing the proces
+        if msg.state == SystemStateEnum.SHUTDOWN:
+            os.kill(os.getpid(), signal.SIGINT)
+            return
 
         oldState = SystemState()
         oldState.state = self.system_state

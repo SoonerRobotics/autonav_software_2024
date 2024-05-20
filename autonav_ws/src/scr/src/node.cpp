@@ -56,6 +56,12 @@ namespace SCR
         oldState.mobility = mobility;
         oldState.mode = system_mode;
 
+        // If the new system state is shutdown, just exit the process
+        if (msg.state == static_cast<int>(SCR::SystemState::SHUTDOWN))
+        {
+            kill(getpid(), SIGINT);
+        }
+
         SCR::SystemState newStateEnum = static_cast<SCR::SystemState>(msg.state);
         SCR::SystemState oldStateEnum = static_cast<SCR::SystemState>(oldState.state);
 
@@ -67,12 +73,6 @@ namespace SCR
         system_mode = static_cast<SCR::SystemMode>(msg.mode);
         mobility = msg.mobility;
         system_state = static_cast<SCR::SystemState>(msg.state);
-
-        if (system_state == SCR::SystemState::SHUTDOWN)
-        {
-            // Just exit this process and die
-            exit(0);
-        }
     }
 
     void Node::device_state_callback(const scr_msgs::msg::DeviceState msg)
