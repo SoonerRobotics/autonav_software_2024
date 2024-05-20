@@ -24,20 +24,26 @@ var addressKeys = {
 		"imu_read_rate": "float"
 	},
 
-	"autonav_serial_camera": {
-		"internal_title": "[Serial] Camera",
+	"autonav_serial_camera_left": {
+		"internal_title": "[Serial] Left Camera",
 		"refresh_rate": "int",
 		"output_width": "int",
 		"output_height": "int",
-		"camera_index_left": "int",
-		"camera_index_right": "int",
-		"right_flip_horizontal": "bool",
-		"right_flip_vertical": "bool",
-		"rotate_right_clockwise": "bool",
-		"left_flip_horizontal": "bool",
-		"left_flip_vertical": "bool",
-		"rotate_left_clockwise": "bool",
 		"scan_rate": "int",
+		"flip_horizontal": "bool",
+		"flip_vertical": "bool",
+		"rotate_clockwise": "bool"
+	},
+
+	"autonav_serial_camera_right": {
+		"internal_title": "[Serial] Right Camera",
+		"refresh_rate": "int",
+		"output_width": "int",
+		"output_height": "int",
+		"scan_rate": "int",
+		"flip_horizontal": "bool",
+		"flip_vertical": "bool",
+		"rotate_clockwise": "bool"
 	},
 
 	"autonav_vision_transformer": {
