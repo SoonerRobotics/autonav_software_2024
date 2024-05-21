@@ -213,11 +213,11 @@ private:
         // Store the config
         configs[request->device] = config;
 
+        // Publish the new config
+        publish_config(request->device, config);
+
         // Send the response
         response->success = true;
-
-        // Publish the new config
-        publish_config(config);
     }
 
     void on_set_active_preset_called(const std::shared_ptr<scr_msgs::srv::SetActivePreset::Request> request, std::shared_ptr<scr_msgs::srv::SetActivePreset::Response> response)
@@ -245,7 +245,7 @@ private:
             configs[device] = cfg;
 
             // Publish the new config
-            publish_config(cfg);
+            publish_config(device, cfg);
         }
 
         response->ok = true;
@@ -338,7 +338,7 @@ private:
                 configs[device] = cfg;
 
                 // Publish the new config
-                publish_config(cfg);
+                publish_config(device, cfg);
             }
 
             write_preset(SCR::systemModeToString(mode), active_preset);
@@ -349,7 +349,6 @@ private:
         active_preset = configs;
         active_preset_name = SCR::systemModeToString(mode);
         write_preset(active_preset_name, active_preset);
-
         RCLCPP_INFO(this->get_logger(), "Created preset for mode %d", (int)mode);
     }
 
@@ -399,7 +398,7 @@ private:
                 configs[device] = cfg;
 
                 // Publish the new config
-                publish_config(cfg);
+                publish_config(device, cfg);
             }
         }
 
@@ -418,10 +417,10 @@ private:
         file.close();
     }
 
-    void publish_config(nlohmann::json cfg)
+    void publish_config(std::string device, nlohmann::json cfg)
     {
         scr_msgs::msg::ConfigUpdated config_updated_message;
-        config_updated_message.device = "preset";
+        config_updated_message.device = device;
         config_updated_message.json = cfg.dump();
         publishers.config_updated->publish(config_updated_message);
     }
