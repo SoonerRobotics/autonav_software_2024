@@ -279,4 +279,8 @@ namespace SCR
         rclcpp::shutdown();
     }
 
+    void Node::log_debug(std::string message)
+    {
+        RCLCPP_INFO(this->get_logger(), "%s", message.c_str());
+    }
 }

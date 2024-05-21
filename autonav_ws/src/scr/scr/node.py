@@ -82,6 +82,9 @@ class Node(ROSNode):
         log_packet.node = self.identifier
         self.logging_publisher.publish(log_packet)
 
+    def log_debug(self, message):
+        self.get_logger().log(message)
+
     def on_device_state(self, msg: DeviceState):
         """
         Called when a device state message is received.

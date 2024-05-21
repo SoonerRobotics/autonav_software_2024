@@ -105,6 +105,10 @@ namespace SCR
         /// @param data The message to log
         void log(std::string data);
 
+        /// @brief Logs a message to the console
+        /// @param message The message to log
+        void log_debug(std::string message);
+
     private:
         void system_state_callback(const scr_msgs::msg::SystemState msg);
         void device_state_callback(const scr_msgs::msg::DeviceState msg);
