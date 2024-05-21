@@ -57,6 +57,10 @@ class ImageTransformerConfig:
         self.parallelogram_left = [[500, 405], [260, 400], [210, 640], [640, 640]]
         self.parallelogram_right = [[0, 415], [195, 390], [260, 640], [0, 640]]
 
+        self.top_width = 320
+        self.bottom_width = 240
+        self.offset = 20
+
         # Disabling
         self.disable_blur = False
         self.disable_hsv = False
@@ -242,7 +246,7 @@ class ImageTransformer(Node):
 
         pts = [self.config.left_topleft, self.config.left_topright, self.config.left_bottomright, self.config.left_bottomleft] if self.dir == "left" else [self.config.right_topleft, self.config.right_topright, self.config.right_bottomright, self.config.right_bottomleft]
         # mask = self.four_point_transform(img, np.array(pts))
-        mask = self.epic_noah_transform(img, np.array(pts), 320, 240, 640, -20 if self.dir == "left" else 20)
+        mask = self.epic_noah_transform(img, np.array(pts), self.config.top_width, self.config.bottom_width, 640, -1 * self.config.offset if self.dir == "left" else self.config.offset)
         return mask
 
     def onImageReceived(self, image: CompressedImage):
