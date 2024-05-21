@@ -14,10 +14,10 @@ sudo apt update
 sudo apt install wget unzip -y
 
 # Vectornav Dependencies
-bash vnav.sh
+bash etc/vnav.sh
 
 # Steam Controller Dependencies
-bash steam.sh
+bash etc/steam.sh
 
 # Python deps
 sudo apt install python3-pip -y
