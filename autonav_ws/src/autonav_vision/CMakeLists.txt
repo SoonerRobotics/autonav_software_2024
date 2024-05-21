@@ -21,7 +21,6 @@ find_package(image_transport REQUIRED)
  
 # Install Python programs
 install(PROGRAMS
-  src/circumscriber.py
   src/transformations.py
   src/combination.py
   DESTINATION lib/${PROJECT_NAME}

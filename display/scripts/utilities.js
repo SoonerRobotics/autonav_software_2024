@@ -28,6 +28,15 @@ const transferImageToElement = (id, data) => {
 	img.src = "data:image/jpeg;base64," + data;
 }
 
+const trasferImageBytesToElement = (id, data) => {
+	const img = document.getElementById(id);
+	const msgarray = new Uint8Array(data);
+	const blob = new Blob([msgarray], { type: "image/jpeg" });
+	const urlCreator = window.URL || window.webkitURL;
+	const imageUrl = urlCreator.createObjectURL(blob);
+	img.src = imageUrl;
+}
+
 const fromFloatToBytes = (value) => {
 	var buffer = new ArrayBuffer(4);
 	var view = new DataView(buffer);

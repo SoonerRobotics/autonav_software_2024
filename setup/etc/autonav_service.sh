@@ -6,7 +6,7 @@ export DISPLAY=:0
 source /opt/ros/humble/setup.bash
 
 # Check if build is needed, if so, build
-cd /home/$LOCAL_USER/autonav_software_2023/autonav_ws
+cd /home/$LOCAL_USER/autonav_software_2024/autonav_ws
 UPSTREAM=${1:-'@{u}'}
 LOCAL=$(git rev-parse @)
 REMOTE=$(git rev-parse "$UPSTREAM")
@@ -21,5 +21,5 @@ else
 fi
 
 # Launch
-source /home/$LOCAL_USER/autonav_software_2023/autonav_ws/install/setup.bash
+source /home/$LOCAL_USER/autonav_software_2024/autonav_ws/install/setup.bash
 ros2 launch autonav_launch competition.xml
