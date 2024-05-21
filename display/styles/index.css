@@ -192,8 +192,8 @@ img[data-type="bigboy"] {
 }
 
 img[data-type="small"] {
-    width: 80px !important;
-    height: 80px !important;
+    width: 320px !important;
+    height: 320px !important;
 }
 
 #logging {

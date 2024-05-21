@@ -121,6 +121,7 @@ var addressKeys = {
 			5: "Misc 4",
 			6: "Misc 5",
 		},
+        "calculateWaypointDirection": "bool",
 		"useOnlyWaypoints": "bool",
 		"waypointDelay": "float",
         "vertical_fov": "float",

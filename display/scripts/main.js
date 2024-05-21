@@ -911,12 +911,10 @@ $(document).ready(function () {
         const configElement = $("#options");
         configElement.empty();
 
-        for (const deviceId in config) {
-            const deviceConfig = config[deviceId];
-            if (addressKeys[deviceId] == undefined) {
-                console.log(`Unknown Device Config: ${deviceId}`);
-                // const alert = $(`<div class="alert alert-danger" role="alert">Unknown Device Config: ${deviceId}</div>`);
-                // configElement.append(alert);
+        // Sort the keys in each config by their addressKeys
+        for(const deviceId in addressKeys)
+        {
+            if (!(deviceId in config)) {
                 continue;
             }
 
@@ -925,31 +923,68 @@ $(document).ready(function () {
             deviceElement.append(`<div class="card-header"><h5>${title}</h5></div>`);
             const deviceBody = $(`<div class="card-body"></div>`);
             deviceElement.append(deviceBody);
+            
+            const deviceConfig = config[deviceId];
+            for (const address in addressKeys[deviceId]) {
+                if (address == "internal_title") {
+                    continue;
+                }
 
-            for (const address of Object.keys(deviceConfig).sort()) {
-                const data = deviceConfig[address];
-                const type = addressKeys[deviceId][address];
-                if (type == undefined) {
-                    const alert = $(`<div class="alert alert-warning" role="alert">Unknown Type: ${address}</div>`);
+                if (!(address in deviceConfig)) {
+                    const alert = $(`<div class="alert alert-warning" role="alert">Key not found: ${address}</div>`);
                     deviceBody.append(alert);
                     continue;
                 }
 
+                const data = deviceConfig[address];
+                const type = addressKeys[deviceId][address];
                 const inputElement = generateElementForConfiguration(data, type, deviceId, address);
                 deviceBody.append(inputElement);
             }
 
-            for (const address in addressKeys[deviceId]) {
-                if (address in deviceConfig || address == "internal_title") {
-                    continue;
-                }
-
-                const alert = $(`<div class="alert alert-danger" role="alert">Unknown Configuration Entry: ${address}</div>`);
-                deviceBody.append(alert);
-            }
-
             configElement.append(deviceElement);
         }
+
+        // config = outputConfig;
+        // for (const deviceId in config) {
+        //     const deviceConfig = config[deviceId];
+        //     if (addressKeys[deviceId] == undefined) {
+        //         console.log(`Unknown Device Config: ${deviceId}`);
+        //         // const alert = $(`<div class="alert alert-danger" role="alert">Unknown Device Config: ${deviceId}</div>`);
+        //         // configElement.append(alert);
+        //         continue;
+        //     }
+
+        //     const title = addressKeys[deviceId]["internal_title"];
+        //     const deviceElement = $(`<div class="card" style="margin-bottom: 10px;"></div>`);
+        //     deviceElement.append(`<div class="card-header"><h5>${title}</h5></div>`);
+        //     const deviceBody = $(`<div class="card-body"></div>`);
+        //     deviceElement.append(deviceBody);
+
+        //     for (const address of Object.keys(deviceConfig).sort()) {
+        //         const data = deviceConfig[address];
+        //         const type = addressKeys[deviceId][address];
+        //         if (type == undefined) {
+        //             const alert = $(`<div class="alert alert-warning" role="alert">Unknown Type: ${address}</div>`);
+        //             deviceBody.append(alert);
+        //             continue;
+        //         }
+
+        //         const inputElement = generateElementForConfiguration(data, type, deviceId, address);
+        //         deviceBody.append(inputElement);
+        //     }
+
+        //     for (const address in addressKeys[deviceId]) {
+        //         if (address in deviceConfig || address == "internal_title") {
+        //             continue;
+        //         }
+
+        //         const alert = $(`<div class="alert alert-danger" role="alert">Unknown Configuration Entry: ${address}</div>`);
+        //         deviceBody.append(alert);
+        //     }
+
+        //     configElement.append(deviceElement);
+        // }
     }
 
     function send(obj) {
