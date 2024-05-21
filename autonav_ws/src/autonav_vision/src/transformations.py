@@ -242,7 +242,7 @@ class ImageTransformer(Node):
 
         pts = [self.config.left_topleft, self.config.left_topright, self.config.left_bottomright, self.config.left_bottomleft] if self.dir == "left" else [self.config.right_topleft, self.config.right_topright, self.config.right_bottomright, self.config.right_bottomleft]
         # mask = self.four_point_transform(img, np.array(pts))
-        mask = self.epic_noah_transform(img, 320, 240, 640, -20 if self.dir == "left" else 20)
+        mask = self.epic_noah_transform(img, np.array(pts), 320, 240, 640, -20 if self.dir == "left" else 20)
         return mask
 
     def onImageReceived(self, image: CompressedImage):
