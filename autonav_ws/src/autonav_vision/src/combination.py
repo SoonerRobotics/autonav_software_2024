@@ -91,6 +91,12 @@ class ImageCombiner(Node):
                 preview_image[i, j] = 0 if combined_grid.data[i * 80 + j] <= 10 else 255
         preview_image = cv2.cvtColor(preview_image, cv2.COLOR_GRAY2RGB)
         preview_image = cv2.resize(preview_image, (320, 320))
+
+        # Draw a grid on the image that is the scale of the original image, so it should be a 80x80 grid scaled up 4x
+        for i in range(80):
+            cv2.line(preview_image, (0, i * 4), (320, i * 4), (85, 85, 85), 1)
+            cv2.line(preview_image, (i * 4, 0), (i * 4, 320), (85, 85, 85), 1)
+
         compressed_image = g_bridge.cv2_to_compressed_imgmsg(preview_image)
         self.combined_grid_image_publisher.publish(compressed_image)
 
