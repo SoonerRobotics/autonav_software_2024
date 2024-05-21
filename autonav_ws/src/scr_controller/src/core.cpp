@@ -217,10 +217,7 @@ private:
         response->success = true;
 
         // Publish the new config
-        scr_msgs::msg::ConfigUpdated config_updated_message;
-        config_updated_message.device = request->device;
-        config_updated_message.json = request->json;
-        publishers.config_updated->publish(config_updated_message);
+        publish_config(config);
     }
 
     void on_set_active_preset_called(const std::shared_ptr<scr_msgs::srv::SetActivePreset::Request> request, std::shared_ptr<scr_msgs::srv::SetActivePreset::Response> response)
@@ -248,10 +245,7 @@ private:
             configs[device] = cfg;
 
             // Publish the new config
-            scr_msgs::msg::ConfigUpdated config_updated_message;
-            config_updated_message.device = device;
-            config_updated_message.json = cfg.dump();
-            publishers.config_updated->publish(config_updated_message);
+            publish_config(cfg);
         }
 
         response->ok = true;
@@ -267,12 +261,7 @@ private:
         std::string home = std::getenv("HOME");
         std::string path = home + "/.config/autonav/" + name + ".preset";
 
-        // Write the preset to disk, if it exists then overwrite it
-        std::string jsonStr = nlohmann::json(active_preset).dump();
-        std::ofstream file(path);
-        file << jsonStr;
-        file.close();
-
+        write_preset(name, active_preset);
         response->ok = true;
     }
 
@@ -310,7 +299,33 @@ private:
         std::string preset = get_preset_for_mode();
         if (!preset.empty())
         {
-            active_preset = json::parse(preset);
+            auto upcoming_preset = json::parse(preset);
+
+            // Checking for missing devices and keys
+            for (auto const &[device, cfg] : configs)
+            {
+                // Check for missing devices
+                if (upcoming_preset.find(device) == upcoming_preset.end())
+                {
+                    // The upcoming preset is missing a config, so we need to add it
+                    upcoming_preset[device] = cfg;
+                    RCLCPP_WARN(this->get_logger(), "Warning: upcoming preset is missing config for device %s", device.c_str());
+                    continue;
+                }
+
+                // Check for missing keys
+                for (auto const &[key, value] : cfg.items())
+                {
+                    if (upcoming_preset[device].find(key) == upcoming_preset[device].end())
+                    {
+                        // The upcoming preset is missing a key, so we need to add it
+                        upcoming_preset[device][key] = value;
+                        RCLCPP_WARN(this->get_logger(), "Warning: upcoming preset is missing key %s for device %s", key.c_str(), device.c_str());
+                    }
+                }
+            }
+
+            active_preset = upcoming_preset;
             active_preset_name = SCR::systemModeToString(mode);
             for (auto const &[device, cfg] : active_preset)
             {
@@ -323,26 +338,17 @@ private:
                 configs[device] = cfg;
 
                 // Publish the new config
-                scr_msgs::msg::ConfigUpdated config_updated_message;
-                config_updated_message.device = device;
-                config_updated_message.json = cfg.dump();
-                publishers.config_updated->publish(config_updated_message);
+                publish_config(cfg);
             }
+
+            write_preset(SCR::systemModeToString(mode), active_preset);
             return;
         }
 
         // If there is no preset for the current mode, then we need to create one
         active_preset = configs;
         active_preset_name = SCR::systemModeToString(mode);
-        std::string modeStr = SCR::systemModeToString(mode);
-        std::string home = std::getenv("HOME");
-        std::string path = home + "/.config/autonav/" + modeStr + ".preset";
-
-        // Write the preset to disk, if it exists then overwrite it
-        std::string jsonStr = nlohmann::json(active_preset).dump();
-        std::ofstream file(path);
-        file << jsonStr;
-        file.close();
+        write_preset(active_preset_name, active_preset);
 
         RCLCPP_INFO(this->get_logger(), "Created preset for mode %d", (int)mode);
     }
@@ -393,14 +399,31 @@ private:
                 configs[device] = cfg;
 
                 // Publish the new config
-                scr_msgs::msg::ConfigUpdated config_updated_message;
-                config_updated_message.device = device;
-                config_updated_message.json = cfg.dump();
-                publishers.config_updated->publish(config_updated_message);
+                publish_config(cfg);
             }
         }
 
         response->ok = true;
+    }
+
+    void write_preset(std::string name, json preset)
+    {
+        std::string home = std::getenv("HOME");
+        std::string path = home + "/.config/autonav/" + name + ".preset";
+
+        // Write the preset to disk, if it exists then overwrite it
+        std::string jsonStr = nlohmann::json(preset).dump();
+        std::ofstream file(path);
+        file << jsonStr;
+        file.close();
+    }
+
+    void publish_config(nlohmann::json cfg)
+    {
+        scr_msgs::msg::ConfigUpdated config_updated_message;
+        config_updated_message.device = "preset";
+        config_updated_message.json = cfg.dump();
+        publishers.config_updated->publish(config_updated_message);
     }
 
     void kill_self()
