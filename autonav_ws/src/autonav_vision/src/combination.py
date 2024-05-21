@@ -65,7 +65,7 @@ class ImageCombiner(Node):
 
         return scaled_grid
     
-    def try_combine_grids_new(self):
+    def try_combine_grids(self):
         if self.grid_left is None or self.grid_right is None:
             return
         
@@ -93,7 +93,7 @@ class ImageCombiner(Node):
         compressed_image = g_bridge.cv2_to_compressed_imgmsg(preview_image)
         self.combined_grid_image_publisher.publish(compressed_image)
 
-    def try_combine_grids(self):
+    def try_combine_grids_old(self):
         if self.grid_left is None or self.grid_right is None:
             return
 
