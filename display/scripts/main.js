@@ -880,7 +880,7 @@ $(document).ready(function () {
                 const select = document.createElement("select");
                 select.classList.add("form-select");
                 select.onchange = function () {
-                    config[device][text] = select.value;
+                    config[device][text] = parseInt(select.value);
                     send({
                         op: "configuration",
                         device: device,
