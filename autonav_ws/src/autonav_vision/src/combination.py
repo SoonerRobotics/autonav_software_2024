@@ -64,8 +64,36 @@ class ImageCombiner(Node):
                 scaled_grid.data[y * 40 + x] = grid.data[y * 80 + (2 * x)]
 
         return scaled_grid
-
+    
     def try_combine_grids(self):
+        if self.grid_left is None or self.grid_right is None:
+            return
+        
+        combined_grid = OccupancyGrid()
+        combined_grid.header = self.grid_left.header
+        combined_grid.info = self.grid_left.info
+        combined_grid.data = [0] * len(self.grid_left.data)
+        for i in range(len(self.grid_left.data)):
+            if self.grid_left.data[i] > 0 or self.grid_right.data[i] > 0:
+                # Need to figure out what the value actually is: 255, 100, 1?
+                combined_grid.data[i] = self.grid_left.data[i] if self.grid_left.data[i] > self.grid_right.data[i] else self.grid_right.data[i]
+            else:
+                combined_grid.data[i] = 0
+
+        self.grid_left = None
+        self.grid_right = None
+        self.combined_grid_publisher.publish(combined_grid)
+
+        # Publish the combined grid as an image
+        preview_image = np.zeros((80, 80), dtype=np.uint8)
+        for i in range(80):
+            for j in range(80):
+                preview_image[i, j] = combined_grid.data[i * 80 + j] * 255 / 100 - 255
+        preview_image = cv2.cvtColor(preview_image, cv2.COLOR_GRAY2RGB)
+        compressed_image = g_bridge.cv2_to_compressed_imgmsg(preview_image)
+        self.combined_grid_image_publisher.publish(compressed_image)
+
+    def try_combine_grids_old(self):
         if self.grid_left is None or self.grid_right is None:
             return
 
