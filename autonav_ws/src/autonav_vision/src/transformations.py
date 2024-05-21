@@ -112,7 +112,23 @@ class ImageTransformer(Node):
         # return the ordered coordinates
         return rect
     
-    def epic_noah_transform(self, image, top_width, bottom_width, height, offset):
+    def epic_noah_transform(self, image, pts, top_width, bottom_width, height, offset):
+
+        rect = self.order_points(pts)
+        (tl, tr, br, bl) = rect
+        # compute the width of the new image, which will be the
+        # maximum distance between bottom-right and bottom-left
+        # x-coordiates or the top-right and top-left x-coordinates
+        widthA = np.sqrt(((br[0] - bl[0]) ** 2) + ((br[1] - bl[1]) ** 2))
+        widthB = np.sqrt(((tr[0] - tl[0]) ** 2) + ((tr[1] - tl[1]) ** 2))
+        maxWidth = max(int(widthA), int(widthB))
+        # compute the height of the new image, which will be the
+        # maximum distance between the top-right and bottom-right
+        # y-coordinates or the top-left and bottom-left y-coordinates
+        heightA = np.sqrt(((tr[0] - br[0]) ** 2) + ((tr[1] - br[1]) ** 2))
+        heightB = np.sqrt(((tl[0] - bl[0]) ** 2) + ((tl[1] - bl[1]) ** 2))
+        maxHeight = max(int(heightA), int(heightB))
+ 
         dst = np.array([
             [0, 0],
             [top_width+offset-1, 0],
