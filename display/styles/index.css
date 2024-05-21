@@ -208,10 +208,9 @@ img[data-type="small"] {
     border: 1px solid #ced4da;
 }
 
-.row {
+.roww {
     display: flex;
     flex-direction: row;
-    gap: 1rem;
     flex-wrap: wrap;
     width: fit-content;
     height: min-content;

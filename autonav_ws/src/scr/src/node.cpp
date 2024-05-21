@@ -59,7 +59,7 @@ namespace SCR
         // If the new system state is shutdown, just exit the process
         if (msg.state == static_cast<int>(SCR::SystemState::SHUTDOWN))
         {
-            kill(getpid(), SIGINT);
+            kill(getpid(), SIGKILL);
         }
 
         SCR::SystemState newStateEnum = static_cast<SCR::SystemState>(msg.state);
