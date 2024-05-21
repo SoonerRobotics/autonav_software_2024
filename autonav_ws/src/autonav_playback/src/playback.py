@@ -197,19 +197,15 @@ class PlaybackNode(Node):
             return
 
         self.image_filtered_left = self.bridge.compressed_imgmsg_to_cv2(msg, "bgr8")
-        if self.image_filtered_right is not None:
-            self.filtered_callback_combined()
 
     def filtered_callback_right(self, msg: CompressedImage):
         if not self.config.record_filtered_cameras:
             return
         
         self.image_filtered_right = self.bridge.compressed_imgmsg_to_cv2(msg, "bgr8")
-        if self.image_filtered_left is not None:
-            self.filtered_callback_combined()
 
     def filtered_callback_combined(self):
-        if not self.config.record_filtered_cameras:
+        if not self.config.record_filtered_cameras or self.image_filtered_left is None or self.image_filtered_right is None:
             return
 
         # Scale the images to the 800 x 800
@@ -225,7 +221,7 @@ class PlaybackNode(Node):
         self.image_filtered_right = None
 
     def astar_callback(self, msg: CompressedImage):
-        if not self.config.record_astar:
+        if not self.config.record_astar or self.image_filtered_left is None or self.image_filtered_right is None or self.image_raw_left is None or self.image_raw_right is None:
             return
         
         # Scale the images to the 800 x 800
@@ -237,24 +233,23 @@ class PlaybackNode(Node):
         self.write_image(msg, "astar", self.astar_index)
         self.astar_index += 1
 
+        self.camera_callback_combined()
+        self.filtered_callback_combined()
+
     def camera_callback_left(self, msg: CompressedImage):
         if not self.config.record_raw_cameras:
             return
 
         self.image_raw_left = self.bridge.compressed_imgmsg_to_cv2(msg, "bgr8")
-        if self.image_raw_right is not None:
-            self.camera_callback_combined()
 
     def camera_callback_right(self, msg: CompressedImage):
         if not self.config.record_raw_cameras:
             return
 
         self.image_raw_right = self.bridge.compressed_imgmsg_to_cv2(msg, "bgr8")
-        if self.image_raw_left is not None:
-            self.camera_callback_combined()
 
     def camera_callback_combined(self):
-        if not self.config.record_raw_cameras:
+        if not self.config.record_raw_cameras or self.image_raw_left is None or self.image_raw_right is None:
             return
 
         img = cv2.hconcat([self.image_raw_left, self.image_raw_right])
