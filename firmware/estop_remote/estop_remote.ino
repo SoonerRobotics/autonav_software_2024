@@ -46,14 +46,14 @@ Adafruit_SSD1351 tft = Adafruit_SSD1351(SCREEN_WIDTH, SCREEN_HEIGHT, &SPI1, CS_P
 // Parameters
 float battery_min_voltage = 3.5f;
 float battery_max_voltage = 3.9f;
-// int screen_refresh_period_ms = 100;
+int screen_refresh_period_ms = 300;
 int heartbeat_period_ms = 250;
 int handshake_period_ms = 500;
 int message_resend_period_ms = 500;
 int max_resends = 2;
 
 // Storage variables
-// unsigned long last_display_update = 0;
+unsigned long last_display_update = 0;
 unsigned long last_heartbeat = 0;
 unsigned long last_handshake_attempt = 0;
 unsigned long last_received_message = 0;
@@ -98,11 +98,27 @@ void mobilityStartButtonInterrupt()
 
 void setup()
 {
+  // delay(2000);
   Serial.begin(115200);
 
   // LED
   // pinMode(LED_PIN, OUTPUT);
   // digitalWrite(LED_PIN, led_status);
+
+  // Setup SPI
+  SPI1.setTX(MOSI_PIN);
+  SPI1.setRX(8);
+  SPI1.setSCK(SCLK_PIN);
+  SPI1.begin();
+
+  // display init to blank screen
+  tft.begin(32000000);
+
+  tft.setTextSize(2);
+  tft.setTextColor(WHITE, BLACK);
+  
+  delay(400);
+  tft.fillScreen(BLACK);
 
   // reset rfm95
   pinMode(RFM95_RST, OUTPUT);
@@ -112,9 +128,12 @@ void setup()
   delay(10);
 
   // init rfm95
-  rf95.init();
-  rf95.setFrequency(RF95_FREQ);
+  int result = rf95.init();
+  int result2 = rf95.setFrequency(RF95_FREQ);
   rf95.setTxPower(23, false);
+
+  Serial.println(result);
+  Serial.println(result2);
 
   // button interrupt setup
   pinMode(BTN_ESTOP, INPUT_PULLUP);
@@ -129,25 +148,6 @@ void setup()
   strncpy(outgoing_message.password, GLOBAL_PASSWORD, sizeof(GLOBAL_PASSWORD));
 
   pinMode(BATT_READ, INPUT);
-}
-
-void setup1() {
-  // Setup SPI
-  SPI1.setTX(MOSI_PIN);
-  SPI1.setSCK(SCLK_PIN);
-  SPI1.setCS(CS_PIN);
-  SPI1.begin();
-
-  // display init to blank screen
-  tft.begin(32000000);
-
-  tft.setTextSize(2);
-  tft.setTextColor(WHITE, BLACK);
-  
-  delay(200);
-  tft.fillScreen(WHITE);
-  delay(300);
-  tft.fillScreen(BLACK);
 }
 
 void updateBatteryDisplay() {
@@ -209,6 +209,7 @@ void updateDisplay() {
     } else {
       tft.write(0xDE);
     }
+    tft.printf(" %02d", rf95.lastSNR());
     tft.setCursor(0, 20);
     tft.print("Sending: ");
     tft.print((float)signal_to_send, 0);
@@ -227,10 +228,13 @@ void updateDisplay() {
     } else {
       tft.write(0xDE);
     }
+    tft.printf(" %02d", rf95.lastSNR());
     if (current_resends > 0) {
         tft.setCursor(0, 20);
-        tft.print("Resends: ");
-        tft.print((float)current_resends, 0);
+        tft.printf("Resends: %01d", current_resends);
+    } else {
+        tft.setCursor(0, 20);
+        tft.print("          ");
     }
   } else {
     tft.setCursor(0, 0);
@@ -241,6 +245,9 @@ void updateDisplay() {
       case 1: tft.print(". "); break;
       case 2: tft.print(".."); break;
     }
+
+    tft.setCursor(0, 20);
+    tft.print("          ");
   }
 
   updateBatteryDisplay();
@@ -270,6 +277,7 @@ void loop()
 
     if (rf95.recv(buf, &len))
     {
+      Serial.println("Received!");
       // Convert packet to character array to determine message contents
       RadioPacket incoming_message = *(RadioPacket*)buf;
 
@@ -310,10 +318,10 @@ void loop()
   }
 
   // Update display regularly, except when we are expecting a response
-  // if ((expecting_response_id == MSG_NONE_ID || expecting_response_id == MSG_HANDSHAKE_REPLY_ID) && (millis() - last_display_update) > screen_refresh_period_ms) {
-  //   last_display_update = millis();
-  //   updateDisplay();
-  // }
+  if ((expecting_response_id == MSG_NONE_ID || expecting_response_id == MSG_HANDSHAKE_REPLY_ID) && (millis() - last_display_update) > screen_refresh_period_ms) {
+    last_display_update = millis();
+    updateDisplay();
+  }
 
 //   // Mark us as disconnected if we haven't received an ACK in a while
 //   if (is_connected && (millis() - last_received_message) > connection_timeout_ms) {
@@ -332,7 +340,7 @@ void loop()
     current_resends += 1;
 
     // Update the display to reflect resend
-    // updateDisplay();
+    updateDisplay();
 
     rf95.send((uint8_t*)&outgoing_message, sizeof(outgoing_message));
     rf95.waitPacketSent();
@@ -375,8 +383,4 @@ void loop()
     last_sent_message = millis();
     expecting_response_id = MSG_HANDSHAKE_REPLY_ID;
   }
-}
-
-void loop1() {
-  updateDisplay();
 }
