@@ -142,7 +142,7 @@ class ImageTransformer(Node):
         else:
             dst = np.array([
                 [240, 0],
-                [240, 240 + bottom_width + offset],
+                [240 + bottom_width + offset, 0],
                 [240 + top_width + offset, height - 1],
                 [240, height - 1]], dtype="float32")
         # compute the perspective transform matrix and then apply it
