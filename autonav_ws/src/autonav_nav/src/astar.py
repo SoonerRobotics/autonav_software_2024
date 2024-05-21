@@ -61,6 +61,7 @@ class AStarNodeConfig:
     def __init__(self):
         self.waypointPopDistance = 1.1
         self.waypointDirection = 0
+        self.calculateWaypointDirection = False
         self.useOnlyWaypoints = False
         self.waypointDelay = 18
         self.waypointWeight = 1.0
@@ -112,6 +113,9 @@ class AStarNode(Node):
         self.waypoint_start_time = self.config.waypointDelay + time.time()
 
     def get_waypoints_for_dir(self):
+        if not self.config.calculateWaypointDirection:
+            return simulation_waypoints[self.config.waypointDirection] if self.system_mode == SystemModeEnum.SIMULATION else competition_waypoints[self.config.waypointDirection] if self.system_mode == SystemModeEnum.COMPETITION else practice_waypoints[self.config.waypointDirection]
+        
         # Get out current heading and estimate within 180 degrees which direction we are facing (north or south, 0 and 1 respectively)
         heading = self.position.theta
         direction_index = 0
@@ -160,7 +164,7 @@ class AStarNode(Node):
                 cv2.circle(cvimg, (pp[0], pp[1]), 1, (0, 255, 0), 1)
 
             cv2.circle(cvimg, (self.best_pos[0], self.best_pos[1]), 1, (255, 0, 0), 1)
-            cvimg = cv2.resize(cvimg, (800, 800), interpolation=cv2.INTER_NEAREST)
+            cvimg = cv2.resize(cvimg, (320, 320), interpolation=cv2.INTER_NEAREST)
             self.pathDebugImagePublisher.publish(CV_BRIDGE.cv2_to_compressed_imgmsg(cvimg))
 
     def reconstruct_path(self, path, current):
