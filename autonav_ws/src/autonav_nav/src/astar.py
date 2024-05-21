@@ -165,6 +165,10 @@ class AStarNode(Node):
 
             cv2.circle(cvimg, (self.best_pos[0], self.best_pos[1]), 1, (255, 0, 0), 1)
             cvimg = cv2.resize(cvimg, (320, 320), interpolation=cv2.INTER_NEAREST)
+            # Draw a grid on the image that is the scale of the original image, so it should be a 80x80 grid scaled up 4x
+            for i in range(80):
+                cv2.line(cvimg, (0, i * 4), (320, i * 4), (85, 85, 85), 1)
+                cv2.line(cvimg, (i * 4, 0), (i * 4, 320), (85, 85, 85), 1)
             self.pathDebugImagePublisher.publish(CV_BRIDGE.cv2_to_compressed_imgmsg(cvimg))
 
     def reconstruct_path(self, path, current):
