@@ -136,15 +136,15 @@ class ImageTransformer(Node):
         if self.dir == "left":
             dst = np.array([
                 [240 - bottom_width - offset, 0],
-                [240, 0],
-                [240, height - 1],
+                [240 - offset, 0],
+                [240 - offset, height - 1],
                 [240 - top_width - offset, height - 1]], dtype="float32")
         else:
             dst = np.array([
-                [240, 0],
+                [240 + offset, 0],
                 [240 + bottom_width + offset, 0],
                 [240 + top_width + offset, height - 1],
-                [240, height - 1]], dtype="float32")
+                [240 + offset, height - 1]], dtype="float32")
         # compute the perspective transform matrix and then apply it
         M = cv2.getPerspectiveTransform(rect, dst)
         warped = cv2.warpPerspective(image, M, (maxWidth, maxHeight))
