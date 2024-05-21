@@ -37,6 +37,7 @@
 
 // Color definitions
 #define	BLACK           0x0000
+#define GRAY            0x52AA
 #define WHITE           0xFFFF
 
 RH_RF95 rf95(RFM95_CS, RFM95_INT);
@@ -50,6 +51,7 @@ int screen_refresh_period_ms = 300;
 int heartbeat_period_ms = 250;
 int handshake_period_ms = 500;
 int message_resend_period_ms = 500;
+int control_debounce_ms = 200;
 int max_resends = 2;
 
 // Storage variables
@@ -60,15 +62,22 @@ unsigned long last_received_message = 0;
 unsigned long last_sent_message = 0;
 int current_resends = 0;
 bool msg_indicator = false;
-
-// int led_status = 0;
 float battery_percentage_smoothed = -1.0f;
 uint8_t expecting_response_id = MSG_NONE_ID;
 bool is_connected = false;
-
 volatile int signal_to_send = NONE_SIGNAL;
-
 RadioPacket outgoing_message;
+
+// Configurables
+bool tx_enabled = false;
+bool option2 = false;
+
+// View variables
+int current_view = 0;
+int last_view = 0;
+int button_select = 0;
+volatile int current_control = 0;
+int last_control = 0;
 
 // Errors
 static const int NO_ERROR = 0;
@@ -95,10 +104,30 @@ void mobilityStartButtonInterrupt()
   }
 }
 
+void centerButtonInterrupt() {
+  current_control = 1;
+}
+
+void upButtonInterrupt() {
+  current_control = 2;
+}
+
+void rightButtonInterrupt() {
+  current_control = 3;
+}
+
+void downButtonInterrupt() {
+  current_control = 4;
+}
+
+void leftButtonInterrupt() {
+  current_control = 5;
+}
+
 
 void setup()
 {
-  // delay(2000);
+  delay(100);
   Serial.begin(115200);
 
   // LED
@@ -116,9 +145,6 @@ void setup()
 
   tft.setTextSize(2);
   tft.setTextColor(WHITE, BLACK);
-  
-  delay(400);
-  tft.fillScreen(BLACK);
 
   // reset rfm95
   pinMode(RFM95_RST, OUTPUT);
@@ -128,29 +154,39 @@ void setup()
   delay(10);
 
   // init rfm95
-  int result = rf95.init();
-  int result2 = rf95.setFrequency(RF95_FREQ);
+  rf95.init();
+  rf95.setFrequency(RF95_FREQ);
   rf95.setTxPower(23, false);
-
-  Serial.println(result);
-  Serial.println(result2);
 
   // button interrupt setup
   pinMode(BTN_ESTOP, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(BTN_ESTOP), estopButtonInterrupt, FALLING);
-
   pinMode(BTN_MSTOP, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(BTN_MSTOP), mobilityStopButtonInterrupt, FALLING);
-
   pinMode(BTN_MSTART, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(BTN_MSTART), mobilityStartButtonInterrupt, FALLING);
+
+  pinMode(BTN_CENTER, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(BTN_CENTER), centerButtonInterrupt, FALLING);
+  pinMode(BTN_UP, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(BTN_UP), upButtonInterrupt, FALLING);
+  pinMode(BTN_DOWN, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(BTN_DOWN), downButtonInterrupt, FALLING);
+  pinMode(BTN_LEFT, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(BTN_LEFT), leftButtonInterrupt, FALLING);
+  pinMode(BTN_RIGHT, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(BTN_RIGHT), rightButtonInterrupt, FALLING);
 
   strncpy(outgoing_message.password, GLOBAL_PASSWORD, sizeof(GLOBAL_PASSWORD));
 
   pinMode(BATT_READ, INPUT);
+
+  // While everything is coming online, wipe the display
+  delay(300);
+  tft.fillScreen(BLACK);
 }
 
-void updateBatteryDisplay() {
+void drawBattery() {
   // Battery status
   float battery_volage = analogRead(BATT_READ);
   battery_volage *= 2;    // we divided by 2, so multiply back
@@ -187,7 +223,14 @@ void updateBatteryDisplay() {
   tft.printf("%3.0f%%", battery_percentage_smoothed);
 }
 
-void updateDisplay() {
+void drawMainView() {
+
+  if (last_view != 0) {
+    tft.fillScreen(BLACK);
+    tft.setTextSize(2);
+    tft.setTextColor(WHITE, BLACK);
+    last_view = 0;
+  }
 
   if (error_state != NO_ERROR) {
     tft.setCursor(0, 0);
@@ -196,7 +239,7 @@ void updateDisplay() {
     tft.print("Code: ");
     tft.print((float)error_state, 0);
 
-    updateBatteryDisplay();
+    drawBattery();
     return;
   }
 
@@ -214,7 +257,7 @@ void updateDisplay() {
     tft.print("Sending: ");
     tft.print((float)signal_to_send, 0);
 
-    updateBatteryDisplay();
+    drawBattery();
     return;
   }
 
@@ -250,34 +293,74 @@ void updateDisplay() {
     tft.print("          ");
   }
 
-  updateBatteryDisplay();
+  drawBattery();
+}
+
+void prepareButton(bool selected, bool condition) {
+  if (selected) {
+    tft.setTextColor(WHITE, GRAY);
+  } else {
+    tft.setTextColor(WHITE, BLACK);
+  }
+
+  if (condition) {
+    tft.write(0xFD); // filled in dot
+  } else {
+    tft.write(0x6F); // empty dot
+  }
+
+  tft.print(" ");
+}
+
+void drawButtonsView() {
+    if (last_view != 1) {
+      tft.fillScreen(BLACK);
+      tft.setTextSize(1);
+      last_view = 1;
+    }
+
+    tft.setCursor(0, 0);
+    prepareButton(button_select == 0, tx_enabled);
+    tft.printf("Tx Enabled");
+
+    tft.setCursor(0, 15);
+    prepareButton(button_select == 1, option2);
+    tft.printf("Option 2");
+}
+
+void sendOutgoingMessage() {
+  if (!tx_enabled) {
+    return;
+  }
+
+  rf95.send((uint8_t*)&outgoing_message, sizeof(outgoing_message));
+  rf95.waitPacketSent();
+
+  last_sent_message = millis();
+
+  rf95.setModeRx();
 }
 
 void reachedError(int error_type) {
-    error_state = error_type;
-    signal_to_send = ESTOP_SIGNAL;
+  error_state = error_type;
+  signal_to_send = ESTOP_SIGNAL;
 
-    outgoing_message.id = MSG_SIGNAL_ID;
-    outgoing_message.signal = signal_to_send;
+  outgoing_message.id = MSG_SIGNAL_ID;
+  outgoing_message.signal = signal_to_send;
 
-    rf95.send((uint8_t*)&outgoing_message, sizeof(outgoing_message));
-    rf95.waitPacketSent();}
+  sendOutgoingMessage();
+}
 
 void loop()
 {
 
   if (rf95.available())
   {
-    // Blink LED on receive
-    // led_status = !led_status;
-    // digitalWrite(LED_PIN, led_status);
-
     uint8_t buf[sizeof(RadioPacket)];
     uint8_t len = sizeof(buf);
 
     if (rf95.recv(buf, &len))
     {
-      Serial.println("Received!");
       // Convert packet to character array to determine message contents
       RadioPacket incoming_message = *(RadioPacket*)buf;
 
@@ -318,15 +401,15 @@ void loop()
   }
 
   // Update display regularly, except when we are expecting a response
-  if ((expecting_response_id == MSG_NONE_ID || expecting_response_id == MSG_HANDSHAKE_REPLY_ID) && (millis() - last_display_update) > screen_refresh_period_ms) {
-    last_display_update = millis();
-    updateDisplay();
-  }
+  // if ((expecting_response_id == MSG_NONE_ID || expecting_response_id == MSG_HANDSHAKE_REPLY_ID) && (millis() - last_display_update) > screen_refresh_period_ms) {
+  //   last_display_update = millis();
+  //   drawMainView();
+  // }
 
-//   // Mark us as disconnected if we haven't received an ACK in a while
-//   if (is_connected && (millis() - last_received_message) > connection_timeout_ms) {
-//     is_connected = false;
-//   }
+  //   // Mark us as disconnected if we haven't received an ACK in a while
+  //   if (is_connected && (millis() - last_received_message) > connection_timeout_ms) {
+  //     is_connected = false;
+  //   }
 
   // Resend messages
   if (is_connected && expecting_response_id != MSG_NONE_ID && (millis() - last_sent_message) > message_resend_period_ms) {
@@ -340,12 +423,9 @@ void loop()
     current_resends += 1;
 
     // Update the display to reflect resend
-    updateDisplay();
+    // drawMainView();
 
-    rf95.send((uint8_t*)&outgoing_message, sizeof(outgoing_message));
-    rf95.waitPacketSent();
-
-    last_sent_message = millis();
+    sendOutgoingMessage();
   }
 
   // Send a signal if we have one waiting
@@ -353,10 +433,7 @@ void loop()
     outgoing_message.id = MSG_SIGNAL_ID;
     outgoing_message.signal = signal_to_send;
 
-    rf95.send((uint8_t*)&outgoing_message, sizeof(outgoing_message));
-    rf95.waitPacketSent();
-
-    last_sent_message = millis();
+    sendOutgoingMessage();
     expecting_response_id = MSG_SIGNAL_REPLY_ID;
   }
 
@@ -365,10 +442,7 @@ void loop()
     last_heartbeat = millis();
     outgoing_message.id = MSG_INIT_HEARTBEAT_ID;
 
-    rf95.send((uint8_t*)&outgoing_message, sizeof(outgoing_message));
-    rf95.waitPacketSent();
-
-    last_sent_message = millis();
+    sendOutgoingMessage();
     expecting_response_id = MSG_HEARTBEAT_REPLY_ID;
   }
 
@@ -377,10 +451,52 @@ void loop()
     last_handshake_attempt = millis();
     outgoing_message.id = MSG_INIT_HANDSHAKE_ID;
 
-    rf95.send((uint8_t*)&outgoing_message, sizeof(outgoing_message));
-    rf95.waitPacketSent();
-
-    last_sent_message = millis();
+    sendOutgoingMessage();
     expecting_response_id = MSG_HANDSHAKE_REPLY_ID;
+  }
+
+  rf95.setModeRx();
+
+  if (millis() - last_control > control_debounce_ms) {
+    switch (current_control) {
+      case 1: { // SELECT
+        if (current_view == 1 && button_select == 0) {
+          tx_enabled = !tx_enabled;
+        }
+        if (current_view == 1 && button_select == 1) {
+          option2 = !option2;
+        }
+      }; break;
+      case 2: { // UP
+        if (current_view == 1) {
+          if (button_select == 0) {
+            current_view = 0;
+          } else {
+            button_select--;
+          }
+        }
+      }; break;
+      case 4: { // DOWN
+        if (current_view == 1) {
+          if (button_select == 0) {
+            button_select++;
+          }
+        } else {
+          current_view = 1;
+        }
+      }; break;
+    }
+
+    if (current_control != 0) {
+      last_control = millis();
+    }
+  } else {
+    current_control = 0;
+  }
+
+  switch (current_view) {
+    case 0: drawMainView(); break;
+    case 1: drawButtonsView(); break;
+    default: drawMainView(); break;
   }
 }
