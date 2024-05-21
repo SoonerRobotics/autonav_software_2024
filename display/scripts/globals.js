@@ -72,6 +72,9 @@ var addressKeys = {
 		"disable_region_of_disinterest": "bool",
 		"parallelogram_left": "parallelogram.int",
         "parallelogram_right": "parallelogram.int",
+		"top_width": "float",
+		"bottom_width": "float",
+		"offset": "float"
 	},
 
 	"autonav_vision_expandifier": {

@@ -133,11 +133,18 @@ class ImageTransformer(Node):
         heightB = np.sqrt(((tl[0] - bl[0]) ** 2) + ((tl[1] - bl[1]) ** 2))
         maxHeight = max(int(heightA), int(heightB))
  
-        dst = np.array([
-            [0, 0],
-            [top_width+offset-1, 0],
-            [bottom_width+offset-1, height - 1],
-            [0, height - 1]], dtype="float32")
+        if self.dir == "left":
+            dst = np.array([
+                [240 - bottom_width - offset, 0],
+                [240, 0],
+                [240, height - 1],
+                [240 - bottom_width - offset, height - 1]], dtype="float32")
+        else:
+            dst = np.array([
+                [240 + bottom_width + offset, 0],
+                [240, 0],
+                [240, height - 1],
+                [240 + bottom_width + offset, height - 1]], dtype="float32")
         # compute the perspective transform matrix and then apply it
         M = cv2.getPerspectiveTransform(rect, dst)
         warped = cv2.warpPerspective(image, M, (maxWidth, maxHeight))
@@ -246,7 +253,7 @@ class ImageTransformer(Node):
 
         pts = [self.config.left_topleft, self.config.left_topright, self.config.left_bottomright, self.config.left_bottomleft] if self.dir == "left" else [self.config.right_topleft, self.config.right_topright, self.config.right_bottomright, self.config.right_bottomleft]
         # mask = self.four_point_transform(img, np.array(pts))
-        mask = self.epic_noah_transform(img, np.array(pts), self.config.top_width, self.config.bottom_width, 640, -1 * self.config.offset if self.dir == "left" else self.config.offset)
+        mask = self.epic_noah_transform(img, np.array(pts), self.config.top_width, self.config.bottom_width, 640, self.config.offset)
         return mask
 
     def onImageReceived(self, image: CompressedImage):
