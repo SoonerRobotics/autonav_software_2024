@@ -90,6 +90,7 @@ class ImageCombiner(Node):
             for j in range(80):
                 preview_image[i, j] = 0 if combined_grid.data[i * 80 + j] <= 10 else 255
         preview_image = cv2.cvtColor(preview_image, cv2.COLOR_GRAY2RGB)
+        preview_image = cv2.resize(preview_image, (320, 320))
         compressed_image = g_bridge.cv2_to_compressed_imgmsg(preview_image)
         self.combined_grid_image_publisher.publish(compressed_image)
 
