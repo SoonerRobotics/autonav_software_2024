@@ -11,6 +11,7 @@ from scr.node import Node
 from scr.states import DeviceStateEnum, SystemStateEnum
 import os
 import json
+import subprocess
 
 bridge = CvBridge()
 
@@ -112,8 +113,26 @@ class CameraNode(Node):
 
 def main():
     rclpy.init()
-    node_left = CameraNode("left", "/dev/v4l/by-id/usb-046d_HD_Pro_Webcam_C920_8174526F-video-index0")
-    node_right = CameraNode("right", "/dev/v4l/by-id/usb-046d_HD_Pro_Webcam_C920_3F47331F-video-index0")
+
+    # Check whether index0 or index1 is the actual footage. Use V4L2-CTL to check if "exposure_time_absolute" exists
+    # sudo v4l2-ctl --device={x} --all
+    left_index0 = subprocess.run(["v4l2-ctl", "--device=0", "--all"], stdout=subprocess.PIPE)
+    right_index0 = subprocess.run(["v4l2-ctl", "--device=2", "--all"], stdout=subprocess.PIPE)
+
+    correct_left = None
+    correct_right = None
+    if "exposure_time_absolute" in left_index0.stdout.decode("utf-8"):
+        correct_left = 0
+    else:
+        correct_left = 1
+        
+    if "exposure_time_absolute" in right_index0.stdout.decode("utf-8"):
+        correct_right = 0
+    else:
+        correct_right = 1
+
+    node_left = CameraNode("left", "/dev/v4l/by-id/usb-046d_HD_Pro_Webcam_C920_8174526F-video-index" + str(correct_left))
+    node_right = CameraNode("right", "/dev/v4l/by-id/usb-046d_HD_Pro_Webcam_C920_3F47331F-video-index" + str(correct_right))
     Node.run_nodes([node_left, node_right])
     rclpy.shutdown()
 
