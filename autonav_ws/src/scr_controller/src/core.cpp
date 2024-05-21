@@ -16,6 +16,7 @@
 #include <filesystem>
 #include <iostream>
 #include <fstream>
+#include <signal.h>
 
 #include "scr/json.hpp"
 using json = nlohmann::json;
@@ -109,6 +110,12 @@ private:
         state = (SCR::SystemState)request->state;
         mode = (SCR::SystemMode)request->mode;
         mobility = request->mobility;
+
+        if (state == SCR::SystemState::SHUTDOWN)
+        {
+            // Start a 5 second timer to kill the node
+            mode_timer = this->create_wall_timer(std::chrono::seconds(5), std::bind(&CoreNode::kill_self, this));
+        }
 
         // Send the response
         response->success = true;
@@ -394,6 +401,11 @@ private:
         }
 
         response->ok = true;
+    }
+
+    void kill_self()
+    {
+        kill(getpid(), SIGKILL);
     }
 
 private:
