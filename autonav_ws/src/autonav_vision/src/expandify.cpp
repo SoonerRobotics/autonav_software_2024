@@ -84,7 +84,6 @@ public:
     void config_updated(json newConfig) override
     {
         config = newConfig.template get<ExpandifyConfig>();
-        RCLCPP_INFO(this->get_logger(), "Config updated: vertical_fov: %f, horizontal_fov: %f, map_res: %f", config.vertical_fov, config.horizontal_fov, config.map_res);
         build_circles();
     }
 

@@ -65,7 +65,6 @@ class PlaybackNode(Node):
 
     def config_updated(self, jsonObject):
         self.config = json.loads(self.jdump(jsonObject), object_hook=lambda d: SimpleNamespace(**d))
-        self.get_logger().info(f"Updated config: {self.jdump(jsonObject)}")
 
     def get_default_config(self):
         return ImageTransformerConfig()
@@ -151,7 +150,6 @@ class PlaybackNode(Node):
         cv2.imwrite(os.path.join(IMAGE_PATH, f"{idx}.jpg"), cv2Image)
 
     def system_state_transition(self, old: SystemState, updated: SystemState):
-        self.get_logger().info(f"System state transitioned from {old.state} to {updated.state}")
         if old.state == SystemStateEnum.AUTONOMOUS and updated.state != SystemStateEnum.AUTONOMOUS:
             self.close_entry()
 
