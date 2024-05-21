@@ -111,6 +111,18 @@ class ImageTransformer(Node):
         rect[3] = pts[np.argmax(diff)]
         # return the ordered coordinates
         return rect
+    
+    def epic_noah_transform(self, image, top_width, bottom_width, height, offset):
+        dst = np.array([
+            [0, 0],
+            [top_width+offset-1, 0],
+            [bottom_width+offset-1, height - 1],
+            [0, height - 1]], dtype="float32")
+        # compute the perspective transform matrix and then apply it
+        M = cv2.getPerspectiveTransform(rect, dst)
+        warped = cv2.warpPerspective(image, M, (maxWidth, maxHeight))
+        # return the warped image
+        return warped
 
 
     def four_point_transform(self, image, pts):
@@ -213,7 +225,8 @@ class ImageTransformer(Node):
             return img
 
         pts = [self.config.left_topleft, self.config.left_topright, self.config.left_bottomright, self.config.left_bottomleft] if self.dir == "left" else [self.config.right_topleft, self.config.right_topright, self.config.right_bottomright, self.config.right_bottomleft]
-        mask = self.four_point_transform(img, np.array(pts))
+        # mask = self.four_point_transform(img, np.array(pts))
+        mask = self.epic_noah_transform(img, 320, 240, 640, -20 if self.dir == "left" else 20)
         return mask
 
     def onImageReceived(self, image: CompressedImage):
