@@ -433,58 +433,32 @@ $(document).ready(function () {
         }
 
         if (topic == "/autonav/camera/compressed/left") {
-            // Set to 
-            const imgElement = document.getElementById("target_raw_camera_left");
-            imgElement.src = `data:image/jpeg;base64,${msg.data}`;
+            transferImageToElement("target_raw_camera_left", msg.data);
             return;
         }
 
         if (topic == "/autonav/camera/compressed/right") {
-            // Set to 
-            const imgElement = document.getElementById("target_raw_camera_right");
-            imgElement.src = `data:image/jpeg;base64,${msg.data}`;
-            return;
-        }
-
-        if (topic == "/autonav/cfg_space/raw/image/left") {
-            const imgElement = document.getElementById("target_filtered_camera_left");
-            imgElement.src = `data:image/jpeg;base64,${msg.data}`;
-            return;
-        }
-
-        if (topic == "/autonav/cfg_space/raw/image/right") {
-            const imgElement = document.getElementById("target_filtered_camera_right");
-            imgElement.src = `data:image/jpeg;base64,${msg.data}`;
+            transferImageToElement("target_raw_camera_right", msg.data);
             return;
         }
 
         if (topic == "/autonav/cfg_space/raw/image/left_small") {
-            const imgElement = document.getElementById("target_filtered_left");
-            imgElement.src = `data:image/jpeg;base64,${msg.data}`;
+            transferImageToElement("target_filtered_left", msg.data);
             return;
         }
 
         if (topic == "/autonav/cfg_space/raw/image/right_small") {
-            const imgElement = document.getElementById("target_filtered_right");
-            imgElement.src = `data:image/jpeg;base64,${msg.data}`;
+            transferImageToElement("target_filtered_right", msg.data);
             return;
         }
 
         if (topic == "/autonav/cfg_space/combined/image") {
-            const imgElement = document.getElementById("target_combined");
-            imgElement.src = `data:image/jpeg;base64,${msg.data}`;
-            return;
-        }
-
-        if (topic == "/autonav/cfg_space/raw/debug") {
-            const imgElement = document.getElementById("target_camera_raw");
-            imgElement.src = `data:image/jpeg;base64,${msg.data}`;
+            transferImageToElement("target_combined", msg.data);
             return;
         }
 
         if (topic == "/autonav/debug/astar/image") {
-            const imgElement = document.getElementById("target_expandified");
-            imgElement.src = `data:image/jpeg;base64,${msg.data}`;
+            transferImageToElement("target_astar", msg.data);
             return;
         }
 

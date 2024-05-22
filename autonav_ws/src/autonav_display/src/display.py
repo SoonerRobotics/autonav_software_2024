@@ -14,8 +14,11 @@ import threading
 import json
 import base64
 import time
+import cv_bridge
+import cv2
 
 async_loop = asyncio.new_event_loop()
+bridge = cv_bridge.CvBridge()
 
 
 class Limiter:
@@ -56,21 +59,18 @@ class BroadcastNode(Node):
 
         # Limiter
         self.limiter = Limiter()
-        self.limiter.setLimit("/autonav/MotorInput", 5)
+        self.limiter.setLimit("/autonav/MotorInput", 2)
         self.limiter.setLimit("/autonav/MotorFeedback", 5)
         self.limiter.setLimit("/autonav/MotorControllerDebug", 1)
-        self.limiter.setLimit("/autonav/imu", 5)
-        self.limiter.setLimit("/autonav/gps", 5)
-        self.limiter.setLimit("/autonav/position", 5)
-        self.limiter.setLimit("/autonav/camera/compressed/left", 2)
-        self.limiter.setLimit("/autonav/camera/compressed/right", 2)
-        self.limiter.setLimit("/autonav/cfg_space/raw/image/left", 5)
-        self.limiter.setLimit("/autonav/cfg_space/raw/image/right", 5)
-        self.limiter.setLimit("/autonav/cfg_space/raw/image/left_small", 5)
-        self.limiter.setLimit("/autonav/cfg_space/raw/image/right_small", 5)
-        self.limiter.setLimit("/autonav/cfg_space/combined/image", 5)
-        self.limiter.setLimit("/autonav/cfg_space/raw/debug", 5)
-        self.limiter.setLimit("/autonav/debug/astar/image", 5)
+        self.limiter.setLimit("/autonav/imu", 1)
+        self.limiter.setLimit("/autonav/gps", 3)
+        self.limiter.setLimit("/autonav/position", 3)
+        self.limiter.setLimit("/autonav/camera/compressed/left", 4)
+        self.limiter.setLimit("/autonav/camera/compressed/right", 4)
+        self.limiter.setLimit("/autonav/cfg_space/raw/image/left_small", 4)
+        self.limiter.setLimit("/autonav/cfg_space/raw/image/right_small", 4)
+        self.limiter.setLimit("/autonav/cfg_space/combined/image", 4)
+        self.limiter.setLimit("/autonav/debug/astar/image", 4)
         self.limiter.setLimit("/autonav/debug/astar", 5)
 
         # Clients
@@ -127,14 +127,14 @@ class BroadcastNode(Node):
         if not self.limiter.use(topic):
             return
 
-        byts = msg.data.tobytes()
-        base64_str = base64.b64encode(byts).decode("utf-8")
+        cvimg = bridge.compressed_imgmsg_to_cv2(msg)
+        _, img = cv2.imencode('.jpg', cvimg)
 
         self.push_old(json.dumps({
             "op": "data",
             "topic": topic,
             "format": msg.format,
-            "data": base64_str
+            "data": list(img.tobytes())
         }))
 
     def push(self, topic, data, unique_id=None):
