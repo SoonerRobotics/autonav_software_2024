@@ -97,10 +97,6 @@ class FiltersNode(Node):
             position.latitude = gps_x
             position.longitude = gps_y
 
-        if self.system_mode == SystemModeEnum.SIMULATION and self.last_gps is not None:
-            position.latitude = self.last_gps.latitude
-            position.longitude = self.last_gps.longitude
-
         self.position_publisher.publish(position)
 
 
