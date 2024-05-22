@@ -45,22 +45,32 @@ class Particle {
 class ParticleFilter {
     public:
         // constructor
-        ParticleFilter(double latitudeLength, double longitudeLength) {
+        ParticleFilter(int num_particles, double latitudeLength, double longitudeLength, double gps_noise, double odom_noise_x, double odom_noise_y, double odom_noise_theta) {
+            this->num_particles = num_particles;
+            printf("num partices: %d\n", this->num_particles);
             this->latitudeLength = latitudeLength;
+            printf("lat len: %f\n", this->latitudeLength);
             this->longitudeLength = longitudeLength;
+            printf("long len %f\n", this->longitudeLength);
+            this->gps_noise = {gps_noise};
+            this->odom_noise = {odom_noise_x, odom_noise_y, odom_noise_theta};
+
             std::random_device rd;
             //std::mt19937 generator(std::chrono::high_resolution_clock::now().time_since_epoch().count());
             std::mt19937 generator(rd());
             std::vector<int> range = {1, 5, 10, 15, 20, 25};
-            std::discrete_distribution<int> discrete(range.begin(), range.end());
-             for (int i = 0; i < 10; i++) {
-                int index = discrete(generator);
-                int value = range[index];
-                //printf("index: %d\n", index);
-                //printf("value: %d\n", value);
-            }
             this->generator = generator;
         };
+
+        // empty constructor
+        ParticleFilter() {
+            this->num_particles = 0;
+            this->latitudeLength = 0;
+            this->longitudeLength = 0;
+            std::random_device rd;
+            std::mt19937 generator(rd());
+            this->generator = generator;
+        }
 
         void init_particles() {
             particles.clear();
@@ -243,11 +253,11 @@ class ParticleFilter {
             return this->num_particles;
         }
 
-        double * get_gps_noise() {
+        std::array<double, 1> get_gps_noise() {
             return this->gps_noise;
         }
 
-        double * get_odom_noise() {
+        std::array<double, 3> get_odom_noise() {
             return this->odom_noise;
         }
 
@@ -280,9 +290,12 @@ class ParticleFilter {
 
     private:
         std::mt19937 generator;
-        static const int num_particles = 750;
-        double gps_noise[1] = {0.8};
-        double odom_noise[3] = {0.05, 0.05, 0.01};
+        //int num_particles = 750;
+        int num_particles = 0;
+        //double gps_noise[1] = {0.8};
+        std::array<double, 1> gps_noise;
+        //double odom_noise[3] = {0.05, 0.05, 0.01};
+        std::array<double, 3> odom_noise;
         std::vector<Particle> particles;
         double latitudeLength;
         double longitudeLength;

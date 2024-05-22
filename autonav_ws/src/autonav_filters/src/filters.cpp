@@ -6,19 +6,33 @@
 #include "autonav_msgs/msg/gps_feedback.hpp"
 #include "autonav_msgs/msg/position.hpp"
 #include "autonav_msgs/msg/imu_data.hpp"
-// #include "scr/states.hpp"
-// #include "scr_msgs/msg/system_state.hpp"
 
 #define _USE_MATH_DEFINES
 
 using namespace std::chrono_literals;
 
-//particle filter
+struct ParticleFilterConfig {
+    int num_particles;
+    double latitudeLength;
+    double longitudeLength;
+    double gps_noise;
+    double odom_noise_x;
+    double odom_noise_y;
+    double odom_noise_theta;
+    
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(ParticleFilterConfig, num_particles, latitudeLength, longitudeLength, gps_noise, odom_noise_x, odom_noise_y, odom_noise_theta);
+};
 
+ParticleFilterConfig config;
+
+//particle filter
 void FiltersNode::init() {
-    double latitudeLength = 111086.2;
-    double longitudeLength = 81978.2;
-    ParticleFilter particle_filter{latitudeLength, longitudeLength};
+    //double latitudeLength = 111086.2;
+    //double longitudeLength = 81978.2;
+    this->latitudeLength = config.latitudeLength;
+    this->longitudeLength = config.longitudeLength;
+    ParticleFilter particle_filter{config.num_particles, config.latitudeLength, config.longitudeLength, config.gps_noise, config.odom_noise_x, config.odom_noise_y, config.odom_noise_theta};
+    this->particle_filter = particle_filter;
     autonav_msgs::msg::GPSFeedback first_gps;
     autonav_msgs::msg::GPSFeedback last_gps;
     bool first_gps_received = false;
@@ -29,15 +43,6 @@ void FiltersNode::init() {
 void FiltersNode::system_state_transition(scr_msgs::msg::SystemState old, scr_msgs::msg::SystemState updated) {
     
 };
-
-void FiltersNode::config_updated(json config) {
-
-};
-
-json FiltersNode::get_default_config() {
-
-};
-
 
 // void FiltersNode::system_state_transition(scr_msgs::msg::SystemState old, scr_msgs::msg::SystemState updated) {
 //     if ((old.state != SCR::SystemState::AUTONOMOUS) && (updated.state == SCR::SystemState::AUTONOMOUS)) {
@@ -52,6 +57,23 @@ json FiltersNode::get_default_config() {
 void FiltersNode::on_reset() {
     // if you're going to seed the pf with the IMU it would go here
     this->particle_filter.init_particles();
+}
+
+void FiltersNode::config_updated(json newConfig) {
+        config = newConfig.template get<ParticleFilterConfig>();
+}
+
+json FiltersNode::get_default_config() {
+        ParticleFilterConfig newConfig;
+        newConfig.latitudeLength = 111086.2;
+        newConfig.longitudeLength = 81978.2;
+        newConfig.num_particles = 750;
+        newConfig.gps_noise = 0.8;
+        newConfig.odom_noise_x = 0.05;
+        newConfig.odom_noise_y = 0.05;
+        newConfig.odom_noise_theta = 0.01;
+
+        return newConfig;
 }
 
 void FiltersNode::on_GPS_received(const autonav_msgs::msg::GPSFeedback gps_message) {

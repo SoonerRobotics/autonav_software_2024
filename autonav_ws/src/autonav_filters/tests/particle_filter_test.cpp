@@ -11,9 +11,12 @@
 
 TEST(ParticleFilterTests, initialization_test) {
     //GTEST_SKIP() << "skipping init test";
+    int num_particles = 750;
     double latitudeLength = 111086.2;
     double longitudeLength = 81978.2;
-    ParticleFilter particle_filter = ParticleFilter(latitudeLength, longitudeLength);
+    double gps_noise = 0.8;
+    double odom_noise[3] = {0.5, 0.5, 0.1};
+    ParticleFilter particle_filter = ParticleFilter(num_particles, latitudeLength, longitudeLength, gps_noise, odom_noise[0], odom_noise[1], odom_noise[2]);
     ASSERT_EQ(particle_filter.get_latitudeLength(), latitudeLength);
     ASSERT_EQ(particle_filter.get_longitudeLength(), longitudeLength);
 
@@ -49,11 +52,13 @@ TEST(ParticleFilterTests, feedback_test) {
     // printf("sliced_delta_xs size: %ld\n", sliced_delta_xs.size());
     // printf("sliced_delta_xs size: %ld\n", sliced_delta_xs.size());
     // printf("sliced_delta_xs size: %ld\n", sliced_delta_xs.size());
-    
 
+    int num_particles = 750;
     double latitudeLength = 111086.2;
     double longitudeLength = 81978.2;
-    ParticleFilter particle_filter = ParticleFilter(latitudeLength, longitudeLength);
+    double gps_noise = 0.8;
+    double odom_noise[3] = {0.5, 0.5, 0.1};
+    ParticleFilter particle_filter = ParticleFilter(num_particles, latitudeLength, longitudeLength, gps_noise, odom_noise[0], odom_noise[1], odom_noise[2]);
     particle_filter.init_particles();
 
     // construct feedback messages
@@ -80,9 +85,12 @@ TEST(ParticleFilterTests, feedback_test) {
 
 TEST(ParticleFilterTests, gps_test) {
     //GTEST_SKIP() << "Skipping gps_test";
+    int num_particles = 750;
     double latitudeLength = 111086.2;
     double longitudeLength = 81978.2;
-    ParticleFilter particle_filter = ParticleFilter(latitudeLength, longitudeLength);
+    double gps_noise = 0.8;
+    double odom_noise[3] = {0.5, 0.5, 0.1};
+    ParticleFilter particle_filter = ParticleFilter(num_particles, latitudeLength, longitudeLength, gps_noise, odom_noise[0], odom_noise[1], odom_noise[2]);
 
     particle_filter.init_particles();
 
@@ -103,9 +111,12 @@ TEST(ParticleFilterTests, gps_test) {
 
 TEST(ParticleFilterTests, complete_test) {
     // This test will fail sometimes because the particle filter is non-deterministic
+    int num_particles = 750;
     double latitudeLength = 111086.2;
     double longitudeLength = 81978.2;
-    ParticleFilter particle_filter = ParticleFilter(latitudeLength, longitudeLength);
+    double gps_noise = 0.8;
+    double odom_noise[3] = {0.5, 0.5, 0.1};
+    ParticleFilter particle_filter = ParticleFilter(num_particles, latitudeLength, longitudeLength, gps_noise, odom_noise[0], odom_noise[1], odom_noise[2]);
 
     particle_filter.init_particles();
 

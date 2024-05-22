@@ -15,6 +15,19 @@
 
 using namespace std::chrono_literals;
 
+// struct ParticleFilterConfig {
+//     int num_particles;
+//     double latitudeLength;
+//     double longitudeLength;
+//     double gps_noise;
+//     double odom_noise_x;
+//     double odom_noise_y;
+//     double odom_noise_theta;
+    
+//     NLOHMANN_DEFINE_TYPE_INTRUSIVE(ParticleFilterConfig, num_particles, latitudeLength, longitudeLength, gps_noise, odom_noise);
+// };
+
+
 class FiltersNode : public SCR::Node {
     public:
         FiltersNode() : SCR::Node("autonav_filters_pf"), count_(0)
@@ -34,10 +47,10 @@ class FiltersNode : public SCR::Node {
 
     private:
         //particle filter
-        double latitudeLength = 111086.2;
-        double longitudeLength = 81978.2;
+        ParticleFilter particle_filter;
+        double latitudeLength;
+        double longitudeLength;
         double degreeOffset = 107.0;
-        ParticleFilter particle_filter{latitudeLength, longitudeLength};
         autonav_msgs::msg::GPSFeedback first_gps;
         autonav_msgs::msg::GPSFeedback last_gps;
         bool first_gps_received = false;
