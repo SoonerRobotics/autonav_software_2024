@@ -87,6 +87,13 @@ class PathResolverNode(Node):
             inputPacket.angular_velocity = 0.0
             self.motor_publisher.publish(inputPacket)
 
+        if updated.mobility == False and self.device_state == DeviceStateEnum.OPERATING and (old.mobility == True or updated.mobility == True):
+            self.set_device_state(DeviceStateEnum.READY)
+            inputPacket = MotorInput()
+            inputPacket.forward_velocity = 0.0
+            inputPacket.angular_velocity = 0.0
+            self.motor_publisher.publish(inputPacket)
+
         if updated.state == SystemStateEnum.AUTONOMOUS and self.device_state == DeviceStateEnum.OPERATING and updated.mobility == False:
             self.safety_lights_publisher.publish(toSafetyLights(False, False, 2, 255, "#00A36C"))
 
