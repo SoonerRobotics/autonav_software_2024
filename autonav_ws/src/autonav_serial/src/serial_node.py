@@ -8,7 +8,7 @@ import threading
 import struct
 from autonav_msgs.msg import MotorInput, MotorFeedback, MotorControllerDebug, SafetyLights, Conbus
 from scr.node import Node
-from scr.states import DeviceStateEnum
+from scr.states import DeviceStateEnum, SystemStateEnum, SystemState
 
 
 MOTOR_CONTROL_ID = 10
@@ -59,6 +59,27 @@ class SerialMotors(Node):
         self.canReadThread = threading.Thread(target=self.canThreadWorker)
         self.canReadThread.daemon = True
         self.canReadThread.start()
+
+    def zero_motors(self):
+        packed_data = struct.pack("hh", int(0 * 1000.0), int(0 * 1000.0))
+        can_msg = can.Message(arbitration_id=MOTOR_CONTROL_ID, data=packed_data)
+        try:
+            self.can.send(can_msg)
+        except can.CanError:
+            pass
+
+    def system_state_transition(self, old: SystemState, updated: SystemState):
+        if old.state != SystemStateEnum.DISABLED and updated.state == SystemStateEnum.DISABLED:
+            self.zero_motors()
+        
+        if old.state == SystemStateEnum.AUTONOMOUS and updated.state == SystemStateEnum.MANUAL:
+            self.zero_motors()
+
+        if old.state == SystemStateEnum.MANUAL and updated.state == SystemStateEnum.AUTONOMOUS:
+            self.zero_motors()
+
+        if old.mobility == True and updated.mobility == False:
+            self.zero_motors()
 
     def canThreadWorker(self):
         while rclpy.ok():
@@ -182,10 +203,8 @@ class SerialMotors(Node):
         if self.device_state != DeviceStateEnum.OPERATING:
             return
 
-        packed_data = struct.pack("hh", int(
-            input.forward_velocity * 1000.0), int(input.angular_velocity * 1000.0))
-        can_msg = can.Message(
-            arbitration_id=MOTOR_CONTROL_ID, data=packed_data)
+        packed_data = struct.pack("hh", int(input.forward_velocity * 1000.0), int(input.angular_velocity * 1000.0))
+        can_msg = can.Message(arbitration_id=MOTOR_CONTROL_ID, data=packed_data)
         try:
             self.can.send(can_msg)
         except can.CanError:
