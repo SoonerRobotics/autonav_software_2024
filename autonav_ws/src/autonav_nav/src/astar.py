@@ -97,7 +97,7 @@ class AStarNode(Node):
         self.map_timer = self.create_timer(0.1, self.create_path)
 
         self.reset_at = -1.0
-        self.waypoint_start_time = time.time() + self.config.waypointDelay
+        self.waypoints = []
         self.set_device_state(DeviceStateEnum.OPERATING)
 
     def getAngleDifference(self, to_angle, from_angle):
@@ -112,7 +112,7 @@ class AStarNode(Node):
         self.cost_map = None
         self.best_pos = (0, 0)
         self.waypoints = []
-        self.waypoint_start_time = self.config.waypointDelay + time.time()
+        self.waypoint_start_time = 0
 
     def get_waypoints_for_dir(self):
         if not self.config.calculateWaypointDirection:
