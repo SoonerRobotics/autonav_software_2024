@@ -69,7 +69,7 @@ volatile int signal_to_send = NONE_SIGNAL;
 RadioPacket outgoing_message;
 
 // Configurables
-bool tx_enabled = false;
+bool tx_enabled = true;
 bool option2 = false;
 
 // View variables
@@ -354,7 +354,7 @@ void reachedError(int error_type) {
 void loop()
 {
 
-  if (rf95.available())
+  while (rf95.available())
   {
     uint8_t buf[sizeof(RadioPacket)];
     uint8_t len = sizeof(buf);
@@ -401,10 +401,14 @@ void loop()
   }
 
   // Update display regularly, except when we are expecting a response
-  // if ((expecting_response_id == MSG_NONE_ID || expecting_response_id == MSG_HANDSHAKE_REPLY_ID) && (millis() - last_display_update) > screen_refresh_period_ms) {
-  //   last_display_update = millis();
-  //   drawMainView();
-  // }
+  if ((expecting_response_id == MSG_NONE_ID || expecting_response_id == MSG_HANDSHAKE_REPLY_ID) && (millis() - last_display_update) > screen_refresh_period_ms) {
+    last_display_update = millis();
+    switch (current_view) {
+      case 0: drawMainView(); break;
+      case 1: drawButtonsView(); break;
+      default: drawMainView(); break;
+    }
+  }
 
   //   // Mark us as disconnected if we haven't received an ACK in a while
   //   if (is_connected && (millis() - last_received_message) > connection_timeout_ms) {
@@ -455,8 +459,6 @@ void loop()
     expecting_response_id = MSG_HANDSHAKE_REPLY_ID;
   }
 
-  rf95.setModeRx();
-
   if (millis() - last_control > control_debounce_ms) {
     switch (current_control) {
       case 1: { // SELECT
@@ -492,11 +494,5 @@ void loop()
     }
   } else {
     current_control = 0;
-  }
-
-  switch (current_view) {
-    case 0: drawMainView(); break;
-    case 1: drawButtonsView(); break;
-    default: drawMainView(); break;
   }
 }
