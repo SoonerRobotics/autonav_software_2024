@@ -26,6 +26,9 @@ namespace SCR
         clients.device_state = this->create_client<scr_msgs::srv::UpdateDeviceState>(Constants::Services::DEVICE_STATE, rmw_qos_profile_services_default, callback_groups.device_state);
         clients.config_update = this->create_client<scr_msgs::srv::UpdateConfig>(Constants::Services::CONFIG_UPDATE, rmw_qos_profile_services_default, callback_groups.config_updated);
 
+        rmw_qos_profile_t q = rmw_qos_profile_sensor_data;
+        qos_profile = rclcpp::QoS(rclcpp::QoSInitialization(q.history, 1), q);
+
         // Create a thread to wait a sec for the node to boot without blocking the main thread
         std::thread booting_thread([this]()
                                    {
@@ -53,23 +56,23 @@ namespace SCR
         oldState.mobility = mobility;
         oldState.mode = system_mode;
 
+        // If the new system state is shutdown, just exit the process
+        if (msg.state == static_cast<int>(SCR::SystemState::SHUTDOWN))
+        {
+            kill(getpid(), SIGKILL);
+        }
+
         SCR::SystemState newStateEnum = static_cast<SCR::SystemState>(msg.state);
         SCR::SystemState oldStateEnum = static_cast<SCR::SystemState>(oldState.state);
 
         SCR::SystemMode newMode = static_cast<SCR::SystemMode>(msg.mode);
         SCR::SystemMode oldMode = static_cast<SCR::SystemMode>(oldState.mode);
 
-        system_state_transition(oldState, msg);
-
         system_mode = static_cast<SCR::SystemMode>(msg.mode);
         mobility = msg.mobility;
         system_state = static_cast<SCR::SystemState>(msg.state);
 
-        if (system_state == SCR::SystemState::SHUTDOWN)
-        {
-            // Just exit this process and die
-            exit(0);
-        }
+        system_state_transition(oldState, msg);
     }
 
     void Node::device_state_callback(const scr_msgs::msg::DeviceState msg)
@@ -276,4 +279,8 @@ namespace SCR
         rclcpp::shutdown();
     }
 
+    void Node::log_debug(std::string message)
+    {
+        RCLCPP_INFO(this->get_logger(), "%s", message.c_str());
+    }
 }

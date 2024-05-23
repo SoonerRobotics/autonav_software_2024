@@ -1,0 +1,4 @@
+bool empty
+---
+string[] presets
+string active_preset

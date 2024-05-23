@@ -23,9 +23,27 @@ const fromBytesToBool = (bytes) => {
 	return getBytesView(bytes).getUint8(0) == 1;
 }
 
-const transferImageToElement = (id, data) => {
+const transferImageToElementOld = (id, data) => {
 	const img = document.getElementById(id);
 	img.src = "data:image/jpeg;base64," + data;
+}
+
+const transferImageToElement = (id, data) => {
+    const img = document.getElementById(id);
+    const uint8Array = new Uint8Array(data);
+    const blob = new Blob([uint8Array], { type: "image/jpeg" });
+    const urlCreator = window.URL || window.webkitURL;
+    const imageUrl = urlCreator.createObjectURL(blob);
+    img.src = imageUrl;
+}
+
+const trasferImageBytesToElement = (id, data) => {
+	const img = document.getElementById(id);
+	const msgarray = new Uint8Array(data);
+	const blob = new Blob([msgarray], { type: "image/jpeg" });
+	const urlCreator = window.URL || window.webkitURL;
+	const imageUrl = urlCreator.createObjectURL(blob);
+	img.src = imageUrl;
 }
 
 const fromFloatToBytes = (value) => {

@@ -1,0 +1,4 @@
+string preset_name
+bool write_mode
+---
+bool ok

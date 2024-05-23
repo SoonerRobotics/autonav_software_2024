@@ -2,12 +2,13 @@
 
 from ctypes import Structure, c_bool, c_uint8
 import rclpy
+import time
 import can
 import threading
 import struct
-from autonav_msgs.msg import MotorInput, MotorFeedback, ObjectDetection, MotorControllerDebug, SafetyLights, Conbus
+from autonav_msgs.msg import MotorInput, MotorFeedback, MotorControllerDebug, SafetyLights, Conbus
 from scr.node import Node
-from scr.states import DeviceStateEnum
+from scr.states import DeviceStateEnum, SystemStateEnum, SystemState
 
 
 MOTOR_CONTROL_ID = 10
@@ -15,7 +16,6 @@ ESTOP_ID = 0
 MOBILITY_STOP_ID = 1
 MOBILITY_START_ID = 9
 MOTOR_FEEDBACK_ID = 14
-OBJECT_DETECTION = 20
 SAFETY_LIGHTS_ID = 13
 
 CAN_50 = 50
@@ -30,7 +30,8 @@ class SafetyLightsPacket(Structure):
         ("brightness", c_uint8, 8),
         ("red", c_uint8, 8),
         ("green", c_uint8, 8),
-        ("blue", c_uint8, 8)
+        ("blue", c_uint8, 8),
+        ("blink_period", c_uint8, 8)
     ]
 
 
@@ -49,7 +50,6 @@ class SerialMotors(Node):
         self.safetyLightsSubscriber = self.create_subscription(SafetyLights, "/autonav/SafetyLights", self.onSafetyLightsReceived, 20)
         self.motorInputSubscriber = self.create_subscription(MotorInput, "/autonav/MotorInput", self.onMotorInputReceived, 20)
         self.motorDebugPublisher = self.create_publisher(MotorControllerDebug, "/autonav/MotorControllerDebug", 20)
-        self.objectDetectionPublisher = self.create_publisher(ObjectDetection, "/autonav/ObjectDetection", 20)
         self.motorFeedbackPublisher = self.create_publisher(MotorFeedback, "/autonav/MotorFeedback", 20)
         self.conbuSubscriber = self.create_subscription(Conbus, "/autonav/conbus/instruction", self.onConbusReceived, 20)
         self.conbusPublisher = self.create_publisher(Conbus, "/autonav/conbus/data", 20)
@@ -59,6 +59,27 @@ class SerialMotors(Node):
         self.canReadThread = threading.Thread(target=self.canThreadWorker)
         self.canReadThread.daemon = True
         self.canReadThread.start()
+
+    def zero_motors(self):
+        packed_data = struct.pack("hh", int(0 * 1000.0), int(0 * 1000.0))
+        can_msg = can.Message(arbitration_id=MOTOR_CONTROL_ID, data=packed_data)
+        try:
+            self.can.send(can_msg)
+        except can.CanError:
+            pass
+
+    def system_state_transition(self, old: SystemState, updated: SystemState):
+        if old.state != SystemStateEnum.DISABLED and updated.state == SystemStateEnum.DISABLED:
+            self.zero_motors()
+        
+        if old.state == SystemStateEnum.AUTONOMOUS and updated.state == SystemStateEnum.MANUAL:
+            self.zero_motors()
+
+        if old.state == SystemStateEnum.MANUAL and updated.state == SystemStateEnum.AUTONOMOUS:
+            self.zero_motors()
+
+        if old.mobility == True and updated.mobility == False:
+            self.zero_motors()
 
     def canThreadWorker(self):
         while rclpy.ok():
@@ -71,6 +92,9 @@ class SerialMotors(Node):
                         self.onCanMessageReceived(msg)
                 except can.CanError:
                     pass
+
+    def getClockMs(self):
+        return time.time() * 1000.0
 
     def onCanMessageReceived(self, msg):
         arb_id = msg.arbitration_id
@@ -115,15 +139,6 @@ class SerialMotors(Node):
             pkg.timestamp = self.getClockMs() * 1.0
             self.motorDebugPublisher.publish(pkg)
 
-        if arb_id == OBJECT_DETECTION:
-            # Load in 4 bytes
-            zero, left, middle, right = struct.unpack("BBBB", msg.data)
-            pkg = ObjectDetection()
-            pkg.sensor_1 = left
-            pkg.sensor_2 = middle
-            pkg.sensor_3 = right
-            self.objectDetectionPublisher.publish(pkg)
-
         if arb_id >= 1000 and arb_id < 1400:
             # self.log(f"[CAN -> {arb_id}] Received ConBus message")
             pkg = Conbus()
@@ -156,11 +171,12 @@ class SerialMotors(Node):
         packed_data = SafetyLightsPacket()
         packed_data.autonomous = lights.autonomous
         packed_data.eco = False
-        packed_data.mode = lights.mode
+        packed_data.mode = 0
         packed_data.brightness = lights.brightness
         packed_data.red = lights.red
         packed_data.green = lights.green
         packed_data.blue = lights.blue
+        packed_data.blink_period = 500
         can_msg = can.Message(
             arbitration_id=SAFETY_LIGHTS_ID, data=bytes(packed_data))
         try:
@@ -187,10 +203,8 @@ class SerialMotors(Node):
         if self.device_state != DeviceStateEnum.OPERATING:
             return
 
-        packed_data = struct.pack("hh", int(
-            input.forward_velocity * 1000.0), int(input.angular_velocity * 1000.0))
-        can_msg = can.Message(
-            arbitration_id=MOTOR_CONTROL_ID, data=packed_data)
+        packed_data = struct.pack("hh", int(input.forward_velocity * 1000.0), int(input.angular_velocity * 1000.0))
+        can_msg = can.Message(arbitration_id=MOTOR_CONTROL_ID, data=packed_data)
         try:
             self.can.send(can_msg)
         except can.CanError:

@@ -24,6 +24,7 @@ $(document).ready(function () {
 
             send({ op: "broadcast" });
             send({ op: "get_nodes" });
+            send({ op: "get_presets" });
 
             const waitInterval = setInterval(() => {
                 if (deviceStates["autonav_serial_can"] != 3) {
@@ -48,19 +49,47 @@ $(document).ready(function () {
                 $(".connecting").hide();
                 $("#main").show();
             }, 1000);
+
+            setTimeout(() => {
+                if(websocket.readyState == 1)
+                {
+                    send({ op: "get_presets" });
+                }
+            }, 3000);
         };
 
         websocket.onmessage = function (event) {
             const messages = event.data.split("\n");
-            for (const message of messages)
-            {
+            for (const message of messages) {
                 const obj = JSON.parse(message);
                 const { op, topic } = obj;
-    
+
                 if (op == "data") {
                     onTopicData(topic, obj);
                 }
-    
+
+                if (op == "get_presets_callback") {
+                    const presets = obj.presets;
+                    const presetElement = $("#dropdown_elements");
+                    presetElement.empty();
+                    for (const preset of presets) {
+                        const dropdownItem = $(`<li><a class="dropdown-item" data-value="${preset}">${preset}</a></li>`);
+                        presetElement.append(dropdownItem);
+
+                        dropdownItem.on("click", function () {
+                            const preset_name = $(this).children().attr("data-value");
+                            send({
+                                op: "set_active_preset",
+                                preset: preset_name
+                            });
+                            send({ op: "get_presets" });
+                        });
+                    }
+
+                    current_preset = obj.active_preset;
+                    $("#active_preset_value").text(current_preset);
+                }
+
                 if (op == "get_nodes_callback") {
                     console.log(obj);
                     for (let i = 0; i < obj.nodes.length; i++) {
@@ -74,8 +103,7 @@ $(document).ready(function () {
 
                         const statemap = obj.states;
                         if (node in statemap) {
-                            if (node == "rosbridge_websocket" || node == "rosapi" || node == "scr_core" || node == "rosapi_params")
-                            {
+                            if (node == "rosbridge_websocket" || node == "rosapi" || node == "scr_core" || node == "rosapi_params") {
                                 continue;
                             }
 
@@ -89,11 +117,20 @@ $(document).ready(function () {
                         }
                     }
 
-                    for (const key in obj.configs)
-                    {
+                    for (const key in obj.configs) {
                         config[key] = obj.configs[key];
                     }
                     regenerateConfig();
+
+                    // Update system state
+                    let system = obj["system"];
+                    $("#var_system_state").text(system["state"] == 0 ? "Diabled" : system["state"] == 1 ? "Autonomous" : system["state"] == 2 ? "Manual" : "Shutdown");
+                    $("#var_system_mode").text(system["mode"] == 0 ? "Competition" : system["mode"] == 1 ? "Simulation" : "Practice");
+                    $("#var_system_mobility").text(system["mobility"] ? "Enabled" : "Disabled");
+
+                    // Update some buttons
+                    $("#checkbox_system_mobility").prop("checked", system["mobility"]);
+                    $("#input_system_state").val(system["state"]);
                 }
             }
         };
@@ -116,7 +153,14 @@ $(document).ready(function () {
         };
     }
 
-    createWebsocket();
+    if (!development_mode) {
+        createWebsocket();
+    } else {
+        $("#connecting-state").text("Updating Data");
+        $(".connecting-input").hide();
+        $(".connecting").hide();
+        $("#main").show();
+    }
 
     var sendQueue = [];
 
@@ -124,7 +168,6 @@ $(document).ready(function () {
         send({
             op: "set_system_state",
             state: systemState.state,
-            estop: systemState.estop,
             mobility: systemState.mobility,
         });
     }
@@ -285,22 +328,19 @@ $(document).ready(function () {
         }
 
         if (topic == "/scr/state/system") {
-            const { state, mode, mobility, estop } = msg;
+            const { state, mode, mobility } = msg;
 
             $("#var_system_state").text(state == 0 ? "Diabled" : state == 1 ? "Autonomous" : state == 2 ? "Manual" : "Shutdown");
             $("#var_system_mode").text(mode == 0 ? "Competition" : mode == 1 ? "Simulation" : "Practice");
             $("#var_system_mobility").text(mobility ? "Enabled" : "Disabled");
-            $("#var_system_estop").text(estop ? "Yes" : "No");
 
             systemState.state = state;
             systemState.mode = mode;
             systemState.mobility = mobility;
-            systemState.estop = estop;
 
             $("#input_system_state").val(state);
             $("#input_system_mode").val(mode);
             $("#input_system_mobility").prop("checked", mobility);
-            $("#input_system_estop").prop("checked", estop);
             return;
         }
 
@@ -318,7 +358,9 @@ $(document).ready(function () {
         }
 
         if (topic == "/scr/configuration") {
-            console.log(msg);
+            const { device, json } = msg;
+            config[device] = JSON.parse(json);
+            regenerateConfig();
             return;
         }
 
@@ -391,40 +433,32 @@ $(document).ready(function () {
         }
 
         if (topic == "/autonav/camera/compressed/left") {
-            // Set to 
-            const imgElement = document.getElementById("target_raw_camera_left");
-            imgElement.src = `data:image/jpeg;base64,${msg.data}`;
+            transferImageToElement("target_raw_camera_left", msg.data);
             return;
         }
 
-        if (topic == "/autonav/camera/compressed") {
-            // Set to 
-            const imgElement = document.getElementById("target_raw_camera");
-            imgElement.src = `data:image/jpeg;base64,${msg.data}`;
+        if (topic == "/autonav/camera/compressed/right") {
+            transferImageToElement("target_raw_camera_right", msg.data);
             return;
         }
 
-        if (topic == "/autonav/cfg_space/raw/image/left") {
-            const imgElement = document.getElementById("target_filtered_camera_left");
-            imgElement.src = `data:image/jpeg;base64,${msg.data}`;
+        if (topic == "/autonav/cfg_space/raw/image/left_small") {
+            transferImageToElement("target_filtered_left", msg.data);
             return;
         }
 
-        if (topic == "/autonav/cfg_space/raw/image") {
-            const imgElement = document.getElementById("target_filtered_camera");
-            imgElement.src = `data:image/jpeg;base64,${msg.data}`;
+        if (topic == "/autonav/cfg_space/raw/image/right_small") {
+            transferImageToElement("target_filtered_right", msg.data);
             return;
         }
 
-        if (topic == "/autonav/cfg_space/raw/debug") {
-            const imgElement = document.getElementById("target_camera_raw");
-            imgElement.src = `data:image/jpeg;base64,${msg.data}`;
+        if (topic == "/autonav/cfg_space/combined/image") {
+            transferImageToElement("target_combined", msg.data);
             return;
         }
 
         if (topic == "/autonav/debug/astar/image") {
-            const imgElement = document.getElementById("target_astar_path");
-            imgElement.src = `data:image/jpeg;base64,${msg.data}`;
+            transferImageToElement("target_astar", msg.data);
             return;
         }
 
@@ -500,6 +534,7 @@ $(document).ready(function () {
 
     $(".dropdown-menu a").on("click", function () {
         const parentDataTarget = $(this).parents(".dropdown").attr("data-target");
+        console.log(parentDataTarget);
         if (parentDataTarget == "system_state") {
             const id = $(this).attr("data-value");
             systemState.state = parseInt(id);
@@ -519,9 +554,29 @@ $(document).ready(function () {
         }
     });
 
-    $("#checkbox_system_estop").on("change", function () {
-        systemState.estop = $(this).is(":checked");
-        setSystemState();
+    $("#save_preset_mode").on("click", function () {
+        send({
+            op: "save_preset_mode"
+        });
+        send({ op: "get_presets" });
+    });
+
+    $("#save_preset_as").on("click", function () {
+        const preset_name = $("#preset_save_name").val();
+        send({
+            op: "save_preset_as",
+            preset: preset_name
+        });
+        send({ op: "get_presets" });
+        $("#preset_save_name").val("");
+    });
+
+    $("#delete_preset").on("click", function () {
+        send({
+            op: "delete_preset",
+            preset: current_preset
+        });
+        send({ op: "get_presets" });
     });
 
     $("#checkbox_system_mobility").on("change", function () {
@@ -554,40 +609,40 @@ $(document).ready(function () {
     function generateElementForConfiguration(data, type, device, text) {
         if (type == "bool") {
             const checked = data == 1;
-    
+
             // Create a dropdown
             const div = document.createElement("div");
             div.classList.add("input-group");
             div.classList.add("mb-3");
-    
+
             const select = document.createElement("select");
             select.classList.add("form-select");
             select.onchange = function () {
-                config[device][text] = select.value;
+                config[device][text] = select.value == 1 ? true : false;
                 send({
                     op: "configuration",
                     device: device,
                     json: config[device],
                 });
             }
-    
+
             const optionTrue = document.createElement("option");
             optionTrue.value = 1;
             optionTrue.innerText = "True";
             optionTrue.selected = checked;
-    
+
             const optionFalse = document.createElement("option");
             optionFalse.value = 0;
             optionFalse.innerText = "False";
             optionFalse.selected = !checked;
-    
+
             select.appendChild(optionTrue);
             select.appendChild(optionFalse);
-    
+
             const span = document.createElement("span");
             span.classList.add("input-group-text");
             span.innerText = text;
-    
+
             div.appendChild(span);
             div.appendChild(select);
             return div;
@@ -596,7 +651,7 @@ $(document).ready(function () {
             const div = document.createElement("div");
             div.classList.add("input-group");
             div.classList.add("mb-3");
-    
+
             const input = document.createElement("input");
             input.type = "number";
             input.classList.add("form-control");
@@ -609,11 +664,11 @@ $(document).ready(function () {
                     json: config[device],
                 });
             }
-    
+
             const span = document.createElement("span");
             span.classList.add("input-group-text");
             span.innerText = text;
-    
+
             div.appendChild(span);
             div.appendChild(input);
             return div;
@@ -622,7 +677,7 @@ $(document).ready(function () {
             const div = document.createElement("div");
             div.classList.add("input-group");
             div.classList.add("mb-3");
-    
+
             const input = document.createElement("input");
             input.type = "number";
             input.classList.add("form-control");
@@ -635,37 +690,178 @@ $(document).ready(function () {
                     json: config[device],
                 });
             }
-    
+
             const span = document.createElement("span");
             span.classList.add("input-group-text");
             span.innerText = text;
-    
+
             div.appendChild(span);
             div.appendChild(input);
             return div;
         }
+        else if (type == "point.int") {
+            // x, y point for two integers
+            const div = document.createElement("div");
+            div.classList.add("input-group");
+            div.classList.add("mb-3");
+
+            const inputX = document.createElement("input");
+            inputX.type = "number";
+            inputX.classList.add("form-control");
+            inputX.value = data[0];
+            inputX.onchange = function () {
+                config[device][text][0] = parseInt(inputX.value);
+                send({
+                    op: "configuration",
+                    device: device,
+                    json: config[device],
+                });
+            }
+
+            const inputY = document.createElement("input");
+            inputY.type = "number";
+            inputY.classList.add("form-control");
+            inputY.value = data[1];
+            inputY.onchange = function () {
+                config[device][text][1] = parseInt(inputY.value);
+                send({
+                    op: "configuration",
+                    device: device,
+                    json: config[device],
+                });
+            }
+
+            const span = document.createElement("span");
+            span.classList.add("input-group-text");
+            span.innerText = text;
+
+            div.appendChild(span);
+            div.appendChild(inputX);
+            div.appendChild(inputY);
+            return div;
+        }
+        else if (type == "parallelogram.int") {
+            const div = document.createElement("div");
+            div.classList.add("input-group", "mb-3");
+
+            function createCoordinateInput(value, onChangeHandler) {
+                const input = document.createElement("input");
+                input.type = "number";
+                input.classList.add("form-control", "coordinate-input");
+                input.value = value;
+                input.onchange = onChangeHandler;
+                return input;
+            }
+
+            const inputX1 = createCoordinateInput(data[0][0], function () {
+                config[device][text][0][0] = parseInt(inputX1.value);
+                send({
+                    op: "configuration",
+                    device: device,
+                    json: config[device],
+                });
+            });
+
+            const inputY1 = createCoordinateInput(data[0][1], function () {
+                config[device][text][0][1] = parseInt(inputY1.value);
+                send({
+                    op: "configuration",
+                    device: device,
+                    json: config[device],
+                });
+            });
+
+            const inputX2 = createCoordinateInput(data[1][0], function () {
+                config[device][text][1][0] = parseInt(inputX2.value);
+                send({
+                    op: "configuration",
+                    device: device,
+                    json: config[device],
+                });
+            });
+
+            const inputY2 = createCoordinateInput(data[1][1], function () {
+                config[device][text][1][1] = parseInt(inputY2.value);
+                send({
+                    op: "configuration",
+                    device: device,
+                    json: config[device],
+                });
+            });
+
+            const inputX3 = createCoordinateInput(data[2][0], function () {
+                config[device][text][2][0] = parseInt(inputX3.value);
+                send({
+                    op: "configuration",
+                    device: device,
+                    json: config[device],
+                });
+            });
+
+            const inputY3 = createCoordinateInput(data[2][1], function () {
+                config[device][text][2][1] = parseInt(inputY3.value);
+                send({
+                    op: "configuration",
+                    device: device,
+                    json: config[device],
+                });
+            });
+
+            const inputX4 = createCoordinateInput(data[3][0], function () {
+                config[device][text][3][0] = parseInt(inputX4.value);
+                send({
+                    op: "configuration",
+                    device: device,
+                    json: config[device],
+                });
+            });
+
+            const inputY4 = createCoordinateInput(data[3][1], function () {
+                config[device][text][3][1] = parseInt(inputY4.value);
+                send({
+                    op: "configuration",
+                    device: device,
+                    json: config[device],
+                });
+            });
+
+            const span = document.createElement("span");
+            span.classList.add("input-group-text");
+            span.innerText = text;
+
+            div.appendChild(span);
+            div.appendChild(inputX1);
+            div.appendChild(inputY1);
+            div.appendChild(inputX2);
+            div.appendChild(inputY2);
+            div.appendChild(inputX3);
+            div.appendChild(inputY3);
+            div.appendChild(inputX4);
+            div.appendChild(inputY4);
+            return div;
+        }
         else {
             const options = addressKeys[device][text];
-    
+
             if (typeof options == "object") {
                 const index = data;
-    
+
                 // Create a dropdown
                 const div = document.createElement("div");
                 div.classList.add("input-group");
                 div.classList.add("mb-3");
-    
+
                 const select = document.createElement("select");
                 select.classList.add("form-select");
                 select.onchange = function () {
-                    config[device][text] = select.value;
+                    config[device][text] = parseInt(select.value);
                     send({
                         op: "configuration",
                         device: device,
                         json: config[device],
                     });
                 }
-    
+
                 for (let i = 0; i < Object.keys(options).length; i++) {
                     const option = document.createElement("option");
                     option.value = i;
@@ -673,63 +869,98 @@ $(document).ready(function () {
                     option.innerText = options[i];
                     select.appendChild(option);
                 }
-    
+
                 const span = document.createElement("span");
                 span.classList.add("input-group-text");
                 span.innerText = text;
-    
+
                 div.appendChild(span);
                 div.appendChild(select);
                 return div;
             }
         }
     }
-    
+
     const regenerateConfig = () => {
-        const configElement = $("#configuration");
+        const configElement = $("#options");
         configElement.empty();
-    
-        for (const deviceId in config) {
-            const deviceConfig = config[deviceId];
-            if (addressKeys[deviceId] == undefined) {
-                console.log(`Unknown Device Config: ${deviceId}`);
-                // const alert = $(`<div class="alert alert-danger" role="alert">Unknown Device Config: ${deviceId}</div>`);
-                // configElement.append(alert);
+
+        // Sort the keys in each config by their addressKeys
+        for(const deviceId in addressKeys)
+        {
+            if (!(deviceId in config)) {
                 continue;
             }
-    
+
             const title = addressKeys[deviceId]["internal_title"];
             const deviceElement = $(`<div class="card" style="margin-bottom: 10px;"></div>`);
             deviceElement.append(`<div class="card-header"><h5>${title}</h5></div>`);
             const deviceBody = $(`<div class="card-body"></div>`);
             deviceElement.append(deviceBody);
-    
-            for (const address of Object.keys(deviceConfig).sort()) {
-                const data = deviceConfig[address];
-                const type = addressKeys[deviceId][address];
-                if (type == undefined) {
-                    const alert = $(`<div class="alert alert-warning" role="alert">Unknown Type: ${address}</div>`);
+            
+            const deviceConfig = config[deviceId];
+            for (const address in addressKeys[deviceId]) {
+                if (address == "internal_title") {
+                    continue;
+                }
+
+                if (!(address in deviceConfig)) {
+                    const alert = $(`<div class="alert alert-warning" role="alert">Key not found: ${address}</div>`);
                     deviceBody.append(alert);
                     continue;
                 }
-    
+
+                const data = deviceConfig[address];
+                const type = addressKeys[deviceId][address];
                 const inputElement = generateElementForConfiguration(data, type, deviceId, address);
                 deviceBody.append(inputElement);
             }
-    
-            for (const address in addressKeys[deviceId]) {
-                if (address in deviceConfig || address == "internal_title") {
-                    continue;
-                }
-    
-                const alert = $(`<div class="alert alert-danger" role="alert">Unknown Configuration Entry: ${address}</div>`);
-                deviceBody.append(alert);
-            }
-    
+
             configElement.append(deviceElement);
         }
+
+        // config = outputConfig;
+        // for (const deviceId in config) {
+        //     const deviceConfig = config[deviceId];
+        //     if (addressKeys[deviceId] == undefined) {
+        //         console.log(`Unknown Device Config: ${deviceId}`);
+        //         // const alert = $(`<div class="alert alert-danger" role="alert">Unknown Device Config: ${deviceId}</div>`);
+        //         // configElement.append(alert);
+        //         continue;
+        //     }
+
+        //     const title = addressKeys[deviceId]["internal_title"];
+        //     const deviceElement = $(`<div class="card" style="margin-bottom: 10px;"></div>`);
+        //     deviceElement.append(`<div class="card-header"><h5>${title}</h5></div>`);
+        //     const deviceBody = $(`<div class="card-body"></div>`);
+        //     deviceElement.append(deviceBody);
+
+        //     for (const address of Object.keys(deviceConfig).sort()) {
+        //         const data = deviceConfig[address];
+        //         const type = addressKeys[deviceId][address];
+        //         if (type == undefined) {
+        //             const alert = $(`<div class="alert alert-warning" role="alert">Unknown Type: ${address}</div>`);
+        //             deviceBody.append(alert);
+        //             continue;
+        //         }
+
+        //         const inputElement = generateElementForConfiguration(data, type, deviceId, address);
+        //         deviceBody.append(inputElement);
+        //     }
+
+        //     for (const address in addressKeys[deviceId]) {
+        //         if (address in deviceConfig || address == "internal_title") {
+        //             continue;
+        //         }
+
+        //         const alert = $(`<div class="alert alert-danger" role="alert">Unknown Configuration Entry: ${address}</div>`);
+        //         deviceBody.append(alert);
+        //     }
+
+        //     configElement.append(deviceElement);
+        // }
     }
-    
+
     function send(obj) {
         sendQueue.push(obj);
     }

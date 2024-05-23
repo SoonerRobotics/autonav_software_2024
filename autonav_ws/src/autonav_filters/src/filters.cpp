@@ -61,6 +61,8 @@ void FiltersNode::on_reset() {
 
 void FiltersNode::config_updated(json newConfig) {
         config = newConfig.template get<ParticleFilterConfig>();
+        ParticleFilter particle_filter{config.num_particles, config.latitudeLength, config.longitudeLength, config.gps_noise, config.odom_noise_x, config.odom_noise_y, config.odom_noise_theta};
+        this->particle_filter = particle_filter;
 }
 
 json FiltersNode::get_default_config() {
