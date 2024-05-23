@@ -95,6 +95,17 @@ var addressKeys = {
 		}
 	},
 
+	"autonav_filters_pf": {
+		"internal_title": "[Localization] Filters",
+		"num_particles": "int",
+		"latitudeLength": "float",
+		"longitudeLength": "float",
+		"gps_noise": "float",
+		"odom_noise_x": "float",
+		"odom_noise_y": "float",
+		"odom_noise_theta": "float",
+	},
+
 	"autonav_manual_steamcontroller": {
 		"internal_title": "[Manual] Steam Controller",
 		"forward_speed": "float",

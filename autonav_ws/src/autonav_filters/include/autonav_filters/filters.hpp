@@ -1,48 +1,81 @@
+#pragma once
+
+#include "scr/node.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "autonav_msgs/msg/motor_feedback.hpp"
+#include "autonav_msgs/msg/gps_feedback.hpp"
+#include "autonav_msgs/msg/position.hpp"
+#include "autonav_msgs/msg/imu_data.hpp"
+
 #include <chrono>
 #include <functional>
-#include <memory>
-#include <string>
-
-#include "rclcpp/rclcpp.hpp"
-#include "autonav_messages/msg/motor_feedback.hpp"
-#include "autonav_messages/msg/gps_feedback.hpp"
-#include "autonav_messages/msg/position.hpp"
-
 #include "autonav_filters/particle_filter.hpp"
 
 #define _USE_MATH_DEFINES
 
 using namespace std::chrono_literals;
 
-class FiltersNode : public rclcpp::Node {
+// struct ParticleFilterConfig {
+//     int num_particles;
+//     double latitudeLength;
+//     double longitudeLength;
+//     double gps_noise;
+//     double odom_noise_x;
+//     double odom_noise_y;
+//     double odom_noise_theta;
+    
+//     NLOHMANN_DEFINE_TYPE_INTRUSIVE(ParticleFilterConfig, num_particles, latitudeLength, longitudeLength, gps_noise, odom_noise);
+// };
+
+
+class FiltersNode : public SCR::Node {
     public:
-        FiltersNode() : Node("autonav_filters"), count_(0)
+        FiltersNode() : SCR::Node("autonav_filters_pf"), count_(0)
         {
             // subscriptions
-            gps_subscription = this->create_subscription<autonav_messages::msg::GPSFeedback>("/autonav_GPS", 
+            gps_subscription = this->create_subscription<autonav_msgs::msg::GPSFeedback>("/autonav/gps", 
             20, std::bind(&FiltersNode::on_GPS_received, this, std::placeholders::_1));
-            motor_subscription = this->create_subscription<autonav_messages::msg::MotorFeedback>("/autonav_MotorFeedback", 
+            motor_subscription = this->create_subscription<autonav_msgs::msg::MotorFeedback>("/autonav/MotorFeedback", 
             20, std::bind(&FiltersNode::on_MotorFeedback_received, this, std::placeholders::_1));
 
             // publishers
-            positionPublisher = this->create_publisher<autonav_messages::msg::Position>("/autonav/position", 20);
+            positionPublisher = this->create_publisher<autonav_msgs::msg::Position>("/autonav/position", 20);
+            
+            // this->set_device_state(SCR::DeviceState::OPERATING);
+            this->on_reset();
         }
 
     private:
         //particle filter
-        float latitudeLength = 111086.2;
-        float longitudeLength = 81978.2;
-        ParticleFilter particle_filter{latitudeLength, longitudeLength};
-        autonav_messages::msg::GPSFeedback first_gps;
-        autonav_messages::msg::GPSFeedback last_gps;
+        ParticleFilter particle_filter;
+        double latitudeLength;
+        double longitudeLength;
+        double degreeOffset = 107.0;
+        autonav_msgs::msg::GPSFeedback first_gps;
+        autonav_msgs::msg::GPSFeedback last_gps;
         bool first_gps_received = false;
+        bool last_gps_assigned = false;
+        bool first_imu_received = false;
+        autonav_msgs::msg::IMUData last_IMU_received;
+
+        void init() override;
+
+        void system_state_transition(scr_msgs::msg::SystemState old, scr_msgs::msg::SystemState updated) override;
+
+        void config_updated(json config) override;
+
+        json get_default_config() override;
+
+        void on_reset();
+
+        // void system_state_transition(scr_msgs::msg::SystemState old, scr_msgs::msg::SystemState updated);
         
-        void on_GPS_received(const autonav_messages::msg::GPSFeedback gps_message);
+        void on_GPS_received(const autonav_msgs::msg::GPSFeedback gps_message);
 
-        void on_MotorFeedback_received(const autonav_messages::msg::MotorFeedback motorFeedback_message);
+        void on_MotorFeedback_received(const autonav_msgs::msg::MotorFeedback motorFeedback_message);
 
-        rclcpp::Subscription<autonav_messages::msg::GPSFeedback>::SharedPtr gps_subscription;
-        rclcpp::Subscription<autonav_messages::msg::MotorFeedback>::SharedPtr motor_subscription;
-        rclcpp::Publisher<autonav_messages::msg::Position>::SharedPtr positionPublisher;
+        rclcpp::Subscription<autonav_msgs::msg::GPSFeedback>::SharedPtr gps_subscription;
+        rclcpp::Subscription<autonav_msgs::msg::MotorFeedback>::SharedPtr motor_subscription;
+        rclcpp::Publisher<autonav_msgs::msg::Position>::SharedPtr positionPublisher;
         size_t count_;
 };
