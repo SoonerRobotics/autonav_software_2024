@@ -205,7 +205,7 @@ class ParticleFilter {
                 //printf("weight before selecting new particles: %f\n", this->particles[i].weight);
                 //index = 0;
                 //printf("index %i\n", index);
-                std::ofstream index_log_file;
+                // std::ofstream index_log_file;
                 //index_log_file.open("/home/tony/Documents/index_log_file.txt", std::ios::app);
                 //index_log_file << index << std::endl;
                 //index_log_file.close();

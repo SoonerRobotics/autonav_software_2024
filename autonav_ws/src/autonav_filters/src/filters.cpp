@@ -67,8 +67,8 @@ void FiltersNode::config_updated(json newConfig) {
 
 json FiltersNode::get_default_config() {
         ParticleFilterConfig newConfig;
-        newConfig.latitudeLength = 111086.2;
-        newConfig.longitudeLength = 81978.2;
+        newConfig.latitudeLength = 110944.12;
+        newConfig.longitudeLength = 91071.17;
         newConfig.num_particles = 750;
         newConfig.gps_noise = 0.8;
         newConfig.odom_noise_x = 0.05;
@@ -79,20 +79,20 @@ json FiltersNode::get_default_config() {
 }
 
 void FiltersNode::on_GPS_received(const autonav_msgs::msg::GPSFeedback gps_message) {
-    RCLCPP_INFO(this->get_logger(), "RECEIVED GPS");
-    RCLCPP_INFO(this->get_logger(), "gps_message.latitude %f\n", gps_message.latitude);
-    RCLCPP_INFO(this->get_logger(), "gps_message.longitude %f\n", gps_message.longitude);
+    // RCLCPP_INFO(this->get_logger(), "RECEIVED GPS");
+    // RCLCPP_INFO(this->get_logger(), "gps_message.latitude %f\n", gps_message.latitude);
+    // RCLCPP_INFO(this->get_logger(), "gps_message.longitude %f\n", gps_message.longitude);
     if (gps_message.gps_fix == 0 &&  gps_message.is_locked == false) {
         return;
-        RCLCPP_INFO(this->get_logger(), "RETURNING IMMEDIATELY");
+        // RCLCPP_INFO(this->get_logger(), "RETURNING IMMEDIATELY");
     }
     if (this->first_gps_received == false) {
         this->first_gps = gps_message;
         this->first_gps_received = true;
     }
 
-    RCLCPP_INFO(this->get_logger(), "first_gps.latitude %f", first_gps.latitude);
-    RCLCPP_INFO(this->get_logger(), "first_gps.longitude %f", first_gps.longitude);
+    // RCLCPP_INFO(this->get_logger(), "first_gps.latitude %f", first_gps.latitude);
+    // RCLCPP_INFO(this->get_logger(), "first_gps.longitude %f", first_gps.longitude);
         
     this->last_gps = gps_message;
     this->last_gps_assigned = true;
@@ -101,7 +101,7 @@ void FiltersNode::on_GPS_received(const autonav_msgs::msg::GPSFeedback gps_messa
     
 }
 void FiltersNode::on_MotorFeedback_received(const autonav_msgs::msg::MotorFeedback motorFeedback_message) {
-    RCLCPP_INFO(this->get_logger(), "received motorfeedback %f", 5);
+    // RCLCPP_INFO(this->get_logger(), "received motorfeedback %f", 5);
     std::vector<double> averages;
     averages = this->particle_filter.feedback(motorFeedback_message);
 
@@ -138,11 +138,11 @@ void FiltersNode::on_MotorFeedback_received(const autonav_msgs::msg::MotorFeedba
     }
     //RCLCPP_INFO(this->get_logger(), "average 0: %f, average 1: %f, average 2: %f", averages[0], averages[1], averages[2]);
     //RCLCPP_INFO(this->get_logger(), "publishing position x: %f, y: %f, theta: %f", position.x, position.y, position.theta);
-    RCLCPP_INFO(this->get_logger(), "position latitude: %f, longitude: %f", position.latitude, position.longitude);
-    std::string latitude_log_string = std::to_string(position.latitude);
-    std::string longitude_log_string = std::to_string(position.longitude);
-    std::string combined_string = latitude_log_string + ", " + longitude_log_string + ", ";
-    this->log(combined_string);
+    // RCLCPP_INFO(this->get_logger(), "position latitude: %f, longitude: %f", position.latitude, position.longitude);
+    // std::string latitude_log_string = std::to_string(position.latitude);
+    // std::string longitude_log_string = std::to_string(position.longitude);
+    // std::string combined_string = latitude_log_string + ", " + longitude_log_string + ", ";
+    // this->log(combined_string);
 
     positionPublisher->publish(position);
 }
