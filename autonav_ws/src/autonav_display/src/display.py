@@ -217,7 +217,7 @@ class BroadcastNode(Node):
                 }), unique_id)
 
             if obj["op"] == "set_system_state":
-                self.set_system_total_state(int(obj["state"]), self.system_mode, bool(obj["mobility"]))
+                self.set_system_total_state(int(obj["state"]), int(obj["mode"]), bool(obj["mobility"]))
 
             if obj["op"] == "conbus":
                 id = int(obj["id"])
