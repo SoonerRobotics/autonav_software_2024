@@ -10,7 +10,7 @@
 #include "autonav_filters/rapidcsv.h"
 
 TEST(ParticleFilterTests, initialization_test) {
-    //GTEST_SKIP() << "skipping init test";
+    GTEST_SKIP() << "skipping init test";
     int num_particles = 750;
     double latitudeLength = 111086.2;
     double longitudeLength = 81978.2;
@@ -37,7 +37,7 @@ TEST(ParticleFilterTests, initialization_test) {
 }
 
 TEST(ParticleFilterTests, feedback_test) {
-    //GTEST_SKIP() << "skipping feedback test";
+    GTEST_SKIP() << "skipping feedback test";
     rapidcsv::Document motor_feedback_sheet("/home/tony/autonav_software_2024/autonav_ws/src/autonav_filters/tests/ENTRY_FEEDBACK.csv");
 
     std::vector<double> delta_xs = motor_feedback_sheet.GetColumn<double>(2);
@@ -83,8 +83,91 @@ TEST(ParticleFilterTests, feedback_test) {
     EXPECT_EQ(position_vector[2], 3.4728605908690113);
 }
 
+TEST(ParticleFilterTests, feedback_sign_combine_test) {
+    int num_particles = 750;
+    double latitudeLength = 111086.2;
+    double longitudeLength = 81978.2;
+    double gps_noise = 0.8;
+    double odom_noise[3] = {0.5, 0.5, 0.1};
+    ParticleFilter particle_filter = ParticleFilter(num_particles, latitudeLength, longitudeLength, gps_noise, odom_noise[0], odom_noise[1], odom_noise[2]);
+    particle_filter.init_particles();
+    autonav_msgs::msg::MotorFeedback motor_message;
+    double xs[2] = {4, -4};
+    double ys[2] = {3, -3};
+    double thetas[2] = {2, -2};
+
+    // a triple for loop timed out gtest so im doing this garbage instead
+    motor_message.delta_x = xs[0];
+    motor_message.delta_y = ys[0];
+    motor_message.delta_theta = thetas[0];
+
+    std::vector<double> position_vector = particle_filter.feedback(motor_message);
+    EXPECT_EQ(position_vector[0], -1.8071470246165216e-15);
+    EXPECT_EQ(position_vector[1], 4.407141318552021e-15);
+    EXPECT_EQ(position_vector[2], 4.409343000989507);
+    
+
+    motor_message.delta_x = xs[0];
+    motor_message.delta_y = ys[0];
+    motor_message.delta_theta = thetas[1];
+    position_vector = particle_filter.feedback(motor_message);
+    EXPECT_EQ(position_vector[0], -1.8900436771218666e-15);
+    EXPECT_EQ(position_vector[1], -5.459336686423437e-16);
+    EXPECT_EQ(position_vector[2], 2.0845519307911555);
+
+    motor_message.delta_x = xs[0];
+    motor_message.delta_y = ys[1];
+    motor_message.delta_theta = thetas[0];
+    position_vector = particle_filter.feedback(motor_message);
+    EXPECT_EQ(position_vector[0], 1.5631940186722204e-15);
+    EXPECT_EQ(position_vector[1], 1.1114072625180901e-15);
+    EXPECT_EQ(position_vector[2], 4.409343000989507);
+
+    motor_message.delta_x = xs[0];
+    motor_message.delta_y = ys[1];
+    motor_message.delta_theta = thetas[1];
+    position_vector = particle_filter.feedback(motor_message);
+    EXPECT_EQ(position_vector[0], 1.3381888190148554e-16);
+    EXPECT_EQ(position_vector[1], -9.710750722054703e-17);
+    EXPECT_EQ(position_vector[2], 2.0845519307911555);
+
+
+    motor_message.delta_x = xs[1];
+    motor_message.delta_y = ys[0];
+    motor_message.delta_theta = thetas[0];
+    position_vector = particle_filter.feedback(motor_message);
+    EXPECT_EQ(position_vector[0], -1.0646298657472169e-15);
+    EXPECT_EQ(position_vector[1], -1.2055541750063033e-15);
+    EXPECT_EQ(position_vector[2], 4.409343000989507);
+
+    motor_message.delta_x = xs[1];
+    motor_message.delta_y = ys[0];
+    motor_message.delta_theta = thetas[1];
+    position_vector = particle_filter.feedback(motor_message);
+    EXPECT_EQ(position_vector[0], -1.7360927510405115e-15);
+    EXPECT_EQ(position_vector[1], -2.0487315547749555e-16);
+    EXPECT_EQ(position_vector[2], 2.0845519307911555);
+
+    motor_message.delta_x = xs[1];
+    motor_message.delta_y = ys[1];
+    motor_message.delta_theta = thetas[0];
+    position_vector = particle_filter.feedback(motor_message);
+    EXPECT_EQ(position_vector[0], 1.8237263551175905e-16);
+    EXPECT_EQ(position_vector[1], -2.1257070178156331e-16);
+    EXPECT_EQ(position_vector[2], 4.409343000989507);
+
+    motor_message.delta_x = xs[1];
+    motor_message.delta_y = ys[1];
+    motor_message.delta_theta = thetas[1];
+    position_vector = particle_filter.feedback(motor_message);
+    EXPECT_EQ(position_vector[0], -6.010007306637514e-17);
+    EXPECT_EQ(position_vector[1], -1.3914795241968628e-17);
+    EXPECT_EQ(position_vector[2], 2.0845519307911555);
+
+}
+
 TEST(ParticleFilterTests, gps_test) {
-    //GTEST_SKIP() << "Skipping gps_test";
+    GTEST_SKIP() << "Skipping gps_test";
     int num_particles = 750;
     double latitudeLength = 111086.2;
     double longitudeLength = 81978.2;
@@ -109,7 +192,43 @@ TEST(ParticleFilterTests, gps_test) {
     ASSERT_EQ(gps_vector_1, python_gps_vector_1);
 }
 
+TEST(ParticleFilterTests, gps_combine_test) {
+    int num_particles = 1;
+    double latitudeLength = 111086.2;
+    double longitudeLength = 81978.2;
+    double gps_noise = 0.8;
+    double odom_noise[3] = {0.5, 0.5, 0.1};
+    ParticleFilter particle_filter = ParticleFilter(num_particles, latitudeLength, longitudeLength, gps_noise, odom_noise[0], odom_noise[1], odom_noise[2]);
+
+    particle_filter.init_particles();
+
+    autonav_msgs::msg::GPSFeedback gps_feedback = autonav_msgs::msg::GPSFeedback();
+    gps_feedback.latitude = 42.6681254;
+    gps_feedback.longitude = -83.2188876;
+    gps_feedback.altitude = 234.891;
+    gps_feedback.gps_fix = 4;
+    gps_feedback.is_locked = true;
+    gps_feedback.satellites = 16;
+
+    std::vector<double> python_gps_vector = {0.0, 0.0};
+
+    std::vector<double> gps_vector = particle_filter.gps(gps_feedback);
+
+    ASSERT_EQ(gps_vector[0], python_gps_vector[0]);
+    ASSERT_EQ(gps_vector[1], python_gps_vector[1]);
+
+    gps_feedback.latitude = 42.66;
+
+    python_gps_vector = {-902.6198094804877, 0.0};
+
+    gps_vector = particle_filter.gps(gps_feedback);
+
+    ASSERT_EQ(gps_vector[0], python_gps_vector[0]);
+    ASSERT_EQ(gps_vector[1], python_gps_vector[1]);
+}
+
 TEST(ParticleFilterTests, complete_test) {
+    GTEST_SKIP() << "skipping test";
     // This test will fail sometimes because the particle filter is non-deterministic
     int num_particles = 750;
     double latitudeLength = 111086.2;

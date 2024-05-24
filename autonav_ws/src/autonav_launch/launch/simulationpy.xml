@@ -1,0 +1,31 @@
+<launch>
+    <!-- Core -->
+    <include file="$(find-pkg-share rosbridge_server)/launch/rosbridge_websocket_launch.xml" />
+    <node pkg="scr_controller" exec="core">
+        <param name="mode" value="1" /> 
+        <param name="state" value="0" /> 
+        <param name="mobility" value="false" /> 
+    </node>
+    <node pkg="scr_controller" exec="logging" />
+
+    <!-- Filtering -->
+    <node pkg="autonav_filters" exec="filters.py">
+        <param name="emulate_tty" value ="True"/>
+        <param name="latitude_length" value="110944.12" />
+        <param name="longitude_length" value="91071.17" />
+    </node>
+    <!-- <node pkg="autonav_filters" exec="filters_node" /> -->
+
+    <!-- Vision Nodes -->
+    <node pkg="autonav_vision" exec="transformations.py" />
+    <node pkg="autonav_vision" exec="combination.py" />
+    <node pkg="autonav_vision" exec="expandify" />
+
+    <!-- Pathing -->
+    <node pkg="autonav_nav" exec="path_resolver.py" />
+    <node pkg="autonav_nav" exec="astar.py" />
+
+    <!-- Other -->
+    <node pkg="autonav_display" exec="display.py" />
+    <node pkg="autonav_playback" exec="playback.py" />
+</launch>

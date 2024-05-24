@@ -137,9 +137,10 @@ class ParticleFilter {
             }
 
             double gps_x = (gps.latitude - this->first_gps.latitude) * this->latitudeLength;
+            //gps_x = abs(gps_x);
             double gps_y = (this->first_gps.longitude - gps.longitude) * this->longitudeLength;
 
-            //printf("gps_x, gps_y: %f, %f\n", gps_x, gps_y);
+            printf("gps_x, gps_y: %f, %f\n", gps_x, gps_y);
 
             for (int i = 0; i < this->particles.size(); i++) {
                 //printf("particle %d \n", i);

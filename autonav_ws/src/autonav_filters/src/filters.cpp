@@ -70,7 +70,7 @@ json FiltersNode::get_default_config() {
         newConfig.latitudeLength = 110944.12;
         newConfig.longitudeLength = 91071.17;
         newConfig.num_particles = 750;
-        newConfig.gps_noise = 0.8;
+        newConfig.gps_noise = 1.6;
         newConfig.odom_noise_x = 0.05;
         newConfig.odom_noise_y = 0.05;
         newConfig.odom_noise_theta = 0.01;

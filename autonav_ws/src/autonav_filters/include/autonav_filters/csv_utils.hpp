@@ -11,4 +11,8 @@ namespace csv_utils {
             return false;
         }
     }
+    
+    double pymod(double n, double M) {
+        return fmodl(((fmodl(n, M)) + M), M);
+    }
 }

@@ -64,6 +64,7 @@ class ParticleFilter:
         gps_x = (gps.latitude - self.first_gps.latitude) * self.latitude_length
         gps_y = (self.first_gps.longitude - gps.longitude) * self.longitude_length
 
+        print(f"gps_x, gps_y: {gps_x}, {gps_y}")
         for particle in self.particles:
             dist_sqrt = np.sqrt((particle.x - gps_x) ** 2 + (particle.y - gps_y) ** 2)
             particle.weight = math.exp(-dist_sqrt / (2 * self.gps_noise[0] ** 2))
