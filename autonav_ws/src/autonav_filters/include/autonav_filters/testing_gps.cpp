@@ -59,6 +59,12 @@ int main() {
     x = exp(-1 * -4 / (2 * pow(0.8, 2)));
     printf("%f\n", x);
 
+    x = cos(sqrt(2)/2);
+    printf("%f\n", x);
+    x = cos(2.35619);
+    printf("%f\n", x);
+    x = cos(-1 * M_PI);
+    printf("%f\n", x);
 
     std::random_device rd;
     std::mt19937 generator(rd());

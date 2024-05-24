@@ -65,9 +65,23 @@ class ParticleFilter:
         gps_y = (self.first_gps.longitude - gps.longitude) * self.longitude_length
 
         print(f"gps_x, gps_y: {gps_x}, {gps_y}")
+        mean_dist = 0
+        mean_weight = 0
+        average_x = 0
         for particle in self.particles:
             dist_sqrt = np.sqrt((particle.x - gps_x) ** 2 + (particle.y - gps_y) ** 2)
             particle.weight = math.exp(-dist_sqrt / (2 * self.gps_noise[0] ** 2))
+            mean_dist += dist_sqrt
+            mean_weight += particle.weight
+            average_x += particle.x
+
+
+        mean_dist /= self.num_particles
+        mean_weight /= self.num_particles
+        average_x /= self.num_particles
+        print(f"mean_dist {mean_dist}")
+        print(f"mean_weight {mean_weight}")
+        print(f"average_x {average_x}")
 
         self.resample()
         return [gps_x, gps_y]
@@ -82,6 +96,7 @@ class ParticleFilter:
         new_particles = random.choices(self.particles, weights, k=self.num_particles)
         self.particles = []
 
+        average_x = 0
         for particle in new_particles:
             rand_x = np.random.normal(0, self.odom_noise[0])
             rand_y = np.random.normal(0, self.odom_noise[1])
@@ -89,3 +104,8 @@ class ParticleFilter:
             y = particle.y + rand_x * math.sin(particle.theta) + rand_y * math.cos(particle.theta)
             theta = np.random.normal(particle.theta, self.odom_noise[2]) % (2 * math.pi)
             self.particles.append(Particle(x, y, theta, particle.weight))
+
+            average_x += x
+
+        average_x /= self.num_particles
+        print(f"average_x {average_x}")

@@ -13,7 +13,15 @@
         <param name="latitude_length" value="110944.12" />
         <param name="longitude_length" value="91071.17" />
     </node> -->
-    <node pkg="autonav_filters" exec="filters_node" />
+    <!--<node pkg="autonav_filters" exec="filters_node"/> -->
+    
+    <node
+        pkg="autonav_filters"
+        exec="filters_node"
+        name="filters_node"
+        output="screen">
+        <env name="RCUTILS_LOGGING_BUFFERED_STREAM" value="0"/>
+    </node>
 
     <!-- Vision Nodes -->
     <node pkg="autonav_vision" exec="transformations.py" />
