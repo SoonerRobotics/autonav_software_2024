@@ -47,7 +47,7 @@ class ParticleFilter {
         // constructor
         ParticleFilter(int num_particles, double latitudeLength, double longitudeLength, double gps_noise, double odom_noise_x, double odom_noise_y, double odom_noise_theta) {
             this->num_particles = num_particles;
-            printf("num partices: %d\n", this->num_particles);
+            //printf("num partices: %d\n", this->num_particles);
             this->latitudeLength = latitudeLength;
             //printf("lat len: %f\n", this->latitudeLength);
             this->longitudeLength = longitudeLength;
@@ -59,6 +59,7 @@ class ParticleFilter {
             //std::mt19937 generator(std::chrono::high_resolution_clock::now().time_since_epoch().count());
             std::mt19937 generator(rd());
             this->generator = generator;
+            this->particles = particles;
         };
 
         // empty constructor
@@ -72,10 +73,14 @@ class ParticleFilter {
         }
 
         void init_particles() {
-            particles.clear();
+            this->particles.clear();
             for (int i=0; i<this->num_particles; i++) {
+                //printf("PF INITIALIZED\n");
+                //printf("%d\n", std::size(this->particles));
                 //particles.push_back(Particle(0, 0, (double)i / this->num_particles * 2 * M_PI));
-                particles.push_back(Particle(0, 0, -1 * (double)i / this->num_particles * 2 * M_PI));
+                //Particle particle = Particle(0, 0, (double)i / this->num_particles * 2 * M_PI);
+                //particle.printParticle();
+                this->particles.push_back(Particle(0, 0, (double)i / this->num_particles * 2 * M_PI));
             }
         }
 
@@ -134,16 +139,19 @@ class ParticleFilter {
         };
 
         std::vector<double> gps(autonav_msgs::msg::GPSFeedback gps) {
+            int particles_size = this->particles.size();
+            //printf("particles size: %d\n", particles_size);
             if (this->first_gps_received == false) {
                 this->first_gps = gps;
                 this->first_gps_received = true;
             }
 
             double gps_x = (gps.latitude - this->first_gps.latitude) * this->latitudeLength;
+            //gps_x = -1;
             //gps_x = abs(gps_x);
             double gps_y = (this->first_gps.longitude - gps.longitude) * this->longitudeLength;
 
-            printf("gps_x, gps_y: %f, %f\n", gps_x, gps_y);
+            //printf("gps_x, gps_y inside pf: %f, %f\n", gps_x, gps_y);
 
             double mean_distance = 0.0;
             double mean_weight = 0.0;
@@ -158,11 +166,11 @@ class ParticleFilter {
                 average_x += this->particles[i].x;
             }
             mean_distance /= this->num_particles;
-            printf("mean distance: %f\n", mean_distance);
+            //printf("mean distance: %f\n", mean_distance);
             mean_weight /= this->num_particles;
-            printf("mean weight: %f\n", mean_weight);
+            //printf("mean weight: %f\n", mean_weight);
             average_x /= num_particles;
-            printf("average x %f\n", average_x);
+            //printf("average x %f\n", average_x);
 
             resample();
 
@@ -194,6 +202,9 @@ class ParticleFilter {
         }
 
         void resample() {
+            int particles_size = this->particles.size();
+            //printf("particles size: %d\n", particles_size);
+
             std::vector<double> weights;
             for (int i = 0; i < int(std::size(this->particles)); i++) {
                 weights.push_back(this->particles[i].weight);
@@ -202,20 +213,41 @@ class ParticleFilter {
             if (weights_sum < 0.0001) {
                 weights_sum = 0.0001;
             }
+            
+            for (int i=0;i<int(std::size(weights));i++) {
+                //printf("weight %i: %f\n", i, weights[i]);
+            }
+
             std::vector<double> temp_weights;
             for (int i = 0; i < int(std::size(weights)); i++) {
                 temp_weights.push_back(weights[i] / weights_sum);
+                //printf("temp_weights %i: %f\n", i, temp_weights[i]);
             }
             weights = temp_weights;
+            int weights_size = weights.size();
+            //printf("WEIGHTS SIZE: %d\n", weights_size);
             std::discrete_distribution<int> discrete(weights.begin(), weights.end());
             std::vector<Particle> new_particles;
 
+            int accum_index;
+            // if (int(std::size(weights) == 0)) {
+            //     return;
+            // }
+
             for (int i = 0;i < num_particles; i++) {
                 int index = discrete(generator);
-
+                // if (index == 0) {
+                //     new_particles = this->particles;
+                //     break;
+                // }
+                accum_index += index;
+                //printf("index: %i\n", index);
                 Particle selected_particle = this->particles[index];
+                //elected_particle.printParticle();
                 new_particles.push_back(selected_particle);
             }
+            double mean_index = (double)mean_index / 262500.0;
+            //printf("mean_index: %f\n", mean_index);
 
             for (int i = 0; i < int(std::size(new_particles)); i++) {
                 //printf("weight after selecting new particles: %f\n", this->particles[i].weight);
@@ -227,17 +259,18 @@ class ParticleFilter {
             std::normal_distribution<> normal_distribution_x{0, this->odom_noise[0]};
             std::normal_distribution<> normal_distribution_y{0, this->odom_noise[1]};
             double average_x = 0;
+            double average_weight = 0;
             for (int i = 0; i < int(std::size(new_particles)); i++) {
                 double random_x = normal_distribution_x(generator);
-                printf("random_x %f\n", random_x);
+                //printf("random_x %f\n", random_x);
                 //random_x = 0.03;
                 double random_y = normal_distribution_y(generator);
                 //random_y = 0.05;
 
                 //printf("random_x, random_y: %f, %f\n", random_x, random_y);
-                printf("new_particles[i].x before adding noise %f\n", new_particles[i].x);
+                //printf("new_particles[i].x before adding noise %f\n", new_particles[i].x);
                 double x = new_particles[i].x + random_x * cos(new_particles[i].theta) + random_y * sin(new_particles[i].theta);
-                printf("x in resample %f\n", x);
+                //printf("x in resample %f\n", x);
                 double y = new_particles[i].y + random_x * sin(new_particles[i].theta) + random_y * cos(new_particles[i].theta);
 
                 //printf("x, y, theta: %f, %f, %f\n", x, y, new_particles[i].theta);
@@ -248,10 +281,13 @@ class ParticleFilter {
                 //printf("theta: %f\n", theta);
                 this->particles.push_back(Particle(x, y, theta, new_particles[i].weight));
                 average_x += x;
+                average_weight += new_particles[i].weight;
             }
 
             average_x /= this->num_particles;
-            printf("average_x: %f\n", average_x);
+            //printf("average_x: %f\n", average_x);
+            average_weight /= this->num_particles;
+            //printf("average_weight %f\n", average_weight);
 
             for (int i = 0; i < int(std::size(this->particles)); i++) {
                 //printf("new particles after resample: %f, %f, %f, %f\n", this->particles[i].x, this->particles[i].y, this->particles[i].theta, this->particles[i].weight);
@@ -302,7 +338,7 @@ class ParticleFilter {
     private:
         std::mt19937 generator;
         //int num_particles = 750;
-        int num_particles = 0;
+        int num_particles = 750;
         //double gps_noise[1] = {0.8};
         std::array<double, 1> gps_noise;
         //double odom_noise[3] = {0.05, 0.05, 0.01};

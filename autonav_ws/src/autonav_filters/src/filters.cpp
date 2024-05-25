@@ -31,8 +31,11 @@ void FiltersNode::init() {
     //double longitudeLength = 81978.2;
     this->latitudeLength = config.latitudeLength;
     this->longitudeLength = config.longitudeLength;
-    ParticleFilter particle_filter{config.num_particles, config.latitudeLength, config.longitudeLength, config.gps_noise, config.odom_noise_x, config.odom_noise_y, config.odom_noise_theta};
+    //ParticleFilter particle_filter{config.num_particles, config.latitudeLength, config.longitudeLength, config.gps_noise, config.odom_noise_x, config.odom_noise_y, config.odom_noise_theta};
+    RCLCPP_INFO(this->get_logger(), "config.num_particles %d", config.num_particles);
     this->particle_filter = particle_filter;
+    this->particle_filter.init_particles();
+    //this->particle_filter.printParticles();
     autonav_msgs::msg::GPSFeedback first_gps;
     autonav_msgs::msg::GPSFeedback last_gps;
     bool first_gps_received = false;
@@ -60,16 +63,19 @@ void FiltersNode::on_reset() {
 }
 
 void FiltersNode::config_updated(json newConfig) {
+        RCLCPP_INFO(this->get_logger(), "config updated");
         config = newConfig.template get<ParticleFilterConfig>();
         ParticleFilter particle_filter{config.num_particles, config.latitudeLength, config.longitudeLength, config.gps_noise, config.odom_noise_x, config.odom_noise_y, config.odom_noise_theta};
         this->particle_filter = particle_filter;
+        this->particle_filter.init_particles();
+        //this->particle_filter.printParticles();
 }
 
 json FiltersNode::get_default_config() {
         ParticleFilterConfig newConfig;
         newConfig.latitudeLength = 110944.12;
         newConfig.longitudeLength = 91071.17;
-        newConfig.num_particles = 1; 
+        newConfig.num_particles = 750; 
         newConfig.gps_noise = 0.8;
         newConfig.odom_noise_x = 0.05;
         newConfig.odom_noise_y = 0.05;
@@ -78,7 +84,7 @@ json FiltersNode::get_default_config() {
         return newConfig;
 }
 
-void FiltersNode::on_GPS_received(const autonav_msgs::msg::GPSFeedback gps_message) {
+void FiltersNode::on_GPS_received(autonav_msgs::msg::GPSFeedback gps_message) {
     if (gps_message.gps_fix == 0 &&  gps_message.is_locked == false) {
         return;
     }
@@ -93,7 +99,7 @@ void FiltersNode::on_GPS_received(const autonav_msgs::msg::GPSFeedback gps_messa
     this->particle_filter.gps(gps_message);
     
 }
-void FiltersNode::on_MotorFeedback_received(const autonav_msgs::msg::MotorFeedback motorFeedback_message) {
+void FiltersNode::on_MotorFeedback_received(autonav_msgs::msg::MotorFeedback motorFeedback_message) {
     // RCLCPP_INFO(this->get_logger(), "received motorfeedback %f", 5);
     std::vector<double> averages;
     averages = this->particle_filter.feedback(motorFeedback_message);
