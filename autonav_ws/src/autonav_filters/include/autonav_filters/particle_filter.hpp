@@ -49,16 +49,15 @@ class ParticleFilter {
             this->num_particles = num_particles;
             printf("num partices: %d\n", this->num_particles);
             this->latitudeLength = latitudeLength;
-            printf("lat len: %f\n", this->latitudeLength);
+            //printf("lat len: %f\n", this->latitudeLength);
             this->longitudeLength = longitudeLength;
-            printf("long len %f\n", this->longitudeLength);
+            //printf("long len %f\n", this->longitudeLength);
             this->gps_noise = {gps_noise};
             this->odom_noise = {odom_noise_x, odom_noise_y, odom_noise_theta};
 
             std::random_device rd;
             //std::mt19937 generator(std::chrono::high_resolution_clock::now().time_since_epoch().count());
             std::mt19937 generator(rd());
-            std::vector<int> range = {1, 5, 10, 15, 20, 25};
             this->generator = generator;
         };
 
@@ -75,7 +74,8 @@ class ParticleFilter {
         void init_particles() {
             particles.clear();
             for (int i=0; i<this->num_particles; i++) {
-                particles.push_back(Particle(0, 0, (double)i / this->num_particles * 2 * M_PI));
+                //particles.push_back(Particle(0, 0, (double)i / this->num_particles * 2 * M_PI));
+                particles.push_back(Particle(0, 0, -1 * (double)i / this->num_particles * 2 * M_PI));
             }
         }
 
@@ -96,13 +96,15 @@ class ParticleFilter {
                 //printf("particle data before : %f, %f, %f, %f\n\n", this->particles[i].x, this->particles[i].y, this->particles[i].theta, this->particles[i].weight);
                 
                 this->particles[i].x += feedback.delta_x * 1.2 * cos(this->particles[i].theta) + feedback.delta_y * sin(this->particles[i].theta);
-                
+                //printf("particle.x start of feedback %f\n", this->particles[i].x);
                 // particle.x += feedback.delta_x * 1.2 * math.cos(particle.theta) + feedback.delta_y * math.sin(particle.theta)
                 this->particles[i].y += feedback.delta_x * 1.2 * sin(this->particles[i].theta) + feedback.delta_y * cos(this->particles[i].theta);
                 this->particles[i].theta += feedback.delta_theta;
                 this->particles[i].theta = pymod(this->particles[i].theta, (2 * M_PI));
+                
+                // !! stuff below this point in this function is irrelevant to the problem
                 //printf("particle data after updates: %f, %f, %f, %f\n\n", this->particles[i].x, this->particles[i].y, this->particles[i].theta, this->particles[i].weight);
-                double weight = pow(this->particles[i].weight, 2);
+                double weight = copysign(1.0, this->particles[i].weight) * pow(this->particles[i].weight, 2);
                 sum_x += this->particles[i].x * weight;
                 sum_y += this->particles[i].y * weight;
                 sum_theta_x += cos(this->particles[i].theta) * weight;
@@ -147,12 +149,10 @@ class ParticleFilter {
             double mean_weight = 0.0;
             double average_x = 0.0;
             for (int i = 0; i < this->particles.size(); i++) {
-                //printf("particle %d \n", i);
-                //printf("particle_x, particle_y: %f, %f\n", this->particles[i].x, this->particles[i].y);
                 double distance = sqrt(pow((this->particles[i].x - gps_x), double(2)) + pow((this->particles[i].y - gps_y), double(2)));
                 //printf("distance: %f\n", distance);
-                this->particles[i].weight = exp(-1 * distance / (2 * pow(this->gps_noise[0], 2)));
-                //printf("particle weight after reassignment: %f\n", this->particles[i].weight);
+                this->particles[i].weight = exp(-1 * distance / (2 * copysign(1.0, this->gps_noise[0]) * pow(this->gps_noise[0], 2)));
+                //printf("particle weight: %f\n", this->particles[i].weight);
                 mean_distance += distance;
                 mean_weight += this->particles[i].weight;
                 average_x += this->particles[i].x;
@@ -197,17 +197,14 @@ class ParticleFilter {
             std::vector<double> weights;
             for (int i = 0; i < int(std::size(this->particles)); i++) {
                 weights.push_back(this->particles[i].weight);
-                //printf("weight: %f\n", weights[i]);
             }
             double weights_sum = std::accumulate(weights.begin(), weights.end(), 0.0);
-            //printf("weight sum: %f\n", weights_sum);
             if (weights_sum < 0.0001) {
                 weights_sum = 0.0001;
             }
             std::vector<double> temp_weights;
             for (int i = 0; i < int(std::size(weights)); i++) {
                 temp_weights.push_back(weights[i] / weights_sum);
-                //printf("weight after sum: %f\n", temp_weights[i]);
             }
             weights = temp_weights;
             std::discrete_distribution<int> discrete(weights.begin(), weights.end());
@@ -215,14 +212,6 @@ class ParticleFilter {
 
             for (int i = 0;i < num_particles; i++) {
                 int index = discrete(generator);
-                //printf("index: %d\n", index);
-                //printf("weight before selecting new particles: %f\n", this->particles[i].weight);
-                //index = 0;
-                //printf("index %i\n", index);
-                // std::ofstream index_log_file;
-                //index_log_file.open("/home/tony/Documents/index_log_file.txt", std::ios::app);
-                //index_log_file << index << std::endl;
-                //index_log_file.close();
 
                 Particle selected_particle = this->particles[index];
                 new_particles.push_back(selected_particle);
@@ -240,13 +229,15 @@ class ParticleFilter {
             double average_x = 0;
             for (int i = 0; i < int(std::size(new_particles)); i++) {
                 double random_x = normal_distribution_x(generator);
+                printf("random_x %f\n", random_x);
                 //random_x = 0.03;
                 double random_y = normal_distribution_y(generator);
                 //random_y = 0.05;
 
                 //printf("random_x, random_y: %f, %f\n", random_x, random_y);
-                
+                printf("new_particles[i].x before adding noise %f\n", new_particles[i].x);
                 double x = new_particles[i].x + random_x * cos(new_particles[i].theta) + random_y * sin(new_particles[i].theta);
+                printf("x in resample %f\n", x);
                 double y = new_particles[i].y + random_x * sin(new_particles[i].theta) + random_y * cos(new_particles[i].theta);
 
                 //printf("x, y, theta: %f, %f, %f\n", x, y, new_particles[i].theta);

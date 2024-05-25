@@ -26,8 +26,19 @@ double pymod(double n, double M) {
     return fmodl(((fmodl(n, M)) + M), M);
 }
 
+template <typename T> double sgn(T val) {
+    return (T(0) < val) - (val < T(0));
+}
+
 int main() {
-    double x = pymod(3, M_PI);
+
+    double x = copysign(1.0, -5) * pow(-5, 2);
+    printf("%f\n", x);
+    x = copysign(1.0, 5) * pow(5, 2);
+    printf("%f\n", x);
+
+    printf("mod\n");
+    x = pymod(3, M_PI);
     printf("%f\n", x);
     x = pymod(-3, M_PI);
     printf("%f\n", x);
@@ -36,6 +47,7 @@ int main() {
     x = pymod(-3, -1 * M_PI);
     printf("%f\n", x);
 
+    printf("atan2\n");
     x = atan2(3, 2);
     printf("%f\n", x);
     x = atan2(-3, 2);
@@ -45,6 +57,7 @@ int main() {
     x = atan2(-3, -2);
     printf("%f\n", x);
 
+    printf("sqrt\n");
     x= sqrt(pow((4), double(2)) + pow((3), double(2)));
     printf("%f\n", x);
     x= sqrt(pow((-4), double(2)) + pow((3), double(2)));
@@ -54,16 +67,28 @@ int main() {
     x= sqrt(pow((-4), double(2)) + pow((-3), double(2)));
     printf("%f\n", x);
 
+    printf("exp\n");
     x = exp(-1 * 4 / (2 * pow(0.8, 2)));
     printf("%f\n", x);
     x = exp(-1 * -4 / (2 * pow(0.8, 2)));
     printf("%f\n", x);
 
+    printf("cos\n");
     x = cos(sqrt(2)/2);
     printf("%f\n", x);
     x = cos(2.35619);
     printf("%f\n", x);
     x = cos(-1 * M_PI);
+    printf("%f\n", x);
+    x = cos(-3.927);
+    printf("%f\n", x);
+
+    printf("+=\n");
+    x = 0;
+    x += 4;
+    printf("%f\n", x);
+    x = 0;
+    x += -4;
     printf("%f\n", x);
 
     std::random_device rd;
