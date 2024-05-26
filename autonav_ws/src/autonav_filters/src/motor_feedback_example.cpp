@@ -6,12 +6,12 @@
 #include <string>
 
 #include "rclcpp/rclcpp.hpp"
-#include "autonav_messages/msg/motor_feedback.hpp"
+#include "autonav_msgs/msg/motor_feedback.hpp"
 
 using namespace std::chrono_literals;
 
-void PositionPublisher::timer_callback() {
-    autonav_messages::msg::MotorFeedback message = autonav_messages::msg::MotorFeedback();
+void PositionPublisher::publish_motor_feedback() {
+    autonav_msgs::msg::MotorFeedback message = autonav_msgs::msg::MotorFeedback();
     message.delta_x = 10;
     message.delta_y = 10;
     message.delta_theta = 360;

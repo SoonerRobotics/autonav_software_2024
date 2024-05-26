@@ -1,13 +1,22 @@
 #include "gtest/gtest.h"
 #include "autonav_filters/particle_filter.hpp"
-#include "autonav_messages/msg/motor_feedback.hpp"
-#include "autonav_messages/msg/gps_feedback.hpp"
+#include "autonav_msgs/msg/motor_feedback.hpp"
+#include "autonav_msgs/msg/gps_feedback.hpp"
 #include <iostream>
+#include <filesystem>
+#include <chrono>
+#include <thread>
+#include "autonav_filters/csv_utils.hpp"
+#include "autonav_filters/rapidcsv.h"
 
 TEST(ParticleFilterTests, initialization_test) {
+    //GTEST_SKIP() << "skipping init test";
+    int num_particles = 750;
     double latitudeLength = 111086.2;
     double longitudeLength = 81978.2;
-    ParticleFilter particle_filter = ParticleFilter(latitudeLength, longitudeLength);
+    double gps_noise = 0.8;
+    double odom_noise[3] = {0.5, 0.5, 0.1};
+    ParticleFilter particle_filter = ParticleFilter(num_particles, latitudeLength, longitudeLength, gps_noise, odom_noise[0], odom_noise[1], odom_noise[2]);
     ASSERT_EQ(particle_filter.get_latitudeLength(), latitudeLength);
     ASSERT_EQ(particle_filter.get_longitudeLength(), longitudeLength);
 
@@ -20,7 +29,6 @@ TEST(ParticleFilterTests, initialization_test) {
 
     std::vector<std::vector<double>> cpp_data = particle_filter.get_particles_data();
 
-    printf("%d \n", cpp_data.size());
     for(int i = 0; i < cpp_data.size(); i++) {
         ASSERT_NEAR(cpp_data[i][0], python_data[i][0], 0.00001);
         ASSERT_NEAR(cpp_data[i][1], python_data[i][1], 0.00001);
@@ -29,65 +37,64 @@ TEST(ParticleFilterTests, initialization_test) {
 }
 
 TEST(ParticleFilterTests, feedback_test) {
+    //GTEST_SKIP() << "skipping feedback test";
+    rapidcsv::Document motor_feedback_sheet("/home/tony/autonav_software_2024/autonav_ws/src/autonav_filters/tests/ENTRY_FEEDBACK.csv");
+
+    std::vector<double> delta_xs = motor_feedback_sheet.GetColumn<double>(2);
+    std::vector<double> delta_ys = motor_feedback_sheet.GetColumn<double>(3);
+    std::vector<double> delta_thetas = motor_feedback_sheet.GetColumn<double>(4);
+
+    //printf("delta_xs size: %ld\n", delta_xs.size());
+
+    std::vector sliced_delta_xs(delta_xs.begin(), delta_xs.begin() + 1402);
+    std::vector sliced_delta_ys(delta_ys.begin(), delta_ys.begin() + 1402);
+    std::vector sliced_delta_thetas(delta_thetas.begin(), delta_thetas.begin() + 1402);
+    // printf("sliced_delta_xs size: %ld\n", sliced_delta_xs.size());
+    // printf("sliced_delta_xs size: %ld\n", sliced_delta_xs.size());
+    // printf("sliced_delta_xs size: %ld\n", sliced_delta_xs.size());
+
+    int num_particles = 750;
     double latitudeLength = 111086.2;
     double longitudeLength = 81978.2;
-    ParticleFilter particle_filter = ParticleFilter(latitudeLength, longitudeLength);
+    double gps_noise = 0.8;
+    double odom_noise[3] = {0.5, 0.5, 0.1};
+    ParticleFilter particle_filter = ParticleFilter(num_particles, latitudeLength, longitudeLength, gps_noise, odom_noise[0], odom_noise[1], odom_noise[2]);
     particle_filter.init_particles();
 
-    std::vector<double> delta_x_data = {0.0035,0.0171,0.0492};
-    std::vector<double> delta_y_data = {0,0.0001,0.0006};
-    std::vector<double> delta_theta_data = {0.003,0.0172,0.0154};
+    // construct feedback messages
 
-    // check the particles after 1 motorFeedBack
+    autonav_msgs::msg::MotorFeedback motor_message;
+    autonav_msgs::msg::GPSFeedback gps_message;
+    std::vector<double> position_vector; 
+    for (int i = 0; i < 1402; i++) {
+        motor_message.delta_x = sliced_delta_xs[i];
+        motor_message.delta_y = sliced_delta_ys[i];
+        motor_message.delta_theta = sliced_delta_thetas[i];
 
-    autonav_messages::msg::MotorFeedback message = autonav_messages::msg::MotorFeedback();
-    message.delta_x = delta_x_data[0];
-    message.delta_y = delta_y_data[0];
-    message.delta_theta = delta_theta_data[0];
+        position_vector = particle_filter.feedback(motor_message);
+    }
 
-    std::vector<double> python_feedback_1 = {-4.330846369663355e-22, -1.2710521335373553e-22, 1.3667852347641414};
-    std::vector<double> feedback_vector_1 = particle_filter.feedback(message);
+    // printf("%f\n", position_vector[0]);
+    // printf("%f\n", position_vector[1]);
+    // printf("%f\n", position_vector[2]);
 
-    ASSERT_NEAR(feedback_vector_1[0], python_feedback_1[0], 0.0001);
-    ASSERT_NEAR(feedback_vector_1[1], python_feedback_1[1], 0.0001);
-    ASSERT_NEAR(feedback_vector_1[2], python_feedback_1[2], 1);
-
-
-    // check the particles after 2 motorFeedBacks
-
-    message.delta_x = delta_x_data[1];
-    message.delta_y = delta_y_data[1];
-    message.delta_theta = delta_theta_data[1];
-
-    std::vector<double> python_feedback_2 = {1.006586515062011e-21, 2.660556662374303e-22, 4.4964617464665135};
-    std::vector<double> feedback_vector_2 = particle_filter.feedback(message);
-
-    ASSERT_NEAR(feedback_vector_2[0], python_feedback_2[0], 0.0001);
-    ASSERT_NEAR(feedback_vector_2[1], python_feedback_2[1], 0.0001);
-    ASSERT_NEAR(feedback_vector_2[2], python_feedback_2[2], 1);
-
-    // check the particles after 3 motorFeedBacks
-
-    message.delta_x = delta_x_data[2];
-    message.delta_y = delta_y_data[2];
-    message.delta_theta = delta_theta_data[2];
-
-    std::vector<double> python_feedback_3 = {-1.8932661725304283e-21, -3.4452908389848775e-20, 4.443694235608761};
-    std::vector<double> feedback_vector_3 = particle_filter.feedback(message);
-
-    ASSERT_NEAR(feedback_vector_3[0], python_feedback_3[0], 0.0001);
-    ASSERT_NEAR(feedback_vector_3[1], python_feedback_3[1], 0.0001);
-    ASSERT_NEAR(feedback_vector_3[2], python_feedback_3[2], 1);
+    EXPECT_EQ(position_vector[0], 1.4589810840940724e-15);
+    EXPECT_EQ(position_vector[1], -1.1226575225009583e-14);
+    EXPECT_EQ(position_vector[2], 3.4728605908690113);
 }
 
 TEST(ParticleFilterTests, gps_test) {
+    //GTEST_SKIP() << "Skipping gps_test";
+    int num_particles = 750;
     double latitudeLength = 111086.2;
     double longitudeLength = 81978.2;
-    ParticleFilter particle_filter = ParticleFilter(latitudeLength, longitudeLength);
+    double gps_noise = 0.8;
+    double odom_noise[3] = {0.5, 0.5, 0.1};
+    ParticleFilter particle_filter = ParticleFilter(num_particles, latitudeLength, longitudeLength, gps_noise, odom_noise[0], odom_noise[1], odom_noise[2]);
 
     particle_filter.init_particles();
 
-    autonav_messages::msg::GPSFeedback gps_feedback_1 = autonav_messages::msg::GPSFeedback();
+    autonav_msgs::msg::GPSFeedback gps_feedback_1 = autonav_msgs::msg::GPSFeedback();
     gps_feedback_1.latitude = 42.6681254;
     gps_feedback_1.longitude = -83.2188876;
     gps_feedback_1.altitude = 234.891;
@@ -100,6 +107,83 @@ TEST(ParticleFilterTests, gps_test) {
     std::vector<double> gps_vector_1 = particle_filter.gps(gps_feedback_1);
 
     ASSERT_EQ(gps_vector_1, python_gps_vector_1);
+}
+
+TEST(ParticleFilterTests, complete_test) {
+    // This test will fail sometimes because the particle filter is non-deterministic
+    int num_particles = 750;
+    double latitudeLength = 111086.2;
+    double longitudeLength = 81978.2;
+    double gps_noise = 0.8;
+    double odom_noise[3] = {0.5, 0.5, 0.1};
+    ParticleFilter particle_filter = ParticleFilter(num_particles, latitudeLength, longitudeLength, gps_noise, odom_noise[0], odom_noise[1], odom_noise[2]);
+
+    particle_filter.init_particles();
+
+    rapidcsv::Document motor_feedback_sheet("/home/tony/autonav_software_2024/autonav_ws/src/autonav_filters/tests/ENTRY_FEEDBACK.csv");
+    rapidcsv::Document gps_feedback_sheet("/home/tony/autonav_software_2024/autonav_ws/src/autonav_filters/tests/ENTRY_GPS.csv");
+
+    std::vector<double> delta_xs = motor_feedback_sheet.GetColumn<double>(2);
+    std::vector<double> delta_ys = motor_feedback_sheet.GetColumn<double>(3);
+    std::vector<double> delta_thetas = motor_feedback_sheet.GetColumn<double>(4);
+
+    std::vector<double> latitudes = gps_feedback_sheet.GetColumn<double>(2);
+    std::vector<double> longitudes = gps_feedback_sheet.GetColumn<double>(3);
+    std::vector<double> altitudes = gps_feedback_sheet.GetColumn<double>(4);
+    std::vector<double> gps_fix = gps_feedback_sheet.GetColumn<double>(5);
+    std::vector<std::string> is_locked_str = gps_feedback_sheet.GetColumn<std::string>(6);
+    std::vector<bool> is_locked;
+    std::vector<double> satellites = gps_feedback_sheet.GetColumn<double>(7);
+
+    for (std::string s : is_locked_str) {
+        is_locked.push_back(csv_utils::to_bool(s));
+    };
+
+    // cut down the deltas until they are the same length as the gps values
+    
+    int n = latitudes.size();
+    //n = 1;
+
+    std::vector sliced_delta_xs(delta_xs.begin(), delta_xs.begin() + n);
+    std::vector sliced_delta_ys(delta_ys.begin(), delta_ys.begin() + n);
+    std::vector sliced_delta_thetas(delta_thetas.begin(), delta_thetas.begin() + n);
+
+    // construct feedback messages
+
+    autonav_msgs::msg::MotorFeedback motor_message;
+    autonav_msgs::msg::GPSFeedback gps_message;
+    std::vector<double> position_vector;
+    std::vector<double> gps_vector;
+    for (int i = 0; i < n; i++) {
+        motor_message.delta_x = sliced_delta_xs[i];
+        //printf("motor_mesage delta_x %f\n", motor_message.delta_x);
+        motor_message.delta_y = sliced_delta_ys[i];
+        //printf("motor_mesage delta_y %f\n", motor_message.delta_y);
+        motor_message.delta_theta = sliced_delta_thetas[i];
+        //printf("motor_mesage delta_theta %f\n\n", motor_message.delta_theta);
+
+        gps_message.latitude = latitudes[i];
+        gps_message.longitude = longitudes[i];
+        gps_message.altitude = altitudes[i];
+        gps_message.gps_fix = gps_fix[i];
+        gps_message.is_locked = is_locked[i];
+        gps_message.satellites = satellites[i];
+
+        position_vector = particle_filter.feedback(motor_message);
+        gps_vector = particle_filter.gps(gps_message);
+    }
+
+    printf("%f\n", position_vector[0]);
+    printf("%f\n", position_vector[1]);
+    printf("%f\n", position_vector[2]);
+
+    ASSERT_NEAR(position_vector[0], 17.507143650199076, 1.0);
+    ASSERT_NEAR(position_vector[1], 17.762181504279035, 1.0);
+    ASSERT_NEAR(position_vector[2], 4.3224496833375365, 1.0);
+
+    /*std::filesystem::path cwd = std::filesystem::current_path();
+    std::string cwd_str = cwd.string();
+    printf(cwd_str.c_str()); */
 }
 
 int main(int argc, char* argv[]) {

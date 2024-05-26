@@ -34,7 +34,7 @@ namespace SCR
         return "Unknown";
     }
 
-    enum SystemState : uint8_t
+    enum SystemState : uint16_t
     {
         DISABLED = 0,
         AUTONOMOUS = 1,
@@ -58,7 +58,7 @@ namespace SCR
         return "Unknown";
     }
 
-    enum SystemMode : uint8_t
+    enum SystemMode : uint32_t
     {
         COMPETITION = 0,
         SIMULATION = 1,

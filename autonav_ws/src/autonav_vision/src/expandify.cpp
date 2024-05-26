@@ -114,6 +114,8 @@ public:
 
     void onConfigSpaceReceived(const nav_msgs::msg::OccupancyGrid::SharedPtr cfg)
     {
+        setvbuf(stdout, NULL, _IONBF, BUFSIZ);
+        RCLCPP_DEBUG(this->get_logger(), "configuration space received");
         if (device_state != SCR::DeviceState::OPERATING || system_state != SCR::SystemState::AUTONOMOUS)
         {
             return;

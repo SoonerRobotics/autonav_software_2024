@@ -75,7 +75,7 @@ class ImageTransformer(Node):
         self.dir = dir
 
     def directionify(self, topic):
-        return topic + "/" + self.dir
+        return topic
 
     def init(self):
         self.camera_subscriber = self.create_subscription(CompressedImage, self.directionify("/autonav/camera/compressed") , self.onImageReceived, self.qos_profile)
@@ -281,9 +281,11 @@ class ImageTransformer(Node):
 
 def main():
     rclpy.init()
-    node_left = ImageTransformer(dir = "left")
-    node_right = ImageTransformer(dir = "right")
-    Node.run_nodes([node_left, node_right])
+    # node_left = ImageTransformer(dir = "left")
+    # node_right = ImageTransformer(dir = "right")
+    node_right = ImageTransformer(dir = "")
+    # Node.run_nodes([node_left, node_right])
+    Node.run_nodes([node_right])
     rclpy.shutdown()
 
 

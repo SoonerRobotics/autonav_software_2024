@@ -64,6 +64,7 @@ class FiltersNode(Node):
             self.onReset()
 
     def onGPSReceived(self, msg: GPSFeedback):
+        #self.get_logger().info("RECEIVED GPS")
         if msg.gps_fix == 0 and msg.is_locked == False:
             return
 
@@ -89,12 +90,15 @@ class FiltersNode(Node):
         position = Position()
         position.x = averages[0]
         position.y = averages[1]
+        #self.get_logger().info(f"position.x {position.x}\n")
+        #self.get_logger().info(f"position.y {position.y}\n")
         position.theta = (-1 * math.pi * 2 + averages[2]) * 1
 
         if self.first_gps is not None:
             gps_x = self.first_gps.latitude + position.x / self.latitude_length
             gps_y = self.first_gps.longitude - position.y / self.longitude_length
             position.latitude = gps_x
+            #self.get_logger().info(f"position.latitude {position.latitude}\n")
             position.longitude = gps_y
 
         self.position_publisher.publish(position)
