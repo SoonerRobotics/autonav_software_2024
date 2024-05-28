@@ -176,7 +176,7 @@ class SerialMotors(Node):
         packed_data.red = lights.red
         packed_data.green = lights.green
         packed_data.blue = lights.blue
-        packed_data.blink_period = 500 / 10
+        packed_data.blink_period = 500
         can_msg = can.Message(
             arbitration_id=SAFETY_LIGHTS_ID, data=bytes(packed_data))
         try:
