@@ -116,38 +116,35 @@ class ImageTransformer(Node):
         # return the ordered coordinates
         return rect
     
-    def epic_noah_transform(self, image, pts, top_width, bottom_width, height, offset):
+    def tofu_transform(self, image):
 
-        rect = self.order_points(pts)
-        (tl, tr, br, bl) = rect
-        # compute the width of the new image, which will be the
-        # maximum distance between bottom-right and bottom-left
-        # x-coordiates or the top-right and top-left x-coordinates
-        widthA = np.sqrt(((br[0] - bl[0]) ** 2) + ((br[1] - bl[1]) ** 2))
-        widthB = np.sqrt(((tr[0] - tl[0]) ** 2) + ((tr[1] - tl[1]) ** 2))
-        maxWidth = max(int(widthA), int(widthB))
-        # compute the height of the new image, which will be the
-        # maximum distance between the top-right and bottom-right
-        # y-coordinates or the top-left and bottom-left y-coordinates
-        heightA = np.sqrt(((tr[0] - br[0]) ** 2) + ((tr[1] - br[1]) ** 2))
-        heightB = np.sqrt(((tl[0] - bl[0]) ** 2) + ((tl[1] - bl[1]) ** 2))
-        maxHeight = max(int(heightA), int(heightB))
- 
         if self.dir == "left":
+            rect = np.array([
+                [0, self.config.top_width],
+                [0, 640],
+                [480, 640],
+                [480, self.config.top_width]], dtype="float32")
             dst = np.array([
-                [240 - bottom_width - offset, 0],
-                [240 - offset, 0],
-                [240 - offset, height - 1],
-                [240 - top_width - offset, height - 1]], dtype="float32")
+                [0, 0],
+                [40 - self.config.bottom_width - self.config.offset, 80],
+                [40 - self.config.offset, 80],
+                [40 - self.config.offset, 0]], dtype="float32")
         else:
+            rect = np.array([
+                [0, self.config.top_width],
+                [0, 640],
+                [480, 640],
+                [480, self.config.top_width]], dtype="float32")
             dst = np.array([
-                [240 + offset, 0],
-                [240 + bottom_width + offset, 0],
-                [240 + top_width + offset, height - 1],
-                [240 + offset, height - 1]], dtype="float32")
+                [40 + self.config.offset, 0],
+                [40 + self.config.offset, 80],
+                [40 + self.config.bottom_width + self.config.offset, 80],
+                [80, 0]], dtype="float32")
+            
         # compute the perspective transform matrix and then apply it
         M = cv2.getPerspectiveTransform(rect, dst)
-        warped = cv2.warpPerspective(image, M, (maxWidth, maxHeight))
+
+        warped = cv2.warpPerspective(image, M, (80, 80))
         # return the warped image
         return warped
 
@@ -208,10 +205,24 @@ class ImageTransformer(Node):
 
         # Draw parallelogram for region of disinterest
         parallelogram = self.config.parallelogram_left if self.dir == "left" else self.config.parallelogram_right
+
+        if self.dir == "left":
+            pts = [
+                [0, self.config.top_width],
+                [0, 640],
+                [480, 640],
+                [480, self.config.top_width]]
+        else:
+            pts = [
+                [0, self.config.top_width],
+                [0, 640],
+                [480, 640],
+                [480, self.config.top_width]]
+
         cv2.polylines(img_copy, [np.array(parallelogram)], True, (0, 255, 0), 2)
 
         # Draw perspective transform points
-        pts = [self.config.left_topleft, self.config.left_topright, self.config.left_bottomright, self.config.left_bottomleft] if self.dir == "left" else [self.config.right_topleft, self.config.right_topright, self.config.right_bottomright, self.config.right_bottomleft]
+        # pts = [self.config.left_topleft, self.config.left_topright, self.config.left_bottomright, self.config.left_bottomleft] if self.dir == "left" else [self.config.right_topleft, self.config.right_topright, self.config.right_bottomright, self.config.right_bottomleft]
         cv2.polylines(img_copy, [np.array(pts)], True, (0, 0, 255), 2)
         
         self.camera_debug_publisher.publish(g_bridge.cv2_to_compressed_imgmsg(img_copy))
@@ -250,10 +261,7 @@ class ImageTransformer(Node):
     def apply_perspective_transform(self, img):
         if self.config.disable_perspective_transform:
             return img
-
-        pts = [self.config.left_topleft, self.config.left_topright, self.config.left_bottomright, self.config.left_bottomleft] if self.dir == "left" else [self.config.right_topleft, self.config.right_topright, self.config.right_bottomright, self.config.right_bottomleft]
-        # mask = self.four_point_transform(img, np.array(pts))
-        mask = self.epic_noah_transform(img, np.array(pts), self.config.top_width, self.config.bottom_width, 640, self.config.offset)
+        mask = self.tofu_transform(img)
         return mask
 
     def onImageReceived(self, image: CompressedImage):
