@@ -106,8 +106,8 @@ class SerialMotors(Node):
             feedback.delta_x = deltaX / 10000.0
             self.motorFeedbackPublisher.publish(feedback)
 
-        # if arb_id == ESTOP_ID:
-        #     self.setEStop(True)
+        if arb_id == ESTOP_ID:
+            self.set_system_mobility(False)
 
         if arb_id == MOBILITY_STOP_ID:
             self.set_system_mobility(False)
