@@ -77,6 +77,7 @@ class SerialMotors(Node):
 
         # If we enter autonomous mode, we need to send a stop message to the motors
         if old.state != SystemStateEnum.AUTONOMOUS and updated.state == SystemStateEnum.AUTONOMOUS:
+            self.set_system_mobility(False)
             can_msg = can.Message(arbitration_id=MOBILITY_STOP_ID, data=bytes([0]))
             try:
                 self.can.send(can_msg)
@@ -84,6 +85,7 @@ class SerialMotors(Node):
                 pass
 
         if old.state == SystemStateEnum.AUTONOMOUS and updated.state != SystemStateEnum.AUTONOMOUS:
+            self.set_system_mobility(False)
             can_msg = can.Message(arbitration_id=MOBILITY_STOP_ID, data=bytes([0]))
             try:
                 self.can.send(can_msg)
