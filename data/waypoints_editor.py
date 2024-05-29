@@ -8,35 +8,60 @@ from math import pi
 
 WAYPOINT_FILENAME = "data/waypoints.csv"
 
+# class to handle gui callbacks and stuff
 class WaypointHandler:
-    def __init__(self):
-        self.waypoints = loadWaypointsFile()
+    #TODO we don't need to create a new axis do we? how do we replot data in a different color? and like modify just the data we want to and not the GPS data?
+    def __init__(self, waypts, dir, ax):
+        # waypoints dict {@see loadWaypointsFile()} for more info
+        self.waypoints = waypts
+        self.direction = dir # north or south
+        self.index = 0 # index of the currently selected waypoint
 
-        self.index = 0
+        self.axis = ax # reference to the axis so we can draw on it
 
-        drawSelectCircle()
+        # draw all the waypoints onto the screen now that we're set up
+        self.redraw()
     
-    def drawSelectCircle(self):
-        pass #TODO draw a circle around the currently selected waypoint
-    
-    def add(self, event):
-        print(event)
-        #TODO
+    def redraw(self):
+        #TODO draw all the waypoints and then a circle around the currently selected waypoint
         # call l.set_ydata(ydata) or something followed by plt.draw() or something
-
-    def subtract(self, event):
-        print(event)
-
-        # ??? how the heck do we pass direction into this? I feel like this should handle everything, or we need to do some in general more OOP stuff up in here
-        self.waypoints[self.direction]
-        #TODO
+        x = [pt[1] for pt in self.waypoints[direction]] # because pairs are (lat, lon) and lat is y, longitude is x
+        y = [pt[0] for pt in self.waypoints[direction]]
+        
+        ax.plot(x, y)
     
-    # save waypoints file callback
+    # callback to add a waypoint after the currently selected waypoint
+    def add(self, event):
+        #TODO figure out how to insert a waypoint or something here
+        #FIXME does this need to be index+1?
+        self.waypoints[self.direction].insert(self.index, w)
+
+        # and then we updated so redraw
+        self.redraw()
+
+    # callback to remove the current waypoint
+    def subtract(self, event):
+        # remove the waypoint at the current index (ie the currently selected waypoint)
+        self.waypoints[self.direction].pop(self.index)
+
+        # redraw the waypoints so the user can tell the waypoint was deleted
+        self.redraw()
+    
+    # callback to save waypoints file callback
     def save(self, event):
         # open the file in write mode
         with open(WAYPOINT_FILENAME, "w") as f:
-            # and write the dict (TODO this doesn't work dummy)
-            f.writelines(self.waypoints)
+            # write the headers
+            f.write("label,lat,lon\n")
+
+            # and then for every different list of waypoints we have in the file
+            for name, listOfWaypts in self.waypoints:
+                # and for every point in those lists
+                for point in listOfWaypts:
+                    # write that point to the file
+                    #TODO use format strings or something because this is ugly
+                    f.write(name + "," + str(point[0]) + "," + str(point[1]) + "\n")
+
 
 # copied/pasted from https://github.com/SoonerRobotics/autonav_software_2024/blob/feat/waypoints_file/autonav_ws/src/autonav_nav/src/astar.py
 def loadWaypointsFile():
@@ -101,12 +126,12 @@ def getGpsPoints(filepath):
     return points, direction
 
 # make the GUI (buttons and stuff, register event handlers, etc)
-def createGui(fig, ax):
+def createGui(fig, ax, waypts, direction):
     BUTTON_Y = 0.05
     BUTTON_WIDTH = 0.2
     BUTTON_HEIGHT = 0.075
 
-    callback = WaypointHandler()
+    callback = WaypointHandler(waypts, direction, ax)
 
     # TODO figure out what this does
     fig.subplots_adjust(bottom=0.3)
@@ -142,13 +167,10 @@ def main():
     root.withdraw()
 
     # load all the waypoints from the file
-    waypts = loadWaypointsFile() # FIXME we call this in the waypoints handler, we can probably drop it
+    waypts = loadWaypointsFile()
 
     # get the logged GPS points
     gpsData, direction = getGpsPoints(getFilepath())
-
-    # get the right set of waypoints (north or south) by doing the same auto-detection that the astar node does, and store them
-    currWaypts = waypts[direction]
 
     # boilerplate matplotlib, get our figure container and the axes so we can draw on them with the functions
     figure, axis = plt.subplots()
@@ -157,13 +179,10 @@ def main():
     drawPlot(gpsData, axis)
 
     # create the gui (and keep the references to objects so they don't go out of scope and get shot)
-    f, a, pb, mb = createGui(figure, axis)
+    f, a, pb, mb = createGui(figure, axis, waypts, direction)
 
     # show everything and have matplotlib run the gui event loop and call our callbacks and everything
     plt.show()
-
-    # main GUI loop
-    #TODO
 
 
 # standard-issue main check
