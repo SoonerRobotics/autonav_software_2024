@@ -6,28 +6,44 @@ from matplotlib.widgets import Button
 
 from math import pi
 
+WAYPOINT_FILENAME = "data/waypoints.csv"
+
 class WaypointHandler:
     def __init__(self):
-        self.waypoints = {}
+        self.waypoints = loadWaypointsFile()
 
         self.index = 0
+
+        drawSelectCircle()
+    
+    def drawSelectCircle(self):
+        pass #TODO draw a circle around the currently selected waypoint
     
     def add(self, event):
         print(event)
-        print(dir(event))
         #TODO
-        pass
+        # call l.set_ydata(ydata) or something followed by plt.draw() or something
 
     def subtract(self, event):
+        print(event)
+
+        # ??? how the heck do we pass direction into this? I feel like this should handle everything, or we need to do some in general more OOP stuff up in here
+        self.waypoints[self.direction]
         #TODO
-        pass
+    
+    # save waypoints file callback
+    def save(self, event):
+        # open the file in write mode
+        with open(WAYPOINT_FILENAME, "w") as f:
+            # and write the dict (TODO this doesn't work dummy)
+            f.writelines(self.waypoints)
 
 # copied/pasted from https://github.com/SoonerRobotics/autonav_software_2024/blob/feat/waypoints_file/autonav_ws/src/autonav_nav/src/astar.py
 def loadWaypointsFile():
     waypoints = {}
 
     # read GPS waypoints data from file
-    with open("data/waypoints.csv", "r") as f:
+    with open(WAYPOINT_FILENAME, "r") as f:
         for line in f.readlines()[1:]: # skip the first line because that's the CSV headers
             label, lat, lon = line.split(",")
 
@@ -62,9 +78,12 @@ def getGpsPoints(filepath):
     # returns a tuple with ([x1, x2, x3, ...], [y1, y2, y3, ...])
     points = ([], [])
 
+    # north or south, which changes which waypoints set we're editing
+    direction = "none"
+
     # open and read the file
     with open(filepath, "r") as logfile:
-        for line in logfile.readlines():
+        for idx, line in enumerate(logfile.readlines()):
             # data is logged in the CSV like timestamp, name, x, y, theta (heading), latitude, longitude
 
             lat = float(line.split(",")[5].strip())
@@ -74,31 +93,40 @@ def getGpsPoints(filepath):
             points[1].append(lon) # lon is x
             points[0].append(lat) # lat is y
 
-    return points
+            # if we're pretty far into the run, heading should be stable
+            if idx == 200:
+                # so we ought to be able to tell if we're heading north or south
+                direction = getWaypointsDirection(float(line.split(",")[4]))
+
+    return points, direction
 
 # make the GUI (buttons and stuff, register event handlers, etc)
 def createGui(fig, ax):
+    BUTTON_Y = 0.05
+    BUTTON_WIDTH = 0.2
+    BUTTON_HEIGHT = 0.075
+
     callback = WaypointHandler()
 
     # TODO figure out what this does
     fig.subplots_adjust(bottom=0.3)
 
     # create the add waypoint button
-    plus_axis = fig.add_axes([0.4, 0.05, 0.2, 0.075])
+    plus_axis = fig.add_axes([0.4, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT])
     plus_button = Button(plus_axis, "add waypoint")
     plus_button.on_clicked(callback.add)
 
     # create the subtract waypoint button
-    minus_axis = fig.add_axes([0.7, 0.05, 0.2, 0.075])
+    minus_axis = fig.add_axes([0.7, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT])
     minus_button = Button(minus_axis, "subtract waypoint")
     minus_button.on_clicked(callback.subtract)
 
-    # go ahead and show what we've drawn so far
-    # plt.show()
+    # create the 'save waypoints file' button to write the file back
+    save_axis = fig.add_axes([0.1, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT])
+    save_button = Button(save_axis, "save waypoints")
+    save_button.on_clicked(callback.save)
 
-    # call l.set_ydata(ydata) or something followed by plt.draw() or something
-
-    return fig, ax
+    return fig, ax, plus_button, minus_button
 
 
 # draw the logged GPS points on the screen
@@ -107,25 +135,31 @@ def drawPlot(listOfPoints, ax):
 
 
 def main():
-    # needed for the file dialog box for choosing a run to be displayed
+    # plt.ion() #?????
+
+    # needed for the file dialog box for choosing a run to be displayed (will be called in getFilepath())
     root = tkinter.Tk()
     root.withdraw()
 
     # load all the waypoints from the file
-    waypts = loadWaypointsFile()
+    waypts = loadWaypointsFile() # FIXME we call this in the waypoints handler, we can probably drop it
 
     # get the logged GPS points
-    gpsData = getGpsPoints(getFilepath())
+    gpsData, direction = getGpsPoints(getFilepath())
 
-    #TODO
+    # get the right set of waypoints (north or south) by doing the same auto-detection that the astar node does, and store them
+    currWaypts = waypts[direction]
+
+    # boilerplate matplotlib, get our figure container and the axes so we can draw on them with the functions
     figure, axis = plt.subplots()
 
     # draw the GPS points on the frame
     drawPlot(gpsData, axis)
 
-    # create the gui
-    createGui(figure, axis)
+    # create the gui (and keep the references to objects so they don't go out of scope and get shot)
+    f, a, pb, mb = createGui(figure, axis)
 
+    # show everything and have matplotlib run the gui event loop and call our callbacks and everything
     plt.show()
 
     # main GUI loop
