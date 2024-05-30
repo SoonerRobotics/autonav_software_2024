@@ -2,6 +2,7 @@ import tkinter
 from tkinter import filedialog
 
 import matplotlib.pyplot as plt
+from matplotlib.markers import MarkerStyle
 from matplotlib.widgets import Button
 
 from math import pi
@@ -10,25 +11,42 @@ WAYPOINT_FILENAME = "data/waypoints.csv"
 
 # class to handle gui callbacks and stuff
 class WaypointHandler:
-    #TODO we don't need to create a new axis do we? how do we replot data in a different color? and like modify just the data we want to and not the GPS data?
+    #TODO we don't need to create a new axis do we? how do we replot data in a different color? 
+    # and like modify just the data we want to and not the GPS data?
     def __init__(self, waypts, dir, ax):
         # waypoints dict {@see loadWaypointsFile()} for more info
         self.waypoints = waypts
         self.direction = dir # north or south
+        # self.mask = [False] * self.waypoints[self.direction] # create a 
         self.index = 0 # index of the currently selected waypoint
 
+        print("DIRECTION: " + dir)
+
         self.axis = ax # reference to the axis so we can draw on it
+        self.firstDraw = True # if this is the first time we've drawn to the screen or not
 
         # draw all the waypoints onto the screen now that we're set up
         self.redraw()
-    
+
+
+    # repaint the waypoints on the screen so the user can see what they are editing    
     def redraw(self):
-        #TODO draw all the waypoints and then a circle around the currently selected waypoint
-        # call l.set_ydata(ydata) or something followed by plt.draw() or something
-        x = [pt[1] for pt in self.waypoints[direction]] # because pairs are (lat, lon) and lat is y, longitude is x
-        y = [pt[0] for pt in self.waypoints[direction]]
+        x = [pt[0] for pt in self.waypoints[self.direction]] # because pairs are (lat, lon) and lat is y, longitude is x
+        y = [pt[1] for pt in self.waypoints[self.direction]] # exept not actually, it is currently correct, so I don't know what's going on
+
+        # draw a black ring around the currently selected waypoint
+        circle = plt.Circle((x[self.index], y[self.index]), 0.00001, color="black")
+        self.axis.add_patch(circle) # https://stackoverflow.com/questions/9215658/plot-a-circle-with-pyplot
         
-        ax.plot(x, y)
+        # if it's the first time we're drawing,
+        if self.firstDraw:
+            # we need to plot everything
+            self.axis.plot(x, y, linestyle="", marker=MarkerStyle("o"), color="#00FF44")
+        else:
+            # otherwise don't draw ghost waypoints that have been deleted, just set the y data or something idk
+            axis.set_ydata(y) #FIXME this still leaves waypoints after they've been deleted
+        
+        plt.draw() # redraw to the screen (not plt.show() because that would be blocking and then we'd have problems)
     
     # callback to add a waypoint after the currently selected waypoint
     def add(self, event):
@@ -59,8 +77,7 @@ class WaypointHandler:
                 # and for every point in those lists
                 for point in listOfWaypts:
                     # write that point to the file
-                    #TODO use format strings or something because this is ugly
-                    f.write(name + "," + str(point[0]) + "," + str(point[1]) + "\n")
+                    f.write(f"{name},{point[1]},{point[0]}\n")
 
 
 # copied/pasted from https://github.com/SoonerRobotics/autonav_software_2024/blob/feat/waypoints_file/autonav_ws/src/autonav_nav/src/astar.py
@@ -127,6 +144,7 @@ def getGpsPoints(filepath):
 
 # make the GUI (buttons and stuff, register event handlers, etc)
 def createGui(fig, ax, waypts, direction):
+    # for reference code was based partially on https://matplotlib.org/stable/gallery/widgets/buttons.html
     BUTTON_Y = 0.05
     BUTTON_WIDTH = 0.2
     BUTTON_HEIGHT = 0.075
@@ -156,7 +174,7 @@ def createGui(fig, ax, waypts, direction):
 
 # draw the logged GPS points on the screen
 def drawPlot(listOfPoints, ax):
-    ax.plot(listOfPoints[0], listOfPoints[1])
+    ax.plot(listOfPoints[0], listOfPoints[1], color="blue")
 
 
 def main():
