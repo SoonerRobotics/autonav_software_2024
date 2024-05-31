@@ -8,11 +8,17 @@ from matplotlib.backend_bases import MouseButton
 
 from math import pi
 
+DEBUG = False
 WAYPOINT_FILENAME = "data/waypoints.csv"
+
 BUTTON_Y = 0.05
 BUTTON_WIDTH = 0.15
 BUTTON_HEIGHT = 0.075
+RECT_WIDTH = 0.00002
+
 GPS_DATA_COLOR = "blue"
+SELECT_COLOR = "red"
+WAYPT_COLOR = "orange"
 
 # no idea if this should be a class method or not
 # really the thing to do would be to make a Point class and associated functions,
@@ -31,6 +37,9 @@ class WaypointHandler:
         # get the logged GPS points
         # uses Tkinter, stolen code from https://github.com/Team-OKC-Robotics/FRC-2023/blob/master/process_wpilib_logs.py
         self.gpsData = self.getGpsPoints(filedialog.askopenfilename())
+
+        if DEBUG:
+            print(f"DIRECTION: {self.direction}")
 
         self.index = 0 # index of the currently selected waypoint
         self.inEditMode = False
@@ -63,7 +72,6 @@ class WaypointHandler:
                     # if it doesn't exist then create it
                     self.waypoints[label] = []
                     self.waypoints[label].append((float(lat), float(lon)))
-        print("WAYPOINTS LOADED")
 
     # get the gps points as a tuple of all the lons and then all the lats, so it can be matplotlib'd instantly
     def getGpsPoints(self, filepath):
@@ -91,8 +99,6 @@ class WaypointHandler:
                     # detect which direction we're heading and return the right waypoint label
                     # code stolen and very very heavily modified and condensed from autonav_nav/astar.py
                     self.direction = "compSouth" if 120 < abs((float(line.split(",")[4])) * 180 / pi) < 240 else "compNorth"
-                    print("GOT THE DIRECTION")
-        print("GOT THE GPS DATA")
         return points
 
     # make the GUI (buttons and stuff, register event handlers, etc)
@@ -124,12 +130,8 @@ class WaypointHandler:
         # binds an event handler so we can keep track of the mouse
         self.mosue_binding_id = plt.connect("button_press_event", self.on_click)
 
-        print("GUI CREATED")
-
     # repaint the waypoints on the screen so the user can see what they are editing    
     def redraw(self):
-        print("REDRAWING")
-
         # clear existing data
         self.axis.clear()
 
@@ -140,22 +142,19 @@ class WaypointHandler:
         y = [pt[1] for pt in self.waypoints[self.direction]] # exept not actually, it is currently correct, so I don't know what's going on
 
         # draw a black ring around the currently selected waypoint
-        circle = plt.Circle((x[self.index], y[self.index]), 0.00001, color="black")
+        circle = plt.Rectangle((x[self.index] - RECT_WIDTH/2, y[self.index] - RECT_WIDTH/2), RECT_WIDTH, RECT_WIDTH, color=SELECT_COLOR)
         self.axis.add_patch(circle) # https://stackoverflow.com/questions/9215658/plot-a-circle-with-pyplot
         
         # plot everything
-        self.axis.plot(x, y, linestyle="", marker=MarkerStyle("o"), color="#00FF44")
+        self.axis.plot(x, y, linestyle="", marker=MarkerStyle("o"), color=WAYPT_COLOR, markersize=10)
         
         plt.draw() # redraw to the screen (not plt.show() because that would be blocking and then we'd have problems)
-        print("DRAWN!")
     
     # callback to add a waypoint after the currently selected waypoint
     def add(self, event):
         # insert a waypoint after the current waypoint, at the same location
         #FIXME does this need to be index+1? or just index?
         self.waypoints[self.direction].insert(self.index + 1, self.waypoints[self.direction][self.index])
-
-        print("WAYPOINT ADDED")
 
         # and then we updated so redraw
         self.redraw()
@@ -165,7 +164,8 @@ class WaypointHandler:
         # remove the waypoint at the current index (ie the currently selected waypoint)
         self.waypoints[self.direction].pop(self.index)
 
-        print("WAYPOINT SUBTRACTED")
+        # if that was the last waypoint, we need to move the index to be one less, so do that
+        self.index = min(self.index, len(self.waypoints[self.direction])-1)
 
         # redraw the waypoints so the user can tell the waypoint was deleted
         self.redraw()
@@ -190,17 +190,23 @@ class WaypointHandler:
     
     # callback for mouse clicks (needed for moving and selecting waypoints)
     def on_click(self, event):
-        # if it's a left click and in bounds of the graph
-        if event.button is MouseButton.LEFT and event.inaxes:
+        if DEBUG:
+            print(event.x, event.y, event.xdata, event.ydata)
+
+        # if it's a left click and in bounds of the graph, and also not one of the buttons (all latitudes are around -83, so < 0, but the buttons are at like .5, which is why that check is there)
+        if event.button is MouseButton.LEFT and event.inaxes and event.ydata < 0:
             # if we're editing (moving) a waypoint
             if self.inEditMode:
                 # assign the coordinates of the mouse click to the currently selected waypoint
                 self.waypoints[self.direction][self.index] = (event.xdata, event.ydata)
 
+                #TODO reorder waypoints
+
                 # take us out of edit mode, as the waypoint has now been moved
                 self.inEditMode = False
 
-                print(f"WAYPOINT EDITED ({event.xdata},{event.ydata})")
+                if DEBUG:
+                    print(f"WAYPOINT EDITED ({event.xdata},{event.ydata})")
             # otherwise, the user is trying to select a waypoint, so do that
             else:
                 bestIndex = 0 # default to the first waypoint
