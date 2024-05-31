@@ -108,17 +108,17 @@ class WaypointHandler:
         self.figure.subplots_adjust(bottom=0.3)
 
         # create the add waypoint button
-        self.plus_axis = self.figure.add_axes([0.05 + BUTTON_WIDTH * 3, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT])
+        self.plus_axis = self.figure.add_axes([0.05 * 3 + BUTTON_WIDTH * 2, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT])
         self.plus_button = Button(self.plus_axis, "add waypoint")
         self.plus_button.on_clicked(self.add)
 
         # create the subtract waypoint button
-        self.minus_axis = self.figure.add_axes([0.05 + BUTTON_WIDTH * 4, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT])
+        self.minus_axis = self.figure.add_axes([0.05 * 4 + BUTTON_WIDTH * 3, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT])
         self.minus_button = Button(self.minus_axis, "subtract waypoint")
         self.minus_button.on_clicked(self.subtract)
 
         # create the move waypoint button
-        self.edit_axis = self.figure.add_axes([0.05 + BUTTON_WIDTH * 2, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT])
+        self.edit_axis = self.figure.add_axes([0.05 * 2 + BUTTON_WIDTH, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT])
         self.edit_button = Button(self.edit_axis, "move waypoint")
         self.edit_button.on_clicked(self.edit)
 
@@ -192,8 +192,9 @@ class WaypointHandler:
         if DEBUG:
             print(event.x, event.y, event.xdata, event.ydata)
 
-        # if it's a left click and in bounds of the graph, and also not one of the buttons (all latitudes are around -83, so < 0, but the buttons are at like .5, which is why that check is there)
-        if event.button is MouseButton.LEFT and event.inaxes and event.ydata < 0:
+        # if it's a right click and in bounds of the graph, and also not one of the buttons (all latitudes are around -83, so < 0, but the buttons are at like .5, which is why that check is there)
+        # right click so we don't reset the screen when the user is trying to zoom in with the magnifying glass
+        if event.button is MouseButton.RIGHT and event.inaxes and event.ydata < 0:
             # if we're editing (moving) a waypoint
             if self.inEditMode:
                 # assign the coordinates of the mouse click to the currently selected waypoint
