@@ -108,17 +108,17 @@ class WaypointHandler:
         self.figure.subplots_adjust(bottom=0.3)
 
         # create the add waypoint button
-        self.plus_axis = self.figure.add_axes([0.05 + BUTTON_WIDTH * 2, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT])
+        self.plus_axis = self.figure.add_axes([0.05 + BUTTON_WIDTH * 3, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT])
         self.plus_button = Button(self.plus_axis, "add waypoint")
         self.plus_button.on_clicked(self.add)
 
         # create the subtract waypoint button
-        self.minus_axis = self.figure.add_axes([0.05 + BUTTON_WIDTH * 3, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT])
+        self.minus_axis = self.figure.add_axes([0.05 + BUTTON_WIDTH * 4, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT])
         self.minus_button = Button(self.minus_axis, "subtract waypoint")
         self.minus_button.on_clicked(self.subtract)
 
         # create the move waypoint button
-        self.edit_axis = self.figure.add_axes([0.05 + BUTTON_WIDTH, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT])
+        self.edit_axis = self.figure.add_axes([0.05 + BUTTON_WIDTH * 2, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT])
         self.edit_button = Button(self.edit_axis, "move waypoint")
         self.edit_button.on_clicked(self.edit)
 
@@ -153,7 +153,6 @@ class WaypointHandler:
     # callback to add a waypoint after the currently selected waypoint
     def add(self, event):
         # insert a waypoint after the current waypoint, at the same location
-        #FIXME does this need to be index+1? or just index?
         self.waypoints[self.direction].insert(self.index + 1, self.waypoints[self.direction][self.index])
 
         # and then we updated so redraw
