@@ -22,25 +22,7 @@ import time
 GRID_SIZE = 0.1
 CV_BRIDGE = cv_bridge.CvBridge()
 
-competition_waypoints = [
-    [(42.66827, -83.21934), (42.668121, -83.219361), (42.668077, -83.219359), (42.667928, -83.219328)],  # NORTH
-    [(42.667928, -83.219328), (42.668077, -83.219359), (42.668121, -83.219361), (42.66827, -83.21934)],  # SOUTH
-    [(35.210475, -97.441927), (35.210476, -97.442321), (35.210599, -97.442323), (35.210599, -97.442096)],  # NORMAN TEST WAYPOINTS
-    []
-]
-
-practice_waypoints = [
-    [(42.668212, -83.218459), (42.668086, -83.218446), (42.66796, -83.218433)],  # FROM NORTH TO SOUTH
-    [(42.66796, -83.218433), (42.668086, -83.218446), (42.668212, -83.218459)],  # FROM SOUTH TO NORTH
-    []  # EMPTY
-]
-
-simulation_waypoints = [
-    [(35.19510000, -97.43895000), (35.19491000, -97.43896000), (35.1948357, -97.43896), (35.19467540, -97.43895)],  # NORTH
-    [(35.19467540, -97.43895), (35.1948357, -97.43896), (35.19491000, -97.43896000), (35.19510000, -97.43895000)],  # SOUTH
-    [(35.194725, -97.43858), (35.1947823, -97.4387), (35.1948547, -97.43876), (35.1949272, -97.43867), (35.1950035, -97.43881)], # PRACTICE
-]
-
+waypoints = {}
 
 def hexToRgb(color: str):
     if color[0] == "#":
@@ -129,9 +111,24 @@ class AStarNode(Node):
             direction_index = 1
             self.get_logger().info("Facing South")
         else:
+            direction_index = 0
             self.get_logger().info("Facing North")
 
-        return simulation_waypoints[direction_index] if self.system_mode == SystemModeEnum.SIMULATION else competition_waypoints[direction_index] if self.system_mode == SystemModeEnum.COMPETITION else practice_waypoints[direction_index]
+
+        if self.system_mode == SystemModeEnum.COMPETITION:
+            if direction_index == 0:
+                return waypoints["compNorth"]
+            else:
+                return waypoints["compSouth"]
+        elif self.system_mode == SystemModeEnum.SIMULATION:
+            if direction_index == 0:
+                return waypoints["simulationNorth"]
+            else:
+                return waypoints["simulationSouth"]
+        else:
+            return waypoints["practice"]
+
+        
 
     def system_state_transition(self, old: SystemState, updated: SystemState):
         if updated.state == SystemStateEnum.AUTONOMOUS and updated.mobility and len(self.waypoints) == 0:
@@ -340,6 +337,18 @@ class AStarNode(Node):
 
 
 def main():
+    # read GPS waypoints data from file
+    with open("data/waypoints.csv", "r") as f:
+        for line in f.readlines():
+            label, lat, lon = line.split(",")
+
+            try:
+                waypoints[label].append((float(lat), float(lon)))
+            except KeyError:
+                waypoints[label] = []
+                waypoints[label].append((float(lat), float(lon)))
+                
+
     rclpy.init()
     node = AStarNode()
     Node.run_node(node)
