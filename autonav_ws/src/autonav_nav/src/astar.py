@@ -30,7 +30,7 @@ competition_waypoints = [
 ]
 
 practice_waypoints = [
-    [(42.668212, -83.218459), (42.668086, -83.218446), (42.66796, -83.218433)],  # FROM NORTH TO SOUTH
+    [(42.668086, -83.218446)],  # qual me daddy
     [(42.66796, -83.218433), (42.668086, -83.218446), (42.668212, -83.218459)],  # FROM SOUTH TO NORTH
     []  # EMPTY
 ]

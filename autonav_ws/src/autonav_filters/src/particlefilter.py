@@ -16,7 +16,7 @@ class ParticleFilter:
     def __init__(self, latitudeLength, longitudeLength) -> None:
         self.num_particles = 750
         self.gps_noise = [0.45]
-        self.odom_noise = [0.05, 0.05, 0.1]
+        self.odom_noise = [0, 0, 0.1]
         self.init_particles()
         self.first_gps = None
 
@@ -24,6 +24,7 @@ class ParticleFilter:
         self.longitude_length = longitudeLength
 
     def init_particles(self, seedHeading: float = 0.0, useSeedHeading: bool = False):
+        self.first_gps = None
         if useSeedHeading:
             self.particles = [Particle(0, 0, seedHeading + np.random.normal(0, 0.1)) for i in range(self.num_particles)]
         else:
