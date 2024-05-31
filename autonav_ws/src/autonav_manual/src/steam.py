@@ -90,11 +90,15 @@ class SteamTranslationNode(Node):
             self.safetyLightsPublisher.publish(toSafetyLights(False, False, 2, 100, "#FF6F00"))
             
         if button == SteamControllerButton.STEAM and self.system_state != SystemStateEnum.AUTONOMOUS:
+            self.safetyLightsPublisher.publish(toSafetyLights(True, False, 2, 100, "#FF0000"))
             self.set_system_state(SystemStateEnum.AUTONOMOUS)
             
         if button == SteamControllerButton.BACK and self.system_state != SystemStateEnum.DISABLED:
             self.set_system_state(SystemStateEnum.DISABLED)
             self.safetyLightsPublisher.publish(toSafetyLights(False, False, 2, 100, "#A020F0"))
+
+    def getClockMs(self):
+        return time.time() * 1000
 
     def onSteamControllerInput(self, _, sci: SteamControllerInput):
         if self.device_state != DeviceStateEnum.OPERATING:

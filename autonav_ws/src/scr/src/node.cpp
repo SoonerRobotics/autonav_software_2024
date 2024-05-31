@@ -19,11 +19,15 @@ namespace SCR
 
         // Create publishers
         publishers.performance_track = this->create_publisher<std_msgs::msg::Float64>(Constants::Topics::PERFORMANCE_TRACK, 10);
+        publishers.logging = this->create_publisher<scr_msgs::msg::Log>(Constants::Topics::LOGGING, 10);
 
         // Create clients
         clients.system_state = this->create_client<scr_msgs::srv::UpdateSystemState>(Constants::Services::SYSTEM_STATE, rmw_qos_profile_services_default, callback_groups.system_state);
         clients.device_state = this->create_client<scr_msgs::srv::UpdateDeviceState>(Constants::Services::DEVICE_STATE, rmw_qos_profile_services_default, callback_groups.device_state);
         clients.config_update = this->create_client<scr_msgs::srv::UpdateConfig>(Constants::Services::CONFIG_UPDATE, rmw_qos_profile_services_default, callback_groups.config_updated);
+
+        rmw_qos_profile_t q = rmw_qos_profile_sensor_data;
+        qos_profile = rclcpp::QoS(rclcpp::QoSInitialization(q.history, 1), q);
 
         // Create a thread to wait a sec for the node to boot without blocking the main thread
         std::thread booting_thread([this]()
@@ -37,6 +41,14 @@ namespace SCR
     {
     }
 
+    void Node::log(std::string data)
+    {
+        scr_msgs::msg::Log msg;
+        msg.node = identifier;
+        msg.data = data;
+        publishers.logging->publish(msg);
+    }
+
     void Node::system_state_callback(const scr_msgs::msg::SystemState msg)
     {
         scr_msgs::msg::SystemState oldState;
@@ -44,27 +56,23 @@ namespace SCR
         oldState.mobility = mobility;
         oldState.mode = system_mode;
 
+        // If the new system state is shutdown, just exit the process
+        if (msg.state == static_cast<int>(SCR::SystemState::SHUTDOWN))
+        {
+            kill(getpid(), SIGKILL);
+        }
+
         SCR::SystemState newStateEnum = static_cast<SCR::SystemState>(msg.state);
         SCR::SystemState oldStateEnum = static_cast<SCR::SystemState>(oldState.state);
 
         SCR::SystemMode newMode = static_cast<SCR::SystemMode>(msg.mode);
         SCR::SystemMode oldMode = static_cast<SCR::SystemMode>(oldState.mode);
 
-        RCLCPP_WARN(this->get_logger(), "SYSTEM STATE CHANGE: %s -> %s", SCR::toString(oldStateEnum).c_str(), SCR::toString(newStateEnum).c_str());
-        RCLCPP_WARN(this->get_logger(), "SYSTEM MODE CHANGE: %s -> %s", SCR::toString(oldMode).c_str(), SCR::toString(newMode).c_str());
-        RCLCPP_WARN(this->get_logger(), "MOBILITY CHANGE: %d -> %d", oldState.mobility, msg.mobility);
-
-        system_state_transition(oldState, msg);
-
         system_mode = static_cast<SCR::SystemMode>(msg.mode);
         mobility = msg.mobility;
         system_state = static_cast<SCR::SystemState>(msg.state);
 
-        if (system_state == SCR::SystemState::SHUTDOWN)
-        {
-            // Just exit this process and die
-            exit(0);
-        }
+        system_state_transition(oldState, msg);
     }
 
     void Node::device_state_callback(const scr_msgs::msg::DeviceState msg)
@@ -76,8 +84,6 @@ namespace SCR
         }
 
         device_state = static_cast<SCR::DeviceState>(msg.state);
-        RCLCPP_INFO(this->get_logger(), "Received Topic: Device state changed to %s", SCR::toString(device_state).c_str());
-
         if (device_state == SCR::DeviceState::BOOTING)
         {
             // Get the default config and push it to the server
@@ -166,7 +172,7 @@ namespace SCR
         auto result = result_future.get();
         if (!result)
         {
-            RCLCPP_ERROR(this->get_logger(), "Failed to set device state to: %s", SCR::toString(state).c_str());
+            RCLCPP_ERROR(this->get_logger(), "Failed to set device state to: %s", SCR::deviceStateToString(state).c_str());
         }
     }
 
@@ -251,5 +257,30 @@ namespace SCR
 
         // Shutdown
         executor.remove_node(node);
+
+        rclcpp::shutdown();
+    }
+
+    void Node::run_nodes(std::vector<std::shared_ptr<Node>> nodes)
+    {
+        rclcpp::executors::MultiThreadedExecutor executor;
+        for (auto node : nodes)
+        {
+            executor.add_node(node);
+        }
+
+        executor.spin();
+
+        for (auto node : nodes)
+        {
+            executor.remove_node(node);
+        }
+
+        rclcpp::shutdown();
+    }
+
+    void Node::log_debug(std::string message)
+    {
+        RCLCPP_INFO(this->get_logger(), "%s", message.c_str());
     }
 }

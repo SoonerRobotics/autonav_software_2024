@@ -11,6 +11,7 @@ namespace SCR
             const std::string DEVICE_STATE = "/scr/device_state";
             const std::string CONFIG_UPDATE = "/scr/config_updated";
             const std::string PERFORMANCE_TRACK = "/scr/performance";
+            const std::string LOGGING = "/scr/logging";
         }
 
         namespace Services
@@ -18,6 +19,10 @@ namespace SCR
             const std::string SYSTEM_STATE = "/scr/system_state_client";
             const std::string DEVICE_STATE = "/scr/device_state_client";
             const std::string CONFIG_UPDATE = "/scr/update_config_client";
+            const std::string SET_ACTIVE_PRESET = "/scr/set_active_preset";
+            const std::string SAVE_ACTIVE_PRESET = "/scr/save_active_preset";
+            const std::string GET_PRESETS = "/scr/get_presets";
+            const std::string DELETE_PRESET = "/scr/delete_preset";
         }
     }
 

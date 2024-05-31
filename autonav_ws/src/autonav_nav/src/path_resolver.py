@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
+import json
+from types import SimpleNamespace
 from autonav_msgs.msg import MotorInput, Position, SafetyLights
+import rclpy.qos
 from scr_msgs.msg import SystemState
 from scr.node import Node
 from scr.states import DeviceStateEnum, SystemStateEnum
@@ -36,13 +39,13 @@ def toSafetyLights(autonomous: bool, eco: bool, mode: int, brightness: int, colo
 
 class PathResolverNodeConfig:
     def __init__(self):
-        self.FORWARD_SPEED = 2.1
-        self.REVERSE_SPEED = -0.4
-        self.RADIUS_MULTIPLIER = 1.2
-        self.RADIUS_MAX = 4.0
-        self.RADIUS_START = 0.7
-        self.ANGULAR_AGGRESSINON = 2.2
-        self.MAX_ANGULAR_SPEED = 0.5
+        self.forward_speed = 1.5
+        self.reverse_speed = -0.4
+        self.radius_multiplier = 1.2
+        self.radius_max = 4.0
+        self.radius_start = 0.7
+        self.angular_aggression = 1.8
+        self.max_angular_speed = 0.8
 
 
 class PathResolverNode(Node):
@@ -54,14 +57,20 @@ class PathResolverNode(Node):
         self.pure_pursuit = PurePursuit()
         self.backCount = -1
         self.status = -1
-        self.path_subscriber = self.create_subscription(Path, "/autonav/path", self.on_path_received, 20)
-        self.position_subscriber = self.create_subscription(Position, "/autonav/position", self.on_position_received, 20)
-        self.motor_publisher = self.create_publisher(MotorInput, "/autonav/MotorInput", 20)
-        self.safety_lights_publisher = self.create_publisher(SafetyLights, "/autonav/SafetyLights", 20)
-        self.config = PathResolverNodeConfig()
+        self.path_subscriber = self.create_subscription(Path, "/autonav/path", self.on_path_received, 1)
+        self.position_subscriber = self.create_subscription(Position, "/autonav/position", self.on_position_received, 1)
+        self.motor_publisher = self.create_publisher(MotorInput, "/autonav/MotorInput", 1)
+        self.safety_lights_publisher = self.create_publisher(SafetyLights, "/autonav/SafetyLights", 1)
+        self.config = self.get_default_config()
 
-        self.create_timer(0.05, self.onResolve)
+        self.create_timer(0.05, self.resolve)
         self.set_device_state(DeviceStateEnum.READY)
+
+    def config_updated(self, jsonObject):
+        self.config = json.loads(self.jdump(jsonObject), object_hook=lambda d: SimpleNamespace(**d))
+
+    def get_default_config(self):
+        return PathResolverNodeConfig()
 
     def reset(self):
         self.position = None
@@ -72,6 +81,13 @@ class PathResolverNode(Node):
             self.set_device_state(DeviceStateEnum.OPERATING)
 
         if updated.state != SystemStateEnum.AUTONOMOUS and self.device_state == DeviceStateEnum.OPERATING:
+            self.set_device_state(DeviceStateEnum.READY)
+            inputPacket = MotorInput()
+            inputPacket.forward_velocity = 0.0
+            inputPacket.angular_velocity = 0.0
+            self.motor_publisher.publish(inputPacket)
+
+        if updated.mobility == False and self.device_state == DeviceStateEnum.OPERATING and (old.mobility == True or updated.mobility == True):
             self.set_device_state(DeviceStateEnum.READY)
             inputPacket = MotorInput()
             inputPacket.forward_velocity = 0.0
@@ -99,16 +115,16 @@ class PathResolverNode(Node):
         self.points = [x.pose.position for x in msg.poses]
         self.pure_pursuit.set_points([(point.x, point.y)for point in self.points])
 
-    def onResolve(self):
+    def resolve(self):
         if self.position is None or self.device_state != DeviceStateEnum.OPERATING or self.system_state != SystemStateEnum.AUTONOMOUS or not self.mobility:
             return
 
         cur_pos = (self.position.x, self.position.y)
         lookahead = None
-        radius = self.config.RADIUS_START
-        while lookahead is None and radius <= self.config.RADIUS_MAX:
+        radius = self.config.radius_start
+        while lookahead is None and radius <= self.config.radius_max:
             lookahead = self.pure_pursuit.get_lookahead_point(cur_pos[0], cur_pos[1], radius)
-            radius *= self.config.RADIUS_MULTIPLIER
+            radius *= self.config.radius_multiplier
 
         motor_packet = MotorInput()
         motor_packet.forward_velocity = 0.0
@@ -117,9 +133,9 @@ class PathResolverNode(Node):
         if self.backCount == -1 and (lookahead is not None and ((lookahead[1] - cur_pos[1]) ** 2 + (lookahead[0] - cur_pos[0]) ** 2) > 0.25):
             angle_diff = math.atan2(lookahead[1] - cur_pos[1], lookahead[0] - cur_pos[0])
             error = self.get_angle_difference(angle_diff, self.position.theta) / math.pi
-            forward_speed = self.config.FORWARD_SPEED * (1 - abs(error)) ** 5
+            forward_speed = self.config.forward_speed * (1 - abs(error)) ** 5
             motor_packet.forward_velocity = forward_speed
-            motor_packet.angular_velocity = clamp(error * self.config.ANGULAR_AGGRESSINON, -self.config.MAX_ANGULAR_SPEED, self.config.MAX_ANGULAR_SPEED)
+            motor_packet.angular_velocity = clamp(error * self.config.angular_aggression, -self.config.max_angular_speed, self.config.max_angular_speed)
 
             if self.status == 0:
                 self.safety_lights_publisher.publish(toSafetyLights(True, False, 2, 255, "#FFFFFF"))
@@ -132,7 +148,7 @@ class PathResolverNode(Node):
                 self.status = 0
                 self.backCount -= 1
 
-            motor_packet.forward_velocity = self.config.REVERSE_SPEED
+            motor_packet.forward_velocity = self.config.reverse_speed
             motor_packet.angular_velocity = BACK_SPEED if IS_SOUTH else (-1 * BACK_SPEED)
 
         if not self.mobility:

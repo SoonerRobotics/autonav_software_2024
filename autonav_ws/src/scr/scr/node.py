@@ -1,15 +1,18 @@
 import threading
 from scr.states import DeviceStateEnum, SystemStateEnum, SystemModeEnum
 from scr_msgs.srv import UpdateDeviceState, UpdateSystemState, UpdateConfig
-from scr_msgs.msg import DeviceState, SystemState, ConfigUpdated
+from scr_msgs.msg import DeviceState, SystemState, ConfigUpdated, Log
 from std_msgs.msg import Float64
 from rclpy.node import Node as ROSNode
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
+from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSHistoryPolicy
 import scr.constants
 import time
 import rclpy
 from rclpy.executors import MultiThreadedExecutor
 import json
+import os
+import signal
 
 
 class Node(ROSNode):
@@ -20,6 +23,11 @@ class Node(ROSNode):
     def __init__(self, node_name):
         super().__init__(node_name)
         self.identifier = node_name
+        self.qos_profile = QoSProfile(
+            reliability=QoSReliabilityPolicy.BEST_EFFORT,
+            history=QoSHistoryPolicy.KEEP_LAST,
+            depth=1
+        )
 
         # Create the callback groups
         self.device_state_callback_group = MutuallyExclusiveCallbackGroup()
@@ -30,16 +38,19 @@ class Node(ROSNode):
         self.device_state_subscriber = self.create_subscription(DeviceState, scr.constants.Topics.DEVICE_STATE, self.on_device_state, 10)
         self.system_state_subscriber = self.create_subscription(SystemState, scr.constants.Topics.SYSTEM_STATE, self.on_system_state, 10)
         self.config_updated_subscriber = self.create_subscription(ConfigUpdated, scr.constants.Topics.CONFIG_UPDATE, self.on_config_updated, 10)
-        
+
         self.device_state_client = self.create_client(UpdateDeviceState, scr.constants.Services.DEVICE_STATE, callback_group=self.device_state_callback_group)
         self.system_state_client = self.create_client(UpdateSystemState, scr.constants.Services.SYSTEM_STATE, callback_group=self.system_state_callback_group)
         self.config_updated_client = self.create_client(UpdateConfig, scr.constants.Services.CONFIG_UPDATE, callback_group=self.config_updated_callback_group)
-        
+
         self.performance_publisher = self.create_publisher(Float64, scr.constants.Topics.PERFORMANCE_TRACK, 10)
+        self.logging_publisher = self.create_publisher(Log, scr.constants.Topics.LOGGING, 10)
 
         self.device_state = DeviceStateEnum.OFF
         self.system_state = SystemStateEnum.DISABLED
         self.system_mode = SystemModeEnum.COMPETITION
+        self.device_states = {}
+        self.node_configs = {}
         self.mobility = False
         self.perf_measurements = {}
 
@@ -59,6 +70,21 @@ class Node(ROSNode):
         else:
             return json.dumps(obj)
 
+    def log(self, data):
+        """
+        Logs a message to the logging topic.
+
+        :param data: The message to log.
+        """
+
+        log_packet = Log()
+        log_packet.data = data
+        log_packet.node = self.identifier
+        self.logging_publisher.publish(log_packet)
+
+    def log_debug(self, message):
+        self.get_logger().log(message)
+
     def on_device_state(self, msg: DeviceState):
         """
         Called when a device state message is received.
@@ -66,6 +92,7 @@ class Node(ROSNode):
         :param msg: The device state message.
         """
 
+        self.device_states[msg.device] = msg.state
         if msg.device is None or msg.device != self.identifier:
             return
 
@@ -81,7 +108,7 @@ class Node(ROSNode):
                 if not rclpy.ok():
                     self.get_logger().error("Interrupted while waiting for service")
                     return
-                
+
             try:
                 result = self.config_updated_client.call(request)
                 if not result.success:
@@ -101,21 +128,27 @@ class Node(ROSNode):
         :param msg: The system state message.
         """
 
+        # If the system state is shutdown, kill this node killing the proces
+        if msg.state == SystemStateEnum.SHUTDOWN:
+            self.get_logger().info("Received shutdown signal, shutting down")
+            os.kill(os.getpid(), signal.SIGKILL)
+            return
+
         oldState = SystemState()
         oldState.state = self.system_state
         oldState.mode = self.system_mode
         oldState.mobility = self.mobility
-
-        self.system_state_transition(oldState, msg)
-
         self.system_state = msg.state
         self.system_mode = msg.mode
         self.mobility = msg.mobility
 
+        self.system_state_transition(oldState, msg)
+
     def on_config_updated(self, msg: ConfigUpdated):
+        self.node_configs[msg.device] = json.loads(msg.json)
         if msg.device is None or msg.device != self.identifier:
             return
-        
+
         try:
             parsed_json = json.loads(msg.json)
             self.config_updated(parsed_json)
@@ -144,7 +177,6 @@ class Node(ROSNode):
         Called when the configuration is updated.
         """
 
-        self.get_logger().warn("Config updated method not overridden: config_updated(json)")
         pass
 
     def get_default_config(self):
@@ -152,7 +184,6 @@ class Node(ROSNode):
         Gets the default configuration for the node.
         """
 
-        self.get_logger().warn("Default config method not overridden: get_default_config()")
         return {}
 
     def set_device_state(self, state: DeviceStateEnum):
@@ -231,7 +262,7 @@ class Node(ROSNode):
 
         self.set_system_total_state(
             self.system_state, self.system_mode, mobility)
-        
+
     def perf_start(self, name: str):
         """
         Starts a performance measurement.
@@ -268,5 +299,16 @@ class Node(ROSNode):
         executor.spin()
         executor.remove_node(node)
 
-    def log(self, message: str):
-        rclpy.logging.get_logger("scr." + self.identifier).info(message)
+    def run_nodes(nodes):
+        """
+        Runs the nodes with the correct ROS parameters and specifications
+
+        :param nodes: The nodes to run.
+        """
+
+        executor = MultiThreadedExecutor()
+        for node in nodes:
+            executor.add_node(node)
+        executor.spin()
+        for node in nodes:
+            executor.remove_node(node)

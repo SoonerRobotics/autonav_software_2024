@@ -16,6 +16,8 @@ var deviceStates = {};
 var logs = [];
 var iterator = 0;
 var iterators = [];
+var development_mode = false;
+var current_preset = "ERROR_NO_PRESET_AUTODETECTED";
 
 var addressKeys = {
 	"autonav_serial_imu": {
@@ -23,25 +25,66 @@ var addressKeys = {
 		"imu_read_rate": "float"
 	},
 
-	"autonav_serial_camera": {
-		"internal_title": "[Serial] Camera",
+	"autonav_serial_camera_left": {
+		"internal_title": "[Serial] Left Camera",
 		"refresh_rate": "int",
 		"output_width": "int",
 		"output_height": "int",
-		"camera_index": "int"
+		"scan_rate": "int",
+		"flip_horizontal": "bool",
+		"flip_vertical": "bool",
+		"rotate_clockwise": "bool"
+	},
+
+	"autonav_serial_camera_right": {
+		"internal_title": "[Serial] Right Camera",
+		"refresh_rate": "int",
+		"output_width": "int",
+		"output_height": "int",
+		"scan_rate": "int",
+		"flip_horizontal": "bool",
+		"flip_vertical": "bool",
+		"rotate_clockwise": "bool"
 	},
 
 	"autonav_vision_transformer": {
 		"internal_title": "[Vision] Transformer",
 		"lower_hue": "int",
-		"lower_saturation": "int",
-		"lower_value": "int",
+		"lower_sat": "int",
+		"lower_val": "int",
 		"upper_hue": "int",
-		"upper_saturation": "int",
-		"upper_value": "int",
-		"blur": "int",
+		"upper_sat": "int",
+		"upper_val": "int",
+		"blur_weight": "int",
 		"blur_iterations": "int",
-		"region_of_disinterest_offset": "int"
+		"map_res": "int",
+		"left_bottomleft": "point.int",
+		"left_bottomright": "point.int",
+		"left_topleft": "point.int",
+		"left_topright": "point.int",
+		"right_bottomleft": "point.int",
+		"right_bottomright": "point.int",
+		"right_topleft": "point.int",
+		"right_topright": "point.int",
+		"disable_blur": "bool",
+		"disable_hsv": "bool",
+		"disable_perspective_transform": "bool",
+		"disable_region_of_disinterest": "bool",
+		"parallelogram_left": "parallelogram.int",
+        "parallelogram_right": "parallelogram.int",
+		"top_width": "float",
+		"bottom_width": "float",
+		"offset": "float"
+	},
+
+	"autonav_vision_expandifier": {
+		"internal_title": "[Vision] Expandifier",
+		"horizontal_fov": "float",
+		"map_res": "int",
+		"vertical_fov": "float",
+		"max_range": "float",
+		"no_go_percent": "float",
+		"no_go_range": "float",
 	},
 
 	"autonav_filters": {
@@ -49,9 +92,7 @@ var addressKeys = {
 		"filter_type": {
 			0: "Deadreckoning",
 			1: "Particle Filter"
-		},
-		"degree_offset": "float",
-		"seed_heading": "bool",
+		}
 	},
 
 	"autonav_manual_steamcontroller": {
@@ -61,13 +102,17 @@ var addressKeys = {
 		"throttle_deadzone": "float",
 		"turn_speed": "float",
 		"max_forward_speed": "float",
-		"max_turn_speed": "float"
+		"max_turn_speed": "float",
+		"invert_steering": "bool",
+		"invert_throttle": "bool",
+		"throttle_rate": "float",
+		"steering_rate": "float"
 	},
 
 	"autonav_nav_astar": {
 		"internal_title": "[Navigation] A*",
-		"pop_distance": "float",
-		"direction": {
+		"waypointPopDistance": "float",
+		"waypointDirection": {
 			0: "North",
 			1: "South",
 			2: "Misc 1",
@@ -76,8 +121,13 @@ var addressKeys = {
 			5: "Misc 4",
 			6: "Misc 5",
 		},
-		"use_only_waypoints": "bool",
-		"waypoint_delay": "float",
+        "calculateWaypointDirection": "bool",
+		"useOnlyWaypoints": "bool",
+		"waypointDelay": "float",
+        "vertical_fov": "float",
+        "horizontal_fov": "float",
+        "waypointMaxWeight": "float",
+        "waypointWeight": "float",
 	},
 
 	"autonav_nav_resolver": {
@@ -91,18 +141,25 @@ var addressKeys = {
 		"max_angular_speed": "float"
 	},
 
-	"autonav_playback": {
-		"internal_title": "[Playback]",
-		"record_imu": "bool",
-		"record_gps": "bool",
-		"record_position": "bool",
-		"record_feedback": "bool",
-		"record_objectdetection": "bool",
-		"record_manual": "bool",
-		"record_autonomous": "bool",
-		"record_input": "bool",
-		"record_debugfeedback": "bool",
-	}
+	"autonav_image_combiner": {
+		"internal_title": "[Image Combiner]",
+		"map_res": "int"
+	},
+
+    "autonav_playback": {
+        "internal_title": "[Playback]",
+        "record_imu": "bool",
+        "record_gps": "bool",
+        "record_position": "bool",
+        "record_feedback": "bool",
+        "record_motor_debug": "bool",
+        "record_raw_cameras": "bool",
+        "record_filtered_cameras": "bool",
+        "record_astar": "bool",
+        "record_autonomous": "bool",
+        "record_manual": "bool",
+        "frame_rate": "int"
+    }
 }
 
 var conbusDevices = {

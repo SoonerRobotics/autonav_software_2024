@@ -8,6 +8,7 @@
 #include "scr_msgs/msg/config_updated.hpp"
 #include "scr_msgs/msg/device_state.hpp"
 #include "scr_msgs/msg/system_state.hpp"
+#include "scr_msgs/msg/log.hpp"
 #include "states.hpp"
 #include "structs.hpp"
 #include "constants.hpp"
@@ -28,6 +29,7 @@ namespace SCR
     struct NodePublishers
     {
         rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr performance_track;
+        rclcpp::Publisher<scr_msgs::msg::Log>::SharedPtr logging;
     };
 
     struct NodeClients
@@ -78,6 +80,10 @@ namespace SCR
         /// @param node 
         static void run_node(std::shared_ptr<Node> node);
 
+        /// @brief Runs the nodes with the correct ROS parameters and specifications
+        /// @param nodes
+        static void run_nodes(std::vector<std::shared_ptr<Node>> nodes);
+
     protected:
         /// @brief Called after a node is first discovered by the network. The device state will be set to BOOTING
         virtual void init() = 0;
@@ -94,6 +100,14 @@ namespace SCR
         /// @brief Returns the default current configuration of the node
         /// @return The default configuration
         virtual json get_default_config() = 0;
+        
+        /// @brief Logs a message to the logging topic
+        /// @param data The message to log
+        void log(std::string data);
+
+        /// @brief Logs a message to the console
+        /// @param message The message to log
+        void log_debug(std::string message);
 
     private:
         void system_state_callback(const scr_msgs::msg::SystemState msg);
@@ -122,6 +136,9 @@ namespace SCR
 
         /// @brief The current map of device configurations
         std::map<std::string, SCR::DeviceState> device_states;
+
+        /// @brief The current qos profile
+        rclcpp::QoS qos_profile = rclcpp::QoS(rclcpp::KeepLast(10));
 
     private:
         NodeSubscriptions subscriptions;

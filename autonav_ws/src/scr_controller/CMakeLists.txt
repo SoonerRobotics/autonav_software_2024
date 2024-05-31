@@ -14,8 +14,12 @@ find_package(scr REQUIRED)
 add_executable(core src/core.cpp)
 ament_target_dependencies(core rclcpp scr_msgs scr)
 
+add_executable(logging src/logging.cpp)
+ament_target_dependencies(logging rclcpp scr_msgs scr)
+
 install(TARGETS
   core
+  logging
   DESTINATION lib/${PROJECT_NAME}
 )
 
