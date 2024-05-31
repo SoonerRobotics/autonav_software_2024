@@ -15,7 +15,7 @@
     </node>
 
     <!-- Vision Nodes -->
-    <node pkg="autonav_vision" exec="transformations.py" />
+    <node pkg="autonav_unet" exec="transformations.py" output="screen" />
     <node pkg="autonav_vision" exec="combination.py" />
     <node pkg="autonav_vision" exec="expandify" />
 
