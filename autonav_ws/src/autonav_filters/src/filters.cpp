@@ -111,7 +111,8 @@ void FiltersNode::on_MotorFeedback_received(autonav_msgs::msg::MotorFeedback mot
     autonav_msgs::msg::Position position;
     position.x = averages[0];
     position.y = averages[1];
-    position.theta = (-1 * M_PI * 2 + averages[2]) * 1;
+    //position.theta = (-1 * M_PI * 2 + averages[2]) * 1;
+    position.theta = averages[2];
     if (this->first_gps_received == true) {
         double gps_x = this->first_gps.latitude + position.x / this->latitudeLength;
         double gps_y = this->first_gps.longitude - position.y / this->longitudeLength;
