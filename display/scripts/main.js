@@ -168,6 +168,7 @@ $(document).ready(function () {
         send({
             op: "set_system_state",
             state: systemState.state,
+            mode: systemState.mode,
             mobility: systemState.mobility,
         });
     }

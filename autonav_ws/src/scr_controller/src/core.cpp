@@ -62,7 +62,7 @@ public:
         mobility = this->declare_parameter<bool>("mobility", false);
 
         // Set mode timer
-        mode_timer = this->create_wall_timer(std::chrono::seconds(2), std::bind(&CoreNode::mode_timer_callback, this));
+        mode_timer = this->create_wall_timer(std::chrono::seconds(5), std::bind(&CoreNode::mode_timer_callback, this));
     }
 
 private:

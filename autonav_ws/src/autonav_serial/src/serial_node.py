@@ -8,7 +8,7 @@ import threading
 import struct
 from autonav_msgs.msg import MotorInput, MotorFeedback, MotorControllerDebug, SafetyLights, Conbus
 from scr.node import Node
-from scr.states import DeviceStateEnum, SystemStateEnum, SystemState
+from scr.states import DeviceStateEnum, SystemStateEnum, SystemStateEnum
 
 
 MOTOR_CONTROL_ID = 10
@@ -68,12 +68,29 @@ class SerialMotors(Node):
         except can.CanError:
             pass
 
-    def system_state_transition(self, old: SystemState, updated: SystemState):
+    def system_state_transition(self, old: SystemStateEnum, updated: SystemStateEnum):
         if old.state != SystemStateEnum.DISABLED and updated.state == SystemStateEnum.DISABLED:
             self.zero_motors()
         
         if old.state == SystemStateEnum.AUTONOMOUS and updated.state == SystemStateEnum.MANUAL:
             self.zero_motors()
+
+        # If we enter autonomous mode, we need to send a stop message to the motors
+        if old.state != SystemStateEnum.AUTONOMOUS and updated.state == SystemStateEnum.AUTONOMOUS:
+            self.set_system_mobility(False)
+            can_msg = can.Message(arbitration_id=MOBILITY_STOP_ID, data=bytes([0]))
+            try:
+                self.can.send(can_msg)
+            except can.CanError:
+                pass
+
+        if old.state == SystemStateEnum.AUTONOMOUS and updated.state != SystemStateEnum.AUTONOMOUS:
+            self.set_system_mobility(False)
+            can_msg = can.Message(arbitration_id=MOBILITY_STOP_ID, data=bytes([0]))
+            try:
+                self.can.send(can_msg)
+            except can.CanError:
+                pass
 
         if old.state == SystemStateEnum.MANUAL and updated.state == SystemStateEnum.AUTONOMOUS:
             self.zero_motors()
@@ -106,8 +123,8 @@ class SerialMotors(Node):
             feedback.delta_x = deltaX / 10000.0
             self.motorFeedbackPublisher.publish(feedback)
 
-        # if arb_id == ESTOP_ID:
-        #     self.setEStop(True)
+        if arb_id == ESTOP_ID:
+            self.set_system_mobility(False)
 
         if arb_id == MOBILITY_STOP_ID:
             self.set_system_mobility(False)

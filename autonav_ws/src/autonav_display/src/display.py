@@ -65,13 +65,13 @@ class BroadcastNode(Node):
         self.limiter.setLimit("/autonav/imu", 1)
         self.limiter.setLimit("/autonav/gps", 3)
         self.limiter.setLimit("/autonav/position", 3)
-        self.limiter.setLimit("/autonav/camera/compressed/left", 4)
-        self.limiter.setLimit("/autonav/camera/compressed/right", 4)
-        self.limiter.setLimit("/autonav/cfg_space/raw/image/left_small", 4)
-        self.limiter.setLimit("/autonav/cfg_space/raw/image/right_small", 4)
-        self.limiter.setLimit("/autonav/cfg_space/combined/image", 4)
-        self.limiter.setLimit("/autonav/debug/astar/image", 4)
-        self.limiter.setLimit("/autonav/debug/astar", 5)
+        self.limiter.setLimit("/autonav/camera/compressed/left", 2)
+        self.limiter.setLimit("/autonav/camera/compressed/right", 2)
+        self.limiter.setLimit("/autonav/cfg_space/raw/image/left_small", 2)
+        self.limiter.setLimit("/autonav/cfg_space/raw/image/right_small", 2)
+        self.limiter.setLimit("/autonav/cfg_space/combined/image", 2)
+        self.limiter.setLimit("/autonav/debug/astar/image", 2)
+        self.limiter.setLimit("/autonav/debug/astar", 2)
 
         # Clients
         self.system_state_c = self.create_subscription(SystemState, "/scr/system_state", self.systemStateCallback, 20)
@@ -217,7 +217,7 @@ class BroadcastNode(Node):
                 }), unique_id)
 
             if obj["op"] == "set_system_state":
-                self.set_system_total_state(int(obj["state"]), self.system_mode, bool(obj["mobility"]))
+                self.set_system_total_state(int(obj["state"]), int(obj["mode"]), bool(obj["mobility"]))
 
             if obj["op"] == "conbus":
                 id = int(obj["id"])
