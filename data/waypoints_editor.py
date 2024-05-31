@@ -10,14 +10,20 @@ from math import pi
 
 WAYPOINT_FILENAME = "data/waypoints.csv"
 BUTTON_Y = 0.05
-BUTTON_WIDTH = 0.2
+BUTTON_WIDTH = 0.15
 BUTTON_HEIGHT = 0.075
+GPS_DATA_COLOR = "blue"
 
+# no idea if this should be a class method or not
+# really the thing to do would be to make a Point class and associated functions,
+# which is hilarious because that's literally all we did in Java 2, but this works for now
+# standard pythagorean distance formula
+# expects two tuples, used pretty much like: dist(waypoint, (event.xdata, event.ydata))
+def dist(p1, p2):
+    return ((p1[0] - p2[0])**2  +  (p1[1] - p2[1])**2) ** 0.5 # raising to power of 1/2 is the same as sqrt
 
 # class to handle gui callbacks and stuff
 class WaypointHandler:
-    #TODO we don't need to create a new axis do we? how do we replot data in a different color? 
-    # and like modify just the data we want to and not the GPS data?
     def __init__(self):
         # load the waypoints from the file
         self.loadWaypointsFile()
@@ -27,13 +33,18 @@ class WaypointHandler:
         self.gpsData = self.getGpsPoints(filedialog.askopenfilename())
 
         self.index = 0 # index of the currently selected waypoint
+        self.inEditMode = False
 
-        self.axis, self.figure = plt.subplots() # standard matplotlib code, get us some objects to draw graphics on
-        self.firstDraw = True # if this is the first time we've drawn to the screen or not
+        self.figure, self.axis = plt.subplots() # standard matplotlib code, get us some objects to draw graphics on
         self.createGui() # go ahead and create the rest of the gui
 
         # draw all the waypoints onto the screen now that we're set up
         self.redraw()
+
+        # everything should be all set up now, so we can
+        # show everything and have matplotlib run the gui event loop and call our callbacks and everything
+        plt.show()
+
 
     # copied/pasted from https://github.com/SoonerRobotics/autonav_software_2024/blob/feat/waypoints_file/autonav_ws/src/autonav_nav/src/astar.py
     # load the waypoints from the file
@@ -52,11 +63,7 @@ class WaypointHandler:
                     # if it doesn't exist then create it
                     self.waypoints[label] = []
                     self.waypoints[label].append((float(lat), float(lon)))
-
-    # draw the logged GPS points on the screen
-    #FIXME htis should be part of self.redraw() or something, we don't need a 1-line function
-    def drawPlot(self):
-        self.axis.plot(self.gpsData[0], self.gpsData[1], color="blue") #TODO make the color a constant or something
+        print("WAYPOINTS LOADED")
 
     # get the gps points as a tuple of all the lons and then all the lats, so it can be matplotlib'd instantly
     def getGpsPoints(self, filepath):
@@ -84,6 +91,8 @@ class WaypointHandler:
                     # detect which direction we're heading and return the right waypoint label
                     # code stolen and very very heavily modified and condensed from autonav_nav/astar.py
                     self.direction = "compSouth" if 120 < abs((float(line.split(",")[4])) * 180 / pi) < 240 else "compNorth"
+                    print("GOT THE DIRECTION")
+        print("GOT THE GPS DATA")
         return points
 
     # make the GUI (buttons and stuff, register event handlers, etc)
@@ -93,34 +102,40 @@ class WaypointHandler:
         self.figure.subplots_adjust(bottom=0.3)
 
         # create the add waypoint button
-        self.plus_axis = self.fig.add_axes([0.4, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT])
+        self.plus_axis = self.figure.add_axes([0.05 + BUTTON_WIDTH * 2, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT])
         self.plus_button = Button(self.plus_axis, "add waypoint")
         self.plus_button.on_clicked(self.add)
 
         # create the subtract waypoint button
-        self.minus_axis = self.fig.add_axes([0.7, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT])
+        self.minus_axis = self.figure.add_axes([0.05 + BUTTON_WIDTH * 3, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT])
         self.minus_button = Button(self.minus_axis, "subtract waypoint")
         self.minus_button.on_clicked(self.subtract)
 
+        # create the move waypoint button
+        self.edit_axis = self.figure.add_axes([0.05 + BUTTON_WIDTH, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT])
+        self.edit_button = Button(self.edit_axis, "move waypoint")
+        self.edit_button.on_clicked(self.edit)
+
         # create the 'save waypoints file' button to write the file back
-        self.save_axis = self.fig.add_axes([0.1, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT])
+        self.save_axis = self.figure.add_axes([0.05, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT])
         self.save_button = Button(self.save_axis, "save waypoints")
         self.save_button.on_clicked(self.save)
 
         # binds an event handler so we can keep track of the mouse
-        self.mosue_binding_id = plt.connect("button_press_event", callback.on_click)
-
-        # draw the GPS points on the frame
-        #FIXME this should be handled in redraw()???
-        self.drawPlot(gpsData, axis)
-
-        # show everything and have matplotlib run the gui event loop and call our callbacks and everything
-        plt.show()
+        self.mosue_binding_id = plt.connect("button_press_event", self.on_click)
 
         print("GUI CREATED")
 
     # repaint the waypoints on the screen so the user can see what they are editing    
     def redraw(self):
+        print("REDRAWING")
+
+        # clear existing data
+        self.axis.clear()
+
+        # draw the logged GPS points on the screen
+        self.axis.plot(self.gpsData[0], self.gpsData[1], color=GPS_DATA_COLOR)
+
         x = [pt[0] for pt in self.waypoints[self.direction]] # because pairs are (lat, lon) and lat is y, longitude is x
         y = [pt[1] for pt in self.waypoints[self.direction]] # exept not actually, it is currently correct, so I don't know what's going on
 
@@ -128,23 +143,17 @@ class WaypointHandler:
         circle = plt.Circle((x[self.index], y[self.index]), 0.00001, color="black")
         self.axis.add_patch(circle) # https://stackoverflow.com/questions/9215658/plot-a-circle-with-pyplot
         
-        # if it's the first time we're drawing,
-        if self.firstDraw:
-            # we need to plot everything
-            self.axis.plot(x, y, linestyle="", marker=MarkerStyle("o"), color="#00FF44")
-
-            print("FIRST DRAW!")
-        else:
-            # otherwise don't draw ghost waypoints that have been deleted, just set the y data or something idk
-            axis.set_ydata(y) #FIXME this still leaves waypoints after they've been deleted
+        # plot everything
+        self.axis.plot(x, y, linestyle="", marker=MarkerStyle("o"), color="#00FF44")
         
         plt.draw() # redraw to the screen (not plt.show() because that would be blocking and then we'd have problems)
+        print("DRAWN!")
     
     # callback to add a waypoint after the currently selected waypoint
     def add(self, event):
-        #TODO figure out how to insert a waypoint or something here
-        #FIXME does this need to be index+1?
-        self.waypoints[self.direction].insert(self.index, w)
+        # insert a waypoint after the current waypoint, at the same location
+        #FIXME does this need to be index+1? or just index?
+        self.waypoints[self.direction].insert(self.index + 1, self.waypoints[self.direction][self.index])
 
         print("WAYPOINT ADDED")
 
@@ -161,6 +170,10 @@ class WaypointHandler:
         # redraw the waypoints so the user can tell the waypoint was deleted
         self.redraw()
     
+    def edit(self, event):
+        # put us in edit mode (next mouse click will take us out of it so we don't need to worry about that)
+        self.inEditMode = True
+    
     # callback to save waypoints file callback
     def save(self, event):
         # open the file in write mode
@@ -175,11 +188,34 @@ class WaypointHandler:
                     # write that point to the file
                     f.write(f"{name},{point[1]},{point[0]}\n")
     
-    # callback for mouse clicks
+    # callback for mouse clicks (needed for moving and selecting waypoints)
     def on_click(self, event):
-        #TODO need to also make sure it's not pressing a button, maybe have an && self.inEditMode check in here somewhere?
+        # if it's a left click and in bounds of the graph
         if event.button is MouseButton.LEFT and event.inaxes:
-            print(f"CLICKED! ({event.xdata},{event.ydata}) || ({event.x},{event.y})")
+            # if we're editing (moving) a waypoint
+            if self.inEditMode:
+                # assign the coordinates of the mouse click to the currently selected waypoint
+                self.waypoints[self.direction][self.index] = (event.xdata, event.ydata)
+
+                # take us out of edit mode, as the waypoint has now been moved
+                self.inEditMode = False
+
+                print(f"WAYPOINT EDITED ({event.xdata},{event.ydata})")
+            # otherwise, the user is trying to select a waypoint, so do that
+            else:
+                bestIndex = 0 # default to the first waypoint
+
+                # find whichever waypoint is closest
+                for idx, waypoint in enumerate(self.waypoints[self.direction]):
+                    # if the distance to the currently iterated waypoint is less than the closest distance to the cursor click event we've found so far, update it
+                    if dist(waypoint, (event.xdata, event.ydata)) < dist(self.waypoints[self.direction][bestIndex], (event.xdata, event.ydata)):
+                        bestIndex = idx
+                
+                # and update it so the user has selected whichever waypoint is closest to the cursor
+                self.index = bestIndex
+
+            # and we updated so redraw
+            self.redraw()
 
 
 def main():
