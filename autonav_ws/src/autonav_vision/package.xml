@@ -2,19 +2,20 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>autonav_vision</name>
-  <version>0.0.1</version>
-  <description>Computer Vision for IGVC for 2024</description>
-  <maintainer email="is.a.squrril@gmail.com">Daniel Brown</maintainer>
-  <license>TODO</license>
+  <version>1.0.0</version>
+  <description>Computer vision</description>
+  <maintainer email="antoniochappell@protonmail.com">Antonio Chappell</maintainer>
+  <license>MIT</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>ament_cmake_python</buildtool_depend>
   
   <depend>rclcpp</depend>
   <depend>rclpy</depend>
+  <depend>geometry_msgs</depend>
   <depend>sensor_msgs</depend>
   <depend>autonav_msgs</depend>
-  <depend>scr_core</depend>
+  <depend>scr</depend>
   <depend>cv_bridge</depend>
   <depend>image_transport</depend>
 

@@ -12,30 +12,33 @@ find_package(rclpy REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
-# find_package(autonav_msgs REQUIRED)
+find_package(autonav_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
-# find_package(scr_core REQUIRED)
+find_package(scr REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(image_transport REQUIRED)
-
-# Install Python executables
-install(PROGRAMS
-  src/transformation_node.py
-  DESTINATION lib/${PROJECT_NAME}
-)
  
 # Install Python programs
 install(PROGRAMS
-  src/camera_node.py
-  src/transformation_node.py
+  src/transformations.py
+  src/combination.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+# C++
+add_executable(expandify src/expandify.cpp)
+ament_target_dependencies(expandify rclcpp sensor_msgs autonav_msgs nav_msgs cv_bridge image_transport scr)
+
+install(TARGETS
+  expandify
   DESTINATION lib/${PROJECT_NAME}
 )
 
 if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
-  set(ament_cmake_copyright_FOUND TRUE)
-  set(ament_cmake_cpplint_FOUND TRUE)
-  ament_lint_auto_find_test_dependencies()
+  #find_package(ament_lint_auto REQUIRED)
+  #set(ament_cmake_copyright_FOUND TRUE)
+  #set(ament_cmake_cpplint_FOUND TRUE)
+  #ament_lint_auto_find_test_dependencies()
 endif()
 ament_package()
