@@ -9,7 +9,7 @@ import struct
 from autonav_msgs.msg import MotorInput, MotorFeedback, MotorControllerDebug, SafetyLights, Conbus
 from scr.node import Node
 from scr.states import DeviceStateEnum, SystemStateEnum, SystemStateEnum
-from scr_msgs.msg import SystemState
+# from scr_msgs.msg import SystemState
 
 
 MOTOR_CONTROL_ID = 10
@@ -69,7 +69,7 @@ class SerialMotors(Node):
         except can.CanError:
             pass
 
-    def system_state_transition(self, old: SystemState, updated: SystemState):
+    def system_state_transition(self, old: SystemStateEnum, updated: SystemStateEnum):
         if old.state != SystemStateEnum.DISABLED and updated.state == SystemStateEnum.DISABLED:
             self.zero_motors()
         

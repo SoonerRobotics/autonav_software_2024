@@ -65,12 +65,12 @@ class BroadcastNode(Node):
         self.limiter.setLimit("/autonav/imu", 1)
         self.limiter.setLimit("/autonav/gps", 3)
         self.limiter.setLimit("/autonav/position", 3)
-        self.limiter.setLimit("/autonav/camera/compressed/left", 2)
-        self.limiter.setLimit("/autonav/camera/compressed/right", 2)
-        self.limiter.setLimit("/autonav/cfg_space/raw/image/left_small", 2)
-        self.limiter.setLimit("/autonav/cfg_space/raw/image/right_small", 2)
-        self.limiter.setLimit("/autonav/cfg_space/combined/image", 2)
-        self.limiter.setLimit("/autonav/debug/astar/image", 2)
+        self.limiter.setLimit("/autonav/camera/compressed/left", 0.5)
+        self.limiter.setLimit("/autonav/camera/compressed/right", 0.5)
+        self.limiter.setLimit("/autonav/cfg_space/raw/image/left_small", 0.5)
+        self.limiter.setLimit("/autonav/cfg_space/raw/image/right_small", 0.5)
+        self.limiter.setLimit("/autonav/cfg_space/combined/image", 0.5)
+        self.limiter.setLimit("/autonav/debug/astar/image", 0.5)
         self.limiter.setLimit("/autonav/debug/astar", 2)
 
         # Clients

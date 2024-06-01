@@ -232,8 +232,14 @@ class ImageTransformer(Node):
         img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
         lower = (self.config.lower_hue, self.config.lower_sat, self.config.lower_val)
         upper = (self.config.upper_hue, self.config.upper_sat, self.config.upper_val)
-        mask = cv2.inRange(img, lower, upper)
-        mask = 255 - mask
+        mask1 = cv2.inRange(img, lower, upper)
+
+        lower = (70, 128, 80)
+        upper = (145, 255, 255)
+        mask2 = cv2.inRange(img, lower, upper)
+        epic_mask = cv2.add(mask1, mask2)
+
+        mask = 255 - epic_mask
         return mask
 
     def apply_region_of_disinterest(self, img):
