@@ -68,6 +68,8 @@ void FiltersNode::config_updated(json newConfig) {
         ParticleFilter particle_filter{config.num_particles, config.latitudeLength, config.longitudeLength, config.gps_noise, config.odom_noise_x, config.odom_noise_y, config.odom_noise_theta};
         this->particle_filter = particle_filter;
         this->particle_filter.init_particles();
+        RCLCPP_INFO(this->get_logger(), "gps_noise %f", config.gps_noise);
+        RCLCPP_INFO(this->get_logger(), "longitudeLength %f", config.longitudeLength);
         //this->particle_filter.printParticles();
 }
 
@@ -76,7 +78,7 @@ json FiltersNode::get_default_config() {
         newConfig.latitudeLength = 110944.12;
         newConfig.longitudeLength = 91071.17;
         newConfig.num_particles = 750; 
-        newConfig.gps_noise = 0.8;
+        newConfig.gps_noise = 0.3;
         newConfig.odom_noise_x = 0.05;
         newConfig.odom_noise_y = 0.05;
         newConfig.odom_noise_theta = 0.01;

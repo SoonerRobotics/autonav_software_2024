@@ -29,8 +29,8 @@
     <node pkg="autonav_vision" exec="expandify" />
 
     <!-- Pathing -->
-    <!-- <node pkg="autonav_nav" exec="path_resolver.py" />
-    <node pkg="autonav_nav" exec="astar.py" /> -->
+    <node pkg="autonav_nav" exec="path_resolver.py" />
+    <node pkg="autonav_nav" exec="astar.py" />
 
     <!-- Other -->
     <node pkg="autonav_display" exec="display.py" />
