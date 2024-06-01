@@ -5,6 +5,12 @@ import rclpy
 import cv2
 import numpy as np
 
+# for cnn
+import pickle
+import tensorflow as tf
+from tensorflow import keras
+# 
+
 from nav_msgs.msg import MapMetaData, OccupancyGrid
 import rclpy.qos
 from sensor_msgs.msg import CompressedImage
@@ -26,17 +32,17 @@ g_mapData.origin = Pose()
 g_mapData.origin.position.x = -10.0
 g_mapData.origin.position.y = -10.0
 
+# for erode/dilate/blur operations
+# 0 for rectangle, 1 for cross, 2 for ellipse
+EROSION_SHAPE = 2
+KERNEL_SIZE = 3
+
+# the actual kernel creating using OpenCV magic
+kernel = cv2.getStructuringElement(EROSION_SHAPE, (KERNEL_SIZE, KERNEL_SIZE))
+
 
 class ImageTransformerConfig:
     def __init__(self):
-        # HSV
-        self.lower_hue = 0
-        self.lower_sat = 0
-        self.lower_val = 0
-        self.upper_hue = 255
-        self.upper_sat = 95
-        self.upper_val = 210
-
         # Blur
         self.blur_weight = 5
         self.blur_iterations = 3
@@ -63,7 +69,7 @@ class ImageTransformerConfig:
 
         # Disabling
         self.disable_blur = False
-        self.disable_hsv = False
+        self.disable_cnn = False
         self.disable_region_of_disinterest = False
         self.disable_perspective_transform = False
 
@@ -73,6 +79,10 @@ class ImageTransformer(Node):
         super().__init__("autonav_vision_transformer")
         self.config = self.get_default_config()
         self.dir = dir
+
+        # Reload the unet model
+        self.model = tf.keras.models.load_model('results/SCRUNet_model.keras')
+
 
     def directionify(self, topic):
         return topic + "/" + self.dir
@@ -117,7 +127,6 @@ class ImageTransformer(Node):
         return rect
     
     def epic_noah_transform(self, image, pts, top_width, bottom_width, height, offset):
-
         rect = self.order_points(pts)
         (tl, tr, br, bl) = rect
         # compute the width of the new image, which will be the
@@ -225,15 +234,38 @@ class ImageTransformer(Node):
 
         return img
 
-    def apply_hsv(self, img):
-        if self.config.disable_hsv:
+    def apply_cnn(self, img):
+        if self.config.disable_cnn:
             return img
 
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-        lower = (self.config.lower_hue, self.config.lower_sat, self.config.lower_val)
-        upper = (self.config.upper_hue, self.config.upper_sat, self.config.upper_val)
-        mask = cv2.inRange(img, lower, upper)
-        mask = 255 - mask
+        # Histogram equalization of HSV value channel
+        image = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+        image[:,:,2] = cv2.equalizeHist(image[:,:,2])
+        image = cv2.cvtColor(image, cv2.COLOR_HSV2BGR)
+
+        # rotate image 90 degrees for the model for some reason
+        image = cv2.transpose(image) / 255.0
+
+        # resize the image for the model
+        image = cv2.resize(image, (256, 256))
+
+        # actually run the CNN on the image (except tensorflow expects a list of images, so we have to add a dimension, and then take it down one notch afterwards)
+        mask_ = self.model(np.expand_dims(image, axis=0)) # alright so I think this works now
+        mask_ = np.squeeze(mask_, axis=0)
+
+        # rotate the image 90 degrees back to how it was
+        mask = cv2.transpose(mask_ * 255.0)
+
+        # scale the image back up
+        mask = cv2.resize(mask, (640, 480)) #TODO find a better way to do this because when it scales the image up it introduces a lot of artefacts
+
+        #FIXME don't know if we really need to do this or not, probably would be it's own apply_erode() or apply_dilate() methods
+        # erode the mask a little bit to remove artefacts and small bits that aren't actually there
+        # mask = cv2.erode(mask, erodeKernel)
+
+        # dilate it back up to make up for lost information
+        # mask = cv2.dilate(mask, dilateKernel)
+        
         return mask
 
     def apply_region_of_disinterest(self, img):
@@ -267,7 +299,7 @@ class ImageTransformer(Node):
         img = self.apply_blur(img)
 
         # Apply filter and return a mask
-        img = self.apply_hsv(img)
+        img = self.apply_cnn(img)
 
         # Apply region of disinterest and flattening
         img = self.apply_region_of_disinterest(img)
