@@ -23,9 +23,8 @@ GRID_SIZE = 0.1
 CV_BRIDGE = cv_bridge.CvBridge()
 
 competition_waypoints = [
-    [(42.66827, -83.21934), (42.668121, -83.219361), (42.668077, -83.219359), (42.667928, -83.219328)],  # NORTH
-    [(42.667928, -83.219328), (42.668077, -83.219359), (42.668121, -83.219361), (42.66827, -83.21934)],  # SOUTH
-    [(35.210475, -97.441927), (35.210476, -97.442321), (35.210599, -97.442323), (35.210599, -97.442096)],  # NORMAN TEST WAYPOINTS
+    [(42.6682623, -83.2193709), (42.6681206, -83.2193606), (42.6680766, -83.2193592), (42.6679277, -83.2193276), (42.668130236144883, -83.21889785301433)],  # NORTH
+    [(42.668086, -83.218446)], #
     []
 ]
 
@@ -117,21 +116,21 @@ class AStarNode(Node):
         self.waypoint_start_time = 0
 
     def get_waypoints_for_dir(self):
-        if not self.config.calculateWaypointDirection:
-            return simulation_waypoints[self.config.waypointDirection] if self.system_mode == SystemModeEnum.SIMULATION else competition_waypoints[self.config.waypointDirection] if self.system_mode == SystemModeEnum.COMPETITION else practice_waypoints[self.config.waypointDirection]
+        # if not self.config.calculateWaypointDirection:
+        return simulation_waypoints[self.config.waypointDirection] if self.system_mode == SystemModeEnum.SIMULATION else competition_waypoints[self.config.waypointDirection] if self.system_mode == SystemModeEnum.COMPETITION else practice_waypoints[self.config.waypointDirection]
         
         # Get out current heading and estimate within 180 degrees which direction we are facing (north or south, 0 and 1 respectively)
-        heading = self.position.theta
-        direction_index = 0
-        heading_degrees = abs(heading * 180 / math.pi)
-        self.get_logger().info(f"Heading: {heading_degrees}")
-        if heading_degrees > 120 and heading_degrees < 240:
-            direction_index = 1
-            self.get_logger().info("Facing South")
-        else:
-            self.get_logger().info("Facing North")
-
-        return simulation_waypoints[direction_index] if self.system_mode == SystemModeEnum.SIMULATION else competition_waypoints[direction_index] if self.system_mode == SystemModeEnum.COMPETITION else practice_waypoints[direction_index]
+        # heading = self.position.theta
+        # direction_index = 0
+        # heading_degrees = abs(heading * 180 / math.pi)
+        # self.get_logger().info(f"Heading: {heading_degrees}")
+        # if heading_degrees > 120 and heading_degrees < 240:
+            # direction_index = 1
+            # self.get_logger().info("Facing South")
+        # else:
+            # self.get_logger().info("Facing North")
+        # 
+        # return simulation_waypoints[direction_index] if self.system_mode == SystemModeEnum.SIMULATION else competition_waypoints[direction_index] if self.system_mode == SystemModeEnum.COMPETITION else practice_waypoints[direction_index]
 
     def system_state_transition(self, old: SystemState, updated: SystemState):
         if updated.state == SystemStateEnum.AUTONOMOUS and updated.mobility and len(self.waypoints) == 0:
