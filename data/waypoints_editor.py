@@ -183,11 +183,11 @@ class WaypointHandler:
             f.write("label,lat,lon\n")
 
             # and then for every different list of waypoints we have in the file
-            for name, listOfWaypts in self.waypoints:
+            for name in self.waypoints:
                 # and for every point in those lists
-                for point in listOfWaypts:
+                for point in self.waypoints[name]:
                     # write that point to the file
-                    f.write(f"{name},{point[1]},{point[0]}\n")
+                    f.write(f"{name},{point[0]},{point[1]}\n")
     
     # callback for mouse clicks (needed for moving and selecting waypoints)
     def on_click(self, event):
