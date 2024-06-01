@@ -79,7 +79,7 @@ class WaypointHandler:
         points = ([], [])
 
         # north or south, which changes which waypoints set we're editing
-        direction = "none"
+        direction = "comp"
 
         # open and read the file
         with open(filepath, "r") as logfile:
@@ -99,6 +99,8 @@ class WaypointHandler:
                     # detect which direction we're heading and return the right waypoint label
                     # code stolen and very very heavily modified and condensed from autonav_nav/astar.py
                     self.direction = "compSouth" if 120 < abs((float(line.split(",")[4])) * 180 / pi) < 240 else "compNorth"
+        
+        self.direction = "comp"
         return points
 
     # make the GUI (buttons and stuff, register event handlers, etc)
