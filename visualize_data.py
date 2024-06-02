@@ -8,8 +8,8 @@ from matplotlib.backend_bases import MouseButton
 
 from math import pi
 
-DEBUG = False
-WAYPOINT_FILENAME = "data/waypoints.csv"
+# DEBUG = False
+# WAYPOINT_FILENAME = "data/waypoints.csv"
 
 BUTTON_Y = 0.05
 BUTTON_WIDTH = 0.15
@@ -20,29 +20,13 @@ GPS_DATA_COLOR = "blue"
 SELECT_COLOR = "red"
 WAYPT_COLOR = "orange"
 
-# no idea if this should be a class method or not
-# really the thing to do would be to make a Point class and associated functions,
-# which is hilarious because that's literally all we did in Java 2, but this works for now
-# standard pythagorean distance formula
-# expects two tuples, used pretty much like: dist(waypoint, (event.xdata, event.ydata))
 def dist(p1, p2):
     return ((p1[0] - p2[0])**2  +  (p1[1] - p2[1])**2) ** 0.5 # raising to power of 1/2 is the same as sqrt
 
 # class to handle gui callbacks and stuff
 class WaypointHandler:
     def __init__(self):
-        # load the waypoints from the file
-        self.loadWaypointsFile()
-
-        # get the logged GPS points
-        # uses Tkinter, stolen code from https://github.com/Team-OKC-Robotics/FRC-2023/blob/master/process_wpilib_logs.py
-        self.gpsData = self.getGpsPoints(filedialog.askopenfilename())
-
-        if DEBUG:
-            print(f"DIRECTION: {self.direction}")
-
-        self.index = 0 # index of the currently selected waypoint
-        self.inEditMode = False
+        self.folderName = getFolderName() # base folder name of all the logged auton data
 
         self.figure, self.axis = plt.subplots() # standard matplotlib code, get us some objects to draw graphics on
         self.createGui() # go ahead and create the rest of the gui
@@ -54,32 +38,18 @@ class WaypointHandler:
         # show everything and have matplotlib run the gui event loop and call our callbacks and everything
         plt.show()
 
+    def mainLoop(self):
+        pass #TODO
 
-    # copied/pasted from https://github.com/SoonerRobotics/autonav_software_2024/blob/feat/waypoints_file/autonav_ws/src/autonav_nav/src/astar.py
-    # load the waypoints from the file
-    def loadWaypointsFile(self):
-        self.waypoints = {}
 
-        # read GPS waypoints data from file
-        with open(WAYPOINT_FILENAME, "r") as f:
-            for line in f.readlines()[1:]: # skip the first line because that's the CSV headers
-                label, lat, lon = line.split(",")
-
-                try:
-                    # add the waypoint to the appropriate list in the dictionary
-                    self.waypoints[label].append((float(lat), float(lon)))
-                except KeyError:
-                    # if it doesn't exist then create it
-                    self.waypoints[label] = []
-                    self.waypoints[label].append((float(lat), float(lon)))
+    # uses Tkinter, stolen code from https://github.com/Team-OKC-Robotics/FRC-2023/blob/master/process_wpilib_logs.py
+    def getFolderName(self):
+        return filedialog.askopenfilename()
 
     # get the gps points as a tuple of all the lons and then all the lats, so it can be matplotlib'd instantly
     def getGpsPoints(self, filepath):
         # returns a tuple with ([x1, x2, x3, ...], [y1, y2, y3, ...])
         points = ([], [])
-
-        # north or south, which changes which waypoints set we're editing
-        direction = "comp"
 
         # open and read the file
         with open(filepath, "r") as logfile:
@@ -93,14 +63,6 @@ class WaypointHandler:
                 points[1].append(lon) # lon is x
                 points[0].append(lat) # lat is y
 
-                # if we're pretty far into the run, heading should be stable
-                if idx == 200:
-                    # so we ought to be able to tell if we're heading north or south
-                    # detect which direction we're heading and return the right waypoint label
-                    # code stolen and very very heavily modified and condensed from autonav_nav/astar.py
-                    self.direction = "compSouth" if 120 < abs((float(line.split(",")[4])) * 180 / pi) < 240 else "compNorth"
-        
-        self.direction = "comp"
         return points
 
     # make the GUI (buttons and stuff, register event handlers, etc)
@@ -160,34 +122,6 @@ class WaypointHandler:
         # and then we updated so redraw
         self.redraw()
 
-    # callback to remove the current waypoint
-    def subtract(self, event):
-        # remove the waypoint at the current index (ie the currently selected waypoint)
-        self.waypoints[self.direction].pop(self.index)
-
-        # if that was the last waypoint, we need to move the index to be one less, so do that
-        self.index = min(self.index, len(self.waypoints[self.direction])-1)
-
-        # redraw the waypoints so the user can tell the waypoint was deleted
-        self.redraw()
-    
-    def edit(self, event):
-        # put us in edit mode (next mouse click will take us out of it so we don't need to worry about that)
-        self.inEditMode = True
-    
-    # callback to save waypoints file callback
-    def save(self, event):
-        # open the file in write mode
-        with open(WAYPOINT_FILENAME, "w") as f:
-            # write the headers
-            f.write("label,lat,lon\n")
-
-            # and then for every different list of waypoints we have in the file
-            for name in self.waypoints:
-                # and for every point in those lists
-                for point in self.waypoints[name]:
-                    # write that point to the file
-                    f.write(f"{name},{point[0]},{point[1]}\n")
     
     # callback for mouse clicks (needed for moving and selecting waypoints)
     def on_click(self, event):
