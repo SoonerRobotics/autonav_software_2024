@@ -23,7 +23,7 @@ GRID_SIZE = 0.1
 CV_BRIDGE = cv_bridge.CvBridge()
 
 competition_waypoints = [
-    [(42.6682623, -83.2193709), (42.6681206, -83.2193606), (42.6680766, -83.2193592), (42.6679277, -83.2193276), (42.668130236144883, -83.21889785301433)],  # NORTH
+    [(42.6682623, -83.2193709), (42.6681206, -83.2193606), (42.6680766, -83.2193592), (42.6679277, -83.2193276), (42.6679216, -83.2189126), (42.668130236144883, -83.21889785301433)],  # NORTH
     [(42.668086, -83.218446)], #
     []
 ]
@@ -168,6 +168,7 @@ class AStarNode(Node):
 
             cv2.circle(cvimg, (self.best_pos[0], self.best_pos[1]), 1, (255, 0, 0), 1)
             cvimg = cv2.resize(cvimg, (320, 320), interpolation=cv2.INTER_NEAREST)
+            
             # Draw a grid on the image that is the scale of the original image, so it should be a 80x80 grid scaled up 4x
             for i in range(80):
                 cv2.line(cvimg, (0, i * 4), (320, i * 4), (85, 85, 85), 1)

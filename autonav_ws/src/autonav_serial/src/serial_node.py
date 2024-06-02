@@ -105,7 +105,7 @@ class SerialMotors(Node):
                 continue
             if self.can is not None:
                 try:
-                    msg = self.can.recv(timeout=1)
+                    msg = self.can.recv(timeout=0.01)
                     if msg is not None:
                         self.onCanMessageReceived(msg)
                 except can.CanError:
@@ -166,14 +166,14 @@ class SerialMotors(Node):
 
     def canWorker(self):
         try:
-            with open("/dev/autonav-can-835", "r") as f:
+            with open("/dev/ttyACM0", "r") as f:
                 pass
 
             if self.can is not None:
                 return
 
             self.can = can.ThreadSafeBus(
-                bustype="slcan", channel="/dev/autonav-can-835", bitrate=100000)
+                bustype="slcan", channel="/dev/ttyACM0", bitrate=100000)
             self.set_device_state(DeviceStateEnum.OPERATING)
         except:
             if self.can is not None:
@@ -189,7 +189,7 @@ class SerialMotors(Node):
         packed_data = SafetyLightsPacket()
         packed_data.autonomous = lights.autonomous
         packed_data.eco = False
-        packed_data.mode = 0
+        packed_data.mode = 0 if not lights.autonomous else 2
         packed_data.brightness = lights.brightness
         packed_data.red = lights.red
         packed_data.green = lights.green

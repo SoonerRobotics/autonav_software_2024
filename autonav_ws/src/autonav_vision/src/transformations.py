@@ -234,8 +234,8 @@ class ImageTransformer(Node):
         upper = (self.config.upper_hue, self.config.upper_sat, self.config.upper_val)
         mask1 = cv2.inRange(img, lower, upper)
 
-        lower = (70, 128, 80)
-        upper = (145, 255, 255)
+        lower = (110, 180, 110)
+        upper = (145, 255, 180)
         mask2 = cv2.inRange(img, lower, upper)
         epic_mask = cv2.add(mask1, mask2)
 
