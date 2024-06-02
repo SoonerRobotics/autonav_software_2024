@@ -78,12 +78,36 @@ class ImageTransformer(Node):
         return topic + "/" + self.dir
 
     def init(self):
+        # don't break anything
+        self.system_state = OFF
+
         self.camera_subscriber = self.create_subscription(CompressedImage, self.directionify("/autonav/camera/compressed") , self.onImageReceived, self.qos_profile)
+        self.calibration_subscriber = self.create_subscription(CameraCalibration, "/camera/autonav/calibration", self.onCalibrate)
         self.camera_debug_publisher = self.create_publisher(CompressedImage, self.directionify("/autonav/camera/compressed") + "/cutout", self.qos_profile)
         self.grid_publisher = self.create_publisher(OccupancyGrid, self.directionify("/autonav/cfg_space/raw"), 1)
         self.grid_image_publisher = self.create_publisher(CompressedImage, self.directionify("/autonav/cfg_space/raw/image") + "_small", self.qos_profile)
 
         self.set_device_state(DeviceStateEnum.OPERATING)
+    
+    def system_state_transition(self, old: SystemState, updated: SystemState):
+        self.system_state = updated
+
+    def onCalibrate(self, msg: CameraCalibration):
+        # only allow calibration if it's safe to do so, don't want to accidentally ruin a run or kill a person
+        if self.system_state is not AUTONOMOUS and self.system_state.mobility is False:
+            # remember that the mask is reversed though, we filter OUT the ground
+            # so ground needs to be in the threshold range, but not obstacles
+            # include in the mask, so it gets filtered out
+            if msg.id is RAMP or msg.id is GROUND:
+                pass #TODO ensure it's part of the mask
+            # to exclude from the mask, so it shows up for expandification
+            elif msg.id == BARREL or msg.id is LINE or msg.id is PAPER:
+                pass
+            else:
+                #TODO probably throw an error here or something, we should never reach this spot of code
+                pass
+        else:
+            return
 
     def config_updated(self, jsonObject):
         self.config = json.loads(self.jdump(jsonObject), object_hook=lambda d: SimpleNamespace(**d))
@@ -213,7 +237,11 @@ class ImageTransformer(Node):
         # Draw perspective transform points
         pts = [self.config.left_topleft, self.config.left_topright, self.config.left_bottomright, self.config.left_bottomleft] if self.dir == "left" else [self.config.right_topleft, self.config.right_topright, self.config.right_bottomright, self.config.right_bottomleft]
         cv2.polylines(img_copy, [np.array(pts)], True, (0, 0, 255), 2)
-        
+
+        # Draw calibration square points
+        pts = [] #TODO
+        cv2.polylines(img_copy, [np.array(pts)], True, (255, 0, 0), 2)
+
         self.camera_debug_publisher.publish(g_bridge.cv2_to_compressed_imgmsg(img_copy))
 
     def apply_blur(self, img):

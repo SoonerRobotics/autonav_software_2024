@@ -555,6 +555,20 @@ $(document).ready(function () {
         }
     });
 
+    $("#calibrate_include").on("click", function () {
+        send({
+            op: "calibrate",
+            id: 0
+        });
+    });
+
+    $("#calibrate_exclude").on("click", function () {
+        send({
+            op: "calibrate",
+            id: 1
+        });
+    });
+
     $("#save_preset_mode").on("click", function () {
         send({
             op: "save_preset_mode"

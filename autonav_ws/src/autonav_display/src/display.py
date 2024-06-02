@@ -6,7 +6,7 @@ from scr.states import DeviceStateEnum
 from scr_msgs.msg import SystemState, DeviceState, ConfigUpdated
 from scr_msgs.srv import SetSystemState, UpdateConfig, SetActivePreset, SaveActivePreset, GetPresets, DeletePreset
 from std_msgs.msg import Empty
-from autonav_msgs.msg import Position, MotorFeedback, MotorInput, MotorControllerDebug, PathingDebug, GPSFeedback, IMUData, Conbus
+from autonav_msgs.msg import Position, MotorFeedback, MotorInput, MotorControllerDebug, PathingDebug, GPSFeedback, IMUData, Conbus, CameraCalibration
 from sensor_msgs.msg import CompressedImage
 import asyncio
 import websockets
@@ -85,6 +85,7 @@ class BroadcastNode(Node):
         # Publishers
         self.conbus_p = self.create_publisher(Conbus, "/autonav/conbus/instruction", 100)
         self.broadcast_p = self.create_publisher(Empty, "/scr/state/broadcast", 20)
+        self.calibration_p = self.create_publisher(CameraCalibration, "/autonav/camera/calibration", 5)
 
         # Subscriptions
         self.device_state_s = self.create_subscription(DeviceState, "/scr/device_state", self.deviceStateCallback, 20)
@@ -227,6 +228,12 @@ class BroadcastNode(Node):
                 msg.data = data
                 msg.iterator = int(obj["iterator"]) if "iterator" in obj else 0
                 self.conbus_p.publish(msg)
+            
+            if obj["op"] == "calibrate":
+                msg = CameraCalibration()
+                # there's calibrate ramp, calibrate ground, and maybe a calibrate barrel and/or calibrate line and maybe a calibrate white balance or something (calibrat paper?)
+                msg.id = int(obj["id"]) # and I guess each will have it's own id or something                
+                self.calibration_p.publish(msg)
 
             if obj["op"] == "get_presets":
                 req = GetPresets.Request()

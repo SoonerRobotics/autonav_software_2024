@@ -27,6 +27,7 @@ set(msg_files
   "msg/SafetyLights.msg"
   "msg/Conbus.msg"
   "msg/PathingDebug.msg"
+  "msg/CameraCalibration.msg"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}
