@@ -1,2 +1,2 @@
-#TODO include a list of which ids mean which thing
-int id
+# whether to include the colors in the mask or not
+bool include_in_mask

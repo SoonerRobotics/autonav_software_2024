@@ -232,7 +232,7 @@ class BroadcastNode(Node):
             if obj["op"] == "calibrate":
                 msg = CameraCalibration()
                 # there's calibrate ramp, calibrate ground, and maybe a calibrate barrel and/or calibrate line and maybe a calibrate white balance or something (calibrat paper?)
-                msg.id = int(obj["id"]) # and I guess each will have it's own id or something                
+                msg.include_in_mask = int(obj["include"]) # and I guess each will have it's own id or something                
                 self.calibration_p.publish(msg)
 
             if obj["op"] == "get_presets":

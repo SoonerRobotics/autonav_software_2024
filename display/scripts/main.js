@@ -558,14 +558,14 @@ $(document).ready(function () {
     $("#calibrate_include").on("click", function () {
         send({
             op: "calibrate",
-            id: 0
+            include: true
         });
     });
 
     $("#calibrate_exclude").on("click", function () {
         send({
             op: "calibrate",
-            id: 1
+            include: false
         });
     });
 

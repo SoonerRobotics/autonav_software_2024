@@ -94,20 +94,27 @@ class ImageTransformer(Node):
 
     def onCalibrate(self, msg: CameraCalibration):
         # only allow calibration if it's safe to do so, don't want to accidentally ruin a run or kill a person
-        if self.system_state is not AUTONOMOUS and self.system_state.mobility is False:
+        if self.system_state.state is not AUTONOMOUS and self.system_state.mobility is False:
             # remember that the mask is reversed though, we filter OUT the ground
             # so ground needs to be in the threshold range, but not obstacles
             # include in the mask, so it gets filtered out
-            if msg.id is RAMP or msg.id is GROUND:
-                pass #TODO ensure it's part of the mask
-            # to exclude from the mask, so it shows up for expandification
-            elif msg.id == BARREL or msg.id is LINE or msg.id is PAPER:
-                pass
+            if msg.include_in_mask:
+                pixels = [] #TODO
+                avgHue, avgSat, avgVal = getAverageVal(pixels) #TODO
+
+                # take the lower of the current and calibrated values, so that as much as possible is included in the mask
+                self.config.lower_hue = min(self.config.lower_hue, avgHue)
+                self.config.lower_sat = min(self.config.lower_sat, avgSat)
+                self.config.lower_val = min(self.config.lower_val, avgVal)
+
+                # take the upper of the current and calibrated values, so that as much as possible is included in the mask
+                self.config.upper_hue = max(self.config.upper_hue, avgHue)
+                self.config.upper_sat = max(self.config.upper_sat, avgSat)
+                self.config.upper_val = max(self.config.upper_val, avgVal)
+                
+            # exclude from the mask, so it shows up for expandification
             else:
-                #TODO probably throw an error here or something, we should never reach this spot of code
-                pass
-        else:
-            return
+                pass #TODO
 
     def config_updated(self, jsonObject):
         self.config = json.loads(self.jdump(jsonObject), object_hook=lambda d: SimpleNamespace(**d))
