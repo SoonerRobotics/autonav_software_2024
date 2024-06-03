@@ -16,7 +16,7 @@ var deviceStates = {};
 var logs = [];
 var iterator = 0;
 var iterators = [];
-var development_mode = false;
+var development_mode = true;
 var current_preset = "ERROR_NO_PRESET_AUTODETECTED";
 
 var addressKeys = {

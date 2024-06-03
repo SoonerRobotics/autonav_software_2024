@@ -15,6 +15,7 @@ import json
 
 from scr.node import Node
 from scr.states import DeviceStateEnum
+from scr.utils import clamp
 
 g_bridge = CvBridge()
 
@@ -26,6 +27,21 @@ g_mapData.origin = Pose()
 g_mapData.origin.position.x = -10.0
 g_mapData.origin.position.y = -10.0
 
+# start in top left, go clockwise
+CALIBRATION_BOX = {
+    "right":[
+        (0, 215),
+        (80, 215),
+        (80, 290),
+        (0, 290)
+    ],
+    "left":[
+        (0, 215),
+        (400, 215),
+        (400, 290),
+        (0, 290)
+    ]
+}
 
 class ImageTransformerConfig:
     def __init__(self):
@@ -74,17 +90,62 @@ class ImageTransformer(Node):
         self.config = self.get_default_config()
         self.dir = dir
 
+        # 30 is a good +/- to use when dealing with OpenCV color values
+        self.pixelFactor = 30
+
     def directionify(self, topic):
         return topic + "/" + self.dir
 
     def init(self):
         self.camera_subscriber = self.create_subscription(CompressedImage, self.directionify("/autonav/camera/compressed") , self.onImageReceived, self.qos_profile)
+        self.calibration_subscriber = self.create_subscription(CameraCalibration, "/camera/autonav/calibration", self.onCalibrate)
         self.camera_debug_publisher = self.create_publisher(CompressedImage, self.directionify("/autonav/camera/compressed") + "/cutout", self.qos_profile)
         self.grid_publisher = self.create_publisher(OccupancyGrid, self.directionify("/autonav/cfg_space/raw"), 1)
         self.grid_image_publisher = self.create_publisher(CompressedImage, self.directionify("/autonav/cfg_space/raw/image") + "_small", self.qos_profile)
 
         self.set_device_state(DeviceStateEnum.OPERATING)
+    
+    def onCalibrate(self, msg: CameraCalibration):
+        # only allow calibration if it's safe to do so, don't want to accidentally ruin a run or kill a person
+        if self.system_state is not SystemStateEnum.AUTONOMOUS and not self.mobility:
+            # remember that the mask is reversed though, we filter OUT the ground
+            # so ground needs to be in the threshold range, but not obstacles
+            pts = CALIBRATION_BOX[self.dir]
 
+            avgH = avgV = avgS = 0
+            # for every pixel in the calibration box square thing
+            for pixel in self.image[pts[0][0]:pts[1][0], pts[0][1]:pts[3][1]]:
+                avgH += pixel[0]
+                avgS += pixel[1]
+                avgV +=pixel[2]
+            
+            # then calculate number of pixles and divide out to get the average values
+            numPixels = abs((pts[0][0] - pts[1][0]) * (pts[0][1] - pts[3][1]))
+            avgH /= numPixels
+            avgS /= numPixels
+            avgV /= numPixels
+
+            # take the lower of the current and calibrated values, so that as much as possible is included in the mask if we are including in the mask,
+            # else we take the upper of the two to shrink the range of values we filter
+            # then we have a fudge factor to not overfit or whatever
+            self.config.lower_hue = min(self.config.lower_hue, avgHue - self.pixelFactor) if msg.include_in_mask else max(self.config.lower_hue, avgHue + self.pixelFactor)
+            self.config.lower_sat = min(self.config.lower_sat, avgSat - self.pixelFactor) if msg.include_in_mask else max(self.config.lower_sat, avgSat + self.pixelFactor)
+            self.config.lower_val = min(self.config.lower_val, avgVal - self.pixelFactor) if msg.include_in_mask else max(self.config.lower_val, avgVal + self.pixelFactor)
+
+            # take the upper of the current and calibrated values, so that as much as possible is included in the mask
+            # else we take the lower of the two values to shrink the range down
+            self.config.upper_hue = max(self.config.upper_hue, avgHue + self.pixelFactor) if msg.include_in_mask else min(self.config.lower_hue, avgHue - self.pixelFactor)
+            self.config.upper_sat = max(self.config.upper_sat, avgSat + self.pixelFactor) if msg.include_in_mask else min(self.config.lower_sat, avgSat - self.pixelFactor)
+            self.config.upper_val = max(self.config.upper_val, avgVal + self.pixelFactor) if msg.include_in_mask else min(self.config.lower_val, avgVal - self.pixelFactor)
+
+            # and we just did some shenanigans with the values and pixelFactor and everything so clamp everything to be safe
+            self.config.lower_hue = clamp(self.config.lower_hue, 0, 255)
+            self.config.lower_sat = clamp(self.config.lower_sat, 0, 255)
+            self.config.lower_val = clamp(self.config.lower_val, 0, 255)
+            self.config.upper_hue = clamp(self.config.upper_hue, 0, 255)
+            self.config.upper_sat = clamp(self.config.upper_sat, 0, 255)
+            self.config.upper_val = clamp(self.config.upper_val, 0, 255)
+    
     def config_updated(self, jsonObject):
         self.config = json.loads(self.jdump(jsonObject), object_hook=lambda d: SimpleNamespace(**d))
 
@@ -213,7 +274,11 @@ class ImageTransformer(Node):
         # Draw perspective transform points
         pts = [self.config.left_topleft, self.config.left_topright, self.config.left_bottomright, self.config.left_bottomleft] if self.dir == "left" else [self.config.right_topleft, self.config.right_topright, self.config.right_bottomright, self.config.right_bottomleft]
         cv2.polylines(img_copy, [np.array(pts)], True, (0, 0, 255), 2)
-        
+
+        # Draw calibration square points
+        pts = CALIBRATION_BOX[self.dir]
+        cv2.polylines(img_copy, [np.array(pts)], True, (255, 0, 0), 2)
+
         self.camera_debug_publisher.publish(g_bridge.cv2_to_compressed_imgmsg(img_copy))
 
     def apply_blur(self, img):
