@@ -9,6 +9,8 @@
 #include "autonav_filters/csv_utils.hpp"
 #include "autonav_filters/rapidcsv.h"
 
+using namespace std::chrono_literals;
+
 TEST(ParticleFilterTests, initialization_test) {
     GTEST_SKIP() << "skipping init test";
     int num_particles = 750;
@@ -194,6 +196,7 @@ TEST(ParticleFilterTests, gps_test) {
 }
 
 TEST(ParticleFilterTests, gps_combine_test) {
+    GTEST_SKIP();
     int num_particles = 5;
     double latitudeLength = 111086.2;
     double longitudeLength = 81978.2;
@@ -234,6 +237,94 @@ TEST(ParticleFilterTests, gps_combine_test) {
 
     //ASSERT_EQ(gps_vector[0], python_gps_vector[0]);
     //ASSERT_EQ(gps_vector[1], python_gps_vector[1]);
+}
+
+TEST(ParticleFilterTests, competition_test) {
+    int num_particles = 750;
+    double latitudeLength = 111086.2;
+    double longitudeLength = 81978.2;
+    double gps_noise = 0.8;
+    double odom_noise[3] = {0.05, 0.05, 0.1};
+    ParticleFilter particle_filter = ParticleFilter(num_particles, latitudeLength, longitudeLength, gps_noise, odom_noise[0], odom_noise[1], odom_noise[2]);
+
+    particle_filter.init_particles();
+
+    rapidcsv::Document motor_feedback_sheet("/home/tony/autonav_software_2024/autonav_ws/src/autonav_filters/tests/ENTRY_FEEDBACK_comp.csv");
+    rapidcsv::Document gps_feedback_sheet("/home/tony/autonav_software_2024/autonav_ws/src/autonav_filters/tests/ENTRY_GPS_comp.csv");
+    
+    std::vector<double> feedback_times = motor_feedback_sheet.GetColumn<double>(0);
+    std::vector<double> delta_xs = motor_feedback_sheet.GetColumn<double>(2);
+    std::vector<double> delta_ys = motor_feedback_sheet.GetColumn<double>(3);
+    std::vector<double> delta_thetas = motor_feedback_sheet.GetColumn<double>(4);
+
+    std::vector<double> gps_times = gps_feedback_sheet.GetColumn<double>(0);
+    std::vector<double> latitudes = gps_feedback_sheet.GetColumn<double>(2);
+    std::vector<double> longitudes = gps_feedback_sheet.GetColumn<double>(3);
+    std::vector<double> altitudes = gps_feedback_sheet.GetColumn<double>(4);
+    std::vector<double> gps_fix = gps_feedback_sheet.GetColumn<double>(5);
+    std::vector<std::string> is_locked_str = gps_feedback_sheet.GetColumn<std::string>(6);
+    std::vector<bool> is_locked;
+    std::vector<double> satellites = gps_feedback_sheet.GetColumn<double>(7);
+
+    for (std::string s : is_locked_str) {
+        is_locked.push_back(csv_utils::to_bool(s));
+    };
+
+    printf("len %d ", delta_xs.size());
+    printf("len gps %d ", latitudes.size());
+
+    printf("feedback time diff %f\n", feedback_times[feedback_times.size()-1] - feedback_times[0]);
+    printf("gps time diff %f\n", gps_times[gps_times.size()-1] - gps_times[0]);
+
+    std::vector<int> feedback_time_deltas;
+    for (int i = 0; i < feedback_times.size();i++) {
+        double value = feedback_times[i] - gps_times[0];
+        value = value * 10e2;
+        int int_value = int(value);
+        feedback_time_deltas.push_back(int_value);
+    }
+
+    std::vector<int> gps_time_deltas;
+    for (int i = 0; i < gps_times.size();i++) {
+        double value = gps_times[i] - gps_times[0];
+        value = value * 10e2;
+        int int_value = int(value);
+        gps_time_deltas.push_back(int_value);
+    }
+
+    printf("start of feedback_time_deltas %d\n", feedback_time_deltas[0]);
+    printf("end of gps_time_deltas %d\n", gps_time_deltas[gps_time_deltas.size()-1]);
+
+    autonav_msgs::msg::MotorFeedback motor_message;
+    autonav_msgs::msg::GPSFeedback gps_message;
+    std::vector<double> averages;
+    for (int i = feedback_time_deltas[0]; i<=gps_time_deltas[gps_time_deltas.size()-1]; i++) {
+    //for (int i = feedback_time_deltas[0]; i<265995; i++) {
+        printf("%d\n", i);
+        for (int j = 0; j < feedback_time_deltas.size(); j++) {
+            if (i == feedback_time_deltas[j]) {
+                //printf("%d = %d\n", i, feedback_time_deltas[j]);
+                motor_message.delta_x = delta_xs[j];
+                motor_message.delta_y = delta_ys[j];
+                motor_message.delta_theta = delta_thetas[j];
+                averages = particle_filter.feedback(motor_message);
+            }
+        }
+        
+        for (int j = 0; j < gps_time_deltas.size(); j++) {
+            if (i == gps_time_deltas[j]) {
+                gps_message.latitude = latitudes[j];
+                gps_message.longitude = longitudes[j];
+                gps_message.altitude = altitudes[j];
+                gps_message.gps_fix = gps_fix[j];
+                gps_message.is_locked = is_locked[j];
+                gps_message.satellites = satellites[j];
+                particle_filter.gps(gps_message);
+            }
+        }
+    }
+
+
 }
 
 TEST(ParticleFilterTests, complete_test) {

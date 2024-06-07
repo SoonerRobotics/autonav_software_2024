@@ -132,9 +132,23 @@ class ParticleFilter {
 
             std::vector<double> feedback_vector = {avg_x, avg_y, avg_theta};
 
-            for (int i = 0; i<int(std::size(this->particles)); i++)
+            //for (int i = 0; i<int(std::size(this->particles)); i++)
             //printf("new particles in feedback: %f, %f, %f, %f\n", this->particles[i].x, this->particles[i].y, this->particles[i].theta, this->particles[i].weight);
             //printf("\n====== END FEEDBACK ======\n\n");
+
+            std::ofstream averages_log_file;
+            averages_log_file.open("/home/tony/Documents/averages_log_file_long.txt", std::ios::app);
+            if (averages_log_file.is_open()) {
+                //printf("gps log file open");
+            }
+            else {
+                //printf("log file not open");
+            }
+            averages_log_file << feedback_vector[0] << ", " << feedback_vector[1] << ", " << feedback_vector[2] << std::endl;
+            averages_log_file.close();
+            //FILE OUTPUT SECTION
+            //printf("====== END FEEDBACK ======\n\n");
+
             return feedback_vector;
         };
 
@@ -185,8 +199,8 @@ class ParticleFilter {
             //     ", " + std::to_string(particle.y) + ", ";
             // }
             
-            // std::ofstream gps_log_file;
-            // gps_log_file.open("/home/tony/Documents/gps_log_file.txt", std::ios::app);
+            //std::ofstream gps_log_file;
+            //gps_log_file.open("/home/tony/Documents/gps_log_file.txt", std::ios::app);
             // if (gps_log_file.is_open()) {
             //     printf("gps log file open");
             // }
