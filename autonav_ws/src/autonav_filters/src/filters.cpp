@@ -76,7 +76,7 @@ void FiltersNode::config_updated(json newConfig) {
 json FiltersNode::get_default_config() {
         ParticleFilterConfig newConfig;
         newConfig.latitudeLength = 110944.12;
-        newConfig.longitudeLength = 91071.17;
+        newConfig.longitudeLength = 81978.2;
         newConfig.num_particles = 750; 
         newConfig.gps_noise = 0.3;
         newConfig.odom_noise_x = 0.05;
