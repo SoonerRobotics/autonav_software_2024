@@ -249,14 +249,19 @@ TEST(ParticleFilterTests, competition_test) {
 
     particle_filter.init_particles();
 
-    rapidcsv::Document motor_feedback_sheet("/home/tony/autonav_software_2024/autonav_ws/src/autonav_filters/tests/ENTRY_FEEDBACK_comp.csv");
-    rapidcsv::Document gps_feedback_sheet("/home/tony/autonav_software_2024/autonav_ws/src/autonav_filters/tests/ENTRY_GPS_comp.csv");
+    //rapidcsv::Document motor_feedback_sheet("/home/tony/autonav_software_2024/autonav_ws/src/autonav_filters/tests/ENTRY_FEEDBACK_comp.csv");
+    //rapidcsv::Document gps_feedback_sheet("/home/tony/autonav_software_2024/autonav_ws/src/autonav_filters/tests/ENTRY_GPS_comp.csv");
+    printf("opening simulator feedback\n");
+    rapidcsv::Document motor_feedback_sheet("/home/tony/autonav_software_2024/autonav_ws/src/autonav_filters/tests/ENTRY_FEEDBACK.csv");
+    printf("opening simulator gps\n");
+    rapidcsv::Document gps_feedback_sheet("/home/tony/autonav_software_2024/autonav_ws/src/autonav_filters/tests/ENTRY_GPS.csv");
     
+    printf("opened both files\n");
     std::vector<double> feedback_times = motor_feedback_sheet.GetColumn<double>(0);
+    printf("line\n");
     std::vector<double> delta_xs = motor_feedback_sheet.GetColumn<double>(2);
     std::vector<double> delta_ys = motor_feedback_sheet.GetColumn<double>(3);
     std::vector<double> delta_thetas = motor_feedback_sheet.GetColumn<double>(4);
-
     std::vector<double> gps_times = gps_feedback_sheet.GetColumn<double>(0);
     std::vector<double> latitudes = gps_feedback_sheet.GetColumn<double>(2);
     std::vector<double> longitudes = gps_feedback_sheet.GetColumn<double>(3);

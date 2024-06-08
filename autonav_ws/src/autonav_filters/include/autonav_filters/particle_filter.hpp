@@ -130,6 +130,7 @@ class ParticleFilter {
 
             //printf("average data: %f, %f, %f\n\n", avg_x, avg_y, avg_theta);
 
+            this->log_particles();
             std::vector<double> feedback_vector = {avg_x, avg_y, avg_theta};
 
             //for (int i = 0; i<int(std::size(this->particles)); i++)
@@ -338,6 +339,20 @@ class ParticleFilter {
             return this->first_gps;
         }
 
+        double* get_mean_values() {
+            double means[3];
+            for (Particle particle : this->particles) {
+                means[0] += particle.x;
+                means[1] += particle.y;
+                means[2] += particle.theta;
+            }
+            means[0] /= this->num_particles;
+            means[1] /= this->num_particles;
+            means[2] /= this->num_particles;
+
+            return means;
+        }
+
         std::vector<std::vector<double>> get_particles_data() {
             std::vector<std::vector<double>> particle_data_collection;
             for (Particle part : particles) {
@@ -345,6 +360,29 @@ class ParticleFilter {
                 particle_data_collection.push_back(particle_data);
             }
             return particle_data_collection;
+        }
+
+        void log_particles() {
+            //printf("in log particles\n");
+            std::ofstream particles_x_log_file;
+            std::ofstream particles_y_log_file;
+            std::ofstream particles_theta_log_file;
+            std::ofstream particles_mean_log_file;
+            particles_x_log_file.open("/home/tony/Documents/particles_x_log_file.txt", std::ios::app);
+            particles_y_log_file.open("/home/tony/Documents/particles_y_log_file.txt", std::ios::app);
+            particles_theta_log_file.open("/home/tony/Documents/particles_theta_log_file.txt", std::ios::app);
+            for (Particle particle : this->particles) {
+                particles_x_log_file << particle.x << ", ";
+                particles_y_log_file << particle.y << ", ";
+                particles_theta_log_file << particle.theta << ", ";
+            }
+            particles_x_log_file << std::endl;
+            particles_y_log_file << std::endl;
+            particles_theta_log_file << std::endl;
+
+            particles_x_log_file.close();
+            particles_y_log_file.close();
+            particles_theta_log_file.close();
         }
 
         #pragma endregion Getters
