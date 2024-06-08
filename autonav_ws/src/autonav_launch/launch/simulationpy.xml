@@ -9,19 +9,14 @@
     <node pkg="scr_controller" exec="logging" />
 
     <!-- Filtering -->
-    <!-- <node pkg="autonav_filters" exec="filters.py">
+    <node pkg="autonav_filters" exec="filters.py" output="screen">
+        <env name="RCUTILS_LOGGING_BUFFERED_STREAM" value="0"/>
+        <!-- <param name="emulate_tty" value ="True"/> -->
         <param name="latitude_length" value="110944.12" />
         <param name="longitude_length" value="91071.17" />
-    </node> -->
-    <!--<node pkg="autonav_filters" exec="filters_node"/> -->
-    
-    <node
-        pkg="autonav_filters"
-        exec="filters_node"
-        name="filters_node"
-        output="screen">
-        <env name="RCUTILS_LOGGING_BUFFERED_STREAM" value="0"/>
+        <param name="filter_type" value="0" />    
     </node>
+    <!-- <node pkg="autonav_filters" exec="filters_node" /> -->
 
     <!-- Vision Nodes -->
     <node pkg="autonav_vision" exec="transformations.py" />

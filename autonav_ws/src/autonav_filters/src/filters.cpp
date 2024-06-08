@@ -31,8 +31,11 @@ void FiltersNode::init() {
     //double longitudeLength = 81978.2;
     this->latitudeLength = config.latitudeLength;
     this->longitudeLength = config.longitudeLength;
-    ParticleFilter particle_filter{config.num_particles, config.latitudeLength, config.longitudeLength, config.gps_noise, config.odom_noise_x, config.odom_noise_y, config.odom_noise_theta};
+    //ParticleFilter particle_filter{config.num_particles, config.latitudeLength, config.longitudeLength, config.gps_noise, config.odom_noise_x, config.odom_noise_y, config.odom_noise_theta};
+    RCLCPP_INFO(this->get_logger(), "config.num_particles %d", config.num_particles);
     this->particle_filter = particle_filter;
+    this->particle_filter.init_particles();
+    //this->particle_filter.printParticles();
     autonav_msgs::msg::GPSFeedback first_gps;
     autonav_msgs::msg::GPSFeedback last_gps;
     bool first_gps_received = false;
@@ -60,17 +63,22 @@ void FiltersNode::on_reset() {
 }
 
 void FiltersNode::config_updated(json newConfig) {
+        RCLCPP_INFO(this->get_logger(), "config updated");
         config = newConfig.template get<ParticleFilterConfig>();
         ParticleFilter particle_filter{config.num_particles, config.latitudeLength, config.longitudeLength, config.gps_noise, config.odom_noise_x, config.odom_noise_y, config.odom_noise_theta};
         this->particle_filter = particle_filter;
+        this->particle_filter.init_particles();
+        RCLCPP_INFO(this->get_logger(), "gps_noise %f", config.gps_noise);
+        RCLCPP_INFO(this->get_logger(), "longitudeLength %f", config.longitudeLength);
+        //this->particle_filter.printParticles();
 }
 
 json FiltersNode::get_default_config() {
         ParticleFilterConfig newConfig;
         newConfig.latitudeLength = 110944.12;
-        newConfig.longitudeLength = 91071.17;
-        newConfig.num_particles = 750;
-        newConfig.gps_noise = 0.8;
+        newConfig.longitudeLength = 81978.2;
+        newConfig.num_particles = 750; 
+        newConfig.gps_noise = 0.3;
         newConfig.odom_noise_x = 0.05;
         newConfig.odom_noise_y = 0.05;
         newConfig.odom_noise_theta = 0.01;
@@ -78,21 +86,14 @@ json FiltersNode::get_default_config() {
         return newConfig;
 }
 
-void FiltersNode::on_GPS_received(const autonav_msgs::msg::GPSFeedback gps_message) {
-    // RCLCPP_INFO(this->get_logger(), "RECEIVED GPS");
-    // RCLCPP_INFO(this->get_logger(), "gps_message.latitude %f\n", gps_message.latitude);
-    // RCLCPP_INFO(this->get_logger(), "gps_message.longitude %f\n", gps_message.longitude);
+void FiltersNode::on_GPS_received(autonav_msgs::msg::GPSFeedback gps_message) {
     if (gps_message.gps_fix == 0 &&  gps_message.is_locked == false) {
         return;
-        // RCLCPP_INFO(this->get_logger(), "RETURNING IMMEDIATELY");
     }
     if (this->first_gps_received == false) {
         this->first_gps = gps_message;
         this->first_gps_received = true;
     }
-
-    // RCLCPP_INFO(this->get_logger(), "first_gps.latitude %f", first_gps.latitude);
-    // RCLCPP_INFO(this->get_logger(), "first_gps.longitude %f", first_gps.longitude);
         
     this->last_gps = gps_message;
     this->last_gps_assigned = true;
@@ -100,7 +101,7 @@ void FiltersNode::on_GPS_received(const autonav_msgs::msg::GPSFeedback gps_messa
     this->particle_filter.gps(gps_message);
     
 }
-void FiltersNode::on_MotorFeedback_received(const autonav_msgs::msg::MotorFeedback motorFeedback_message) {
+void FiltersNode::on_MotorFeedback_received(autonav_msgs::msg::MotorFeedback motorFeedback_message) {
     // RCLCPP_INFO(this->get_logger(), "received motorfeedback %f", 5);
     std::vector<double> averages;
     averages = this->particle_filter.feedback(motorFeedback_message);
@@ -112,37 +113,20 @@ void FiltersNode::on_MotorFeedback_received(const autonav_msgs::msg::MotorFeedba
     autonav_msgs::msg::Position position;
     position.x = averages[0];
     position.y = averages[1];
-    //RCLCPP_INFO(this->get_logger(), "position.x %f\n", position.x);
-    //RCLCPP_INFO(this->get_logger(), "position.y %f\n", position.y);
-    position.theta = (-1 * M_PI * 2 + averages[2]);
-    //RCLCPP_INFO(this->get_logger(), "position.theta %f\n", position.theta);
+    //position.theta = (-1 * M_PI * 2 + averages[2]) * 1;
+    position.theta = averages[2];
     if (this->first_gps_received == true) {
         double gps_x = this->first_gps.latitude + position.x / this->latitudeLength;
         double gps_y = this->first_gps.longitude - position.y / this->longitudeLength;
 
-        //RCLCPP_INFO(this->get_logger(), "first_gps.latitude %f", first_gps.latitude);
-        //RCLCPP_INFO(this->get_logger(), "first_gps.longitude %f", first_gps.longitude);
-        //RCLCPP_INFO(this->get_logger(), "gps_x %f", gps_x);
-        //RCLCPP_INFO(this->get_logger(), "gps_y %f", gps_y);
-
-
         position.latitude = gps_x;
-        //RCLCPP_INFO(this->get_logger(), "position.latitude %f\n", position.latitude);
         position.longitude = gps_y;
-        //RCLCPP_INFO(this->get_logger(), "position.longitude %f\n", position.longitude);
     }
 
     if (this->last_gps_assigned = true) {
         //position.latitude = this->last_gps.latitude;
         //position.longitude = this->last_gps.longitude;
     }
-    //RCLCPP_INFO(this->get_logger(), "average 0: %f, average 1: %f, average 2: %f", averages[0], averages[1], averages[2]);
-    //RCLCPP_INFO(this->get_logger(), "publishing position x: %f, y: %f, theta: %f", position.x, position.y, position.theta);
-    // RCLCPP_INFO(this->get_logger(), "position latitude: %f, longitude: %f", position.latitude, position.longitude);
-    // std::string latitude_log_string = std::to_string(position.latitude);
-    // std::string longitude_log_string = std::to_string(position.longitude);
-    // std::string combined_string = latitude_log_string + ", " + longitude_log_string + ", ";
-    // this->log(combined_string);
 
     positionPublisher->publish(position);
 }

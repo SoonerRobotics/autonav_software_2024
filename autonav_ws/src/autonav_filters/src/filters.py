@@ -41,6 +41,7 @@ class FiltersNode(Node):
 
     def config_updated(self, jsonObject):
         self.config = json.loads(self.jdump(jsonObject), object_hook=lambda d: SimpleNamespace(**d))
+        self.onReset()
 
     def get_default_config(self):
         return FiltersNodeConfig()
@@ -53,11 +54,16 @@ class FiltersNode(Node):
         self.set_device_state(DeviceStateEnum.OPERATING)
 
     def onReset(self):
+        self.first_gps = None
+        self.last_gps = None
         self.dr.reset()
         self.pf.init_particles()
 
     def system_state_transition(self, old: SystemState, updated: SystemState):
         if old.state != SystemStateEnum.AUTONOMOUS and updated.state == SystemStateEnum.AUTONOMOUS:
+            self.onReset()
+
+        if old.state != SystemStateEnum.MANUAL and updated.state == SystemStateEnum.MANUAL:
             self.onReset()
 
         if old.mobility == False and updated.mobility == True:
@@ -90,9 +96,7 @@ class FiltersNode(Node):
         position = Position()
         position.x = averages[0]
         position.y = averages[1]
-        #self.get_logger().info(f"position.x {position.x}\n")
-        #self.get_logger().info(f"position.y {position.y}\n")
-        position.theta = (-1 * math.pi * 2 + averages[2]) * 1
+        position.theta = averages[2]
 
         if self.first_gps is not None:
             gps_x = self.first_gps.latitude + position.x / self.latitude_length
