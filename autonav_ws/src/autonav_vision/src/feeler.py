@@ -16,8 +16,17 @@ HEIGHT = 800
 def centerCoordinates(x, y):
     return (x + WIDTH//2), (y + HEIGHT//2)
 
+# can you overload functions like this in python? no idea
+# but anyways yeah just assume all polar/cartesian rubbish starts at 0 or something
+def lerp(end):
+    lerp(0, end, 0.5)
+
+# taken from the wikipedia page on linear interpolation
 def lerp(start, end, step):
-    yield start + step #???
+    # this is giving me major frange() vibes, which we honestly might need
+    for x in range(start, end):
+        yield start + (step * (end - start))
+    yield end # just in case?
 
 class Vector:
     # so there's no confusion when creating a vector because we are mixing coordinate systems all over the place,
@@ -82,13 +91,13 @@ class Vector:
         cv2.line(image, centerCoordinates(0, 0), centerCoordinates(self.x, self.y))
     
     # mask is supposed to be a binary openCV image I think
-    def upadate(self, mask):
+    def update(self, mask):
         # for each coordinate/pixel value in the vector
-        for x, y in lerp(self.startPoint, self.endPoint):
+        for x, y in round(lerp(self.x)), round(lerp(self.y)):
             # if the pixel at that location is NOT empty space (ie it is an obstacle)
             if mask[centerCoordinates(x, y)] > 0:
                 # then we've reached our new length, so update that
-                self.endPoint = x, y
+                self.setXY(x, y)
 
 class Robot:
     def __init__(self):
@@ -105,7 +114,8 @@ class Robot:
             self.feelers.append(v)
 
         # start pointing straight
-        self.heading_arrow = Vector(MAX_LENGTH, 0)
+        self.heading_arrow = Vector()
+        self.heading_arrow.setPolar(0, MAX_LENGTH)
     
     def update(self):
         # reset our heading
@@ -133,13 +143,16 @@ PATH = filedialog.askopenfilename()
 # bg_img = cv2.imread(PATH)
 video = cv2.VideoCapture(PATH)
 
-while video.isOpened():
+done = False # while debugging don't need to do every frame, waste of battery power
+while video.isOpened() and not done:
     ret, image = video.read()
 
     if not ret:
         break # the end of the video
     
-    mask = threshold(image)
+    # for now just use recorded threshold, so don't have to bother about cutting robot out and warpPerspective-ing
+    # mask = threshold(image)
+    mask = image
 
     for feeler in robot.feelers:
         feeler.update(mask)
@@ -151,4 +164,7 @@ while video.isOpened():
     cv2.imshow("image", image)
     cv2.waitKey(0) #TODO do we want to make this match the 8 fps or something? or videoWrite and not bother with real-time output?
 
+    done = True
+
+video.release()
 cv2.destroyAllWindows()
