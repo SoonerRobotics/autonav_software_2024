@@ -16,6 +16,9 @@ HEIGHT = 800
 def centerCoordinates(x, y):
     return (x + WIDTH//2), (y + HEIGHT//2)
 
+def lerp(start, end, step):
+    yield start + step #???
+
 class Vector:
     # so there's no confusion when creating a vector because we are mixing coordinate systems all over the place,
     # just make a 0 vector and then you're supposed to call either setXY or setPolar to actually change the values
@@ -77,6 +80,15 @@ class Vector:
     # draw the feeler on the given image
     def draw(self, image):
         cv2.line(image, centerCoordinates(0, 0), centerCoordinates(self.x, self.y))
+    
+    # mask is supposed to be a binary openCV image I think
+    def upadate(self, mask):
+        # for each coordinate/pixel value in the vector
+        for x, y in lerp(self.startPoint, self.endPoint):
+            # if the pixel at that location is NOT empty space (ie it is an obstacle)
+            if mask[centerCoordinates(x, y)] > 0:
+                # then we've reached our new length, so update that
+                self.endPoint = x, y
 
 class Robot:
     def __init__(self):
