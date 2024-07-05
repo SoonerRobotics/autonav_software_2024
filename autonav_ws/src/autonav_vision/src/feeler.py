@@ -4,7 +4,7 @@ from math import cos, sin, atan, radians, degrees, sqrt
 import tkinter
 from tkinter import filedialog
 
-MAX_LENGTH = 150
+MAX_LENGTH = 175
 
 # colors
 WHITE = (255, 255, 255)
@@ -17,11 +17,12 @@ WIDTH = 960
 HEIGHT = 640
 
 def threshold(image):
+    # order is top-left, top-right, bottom-right, bottom-left
     vertices = (
         (285, 303),
         (616, 303),
-        (262, 638),
-        (722, 638)
+        (722, 638),
+        (262, 638)
     )
 
     # print(vertices)
@@ -159,12 +160,6 @@ class Vector:
 
         # print(f"({self.x}, {self.y}) => ({centerCoordinates(self.x, self.y)[0]}, {centerCoordinates(self.x, self.y)[1]})")
 
-        # print(stepVal)
-
-        # print(self.x)
-
-        # print(slope)
-
         #TODO we don't need to loop up to self.x, we need to loop up to what self.x would be if it was at max length
         # because right now the vectors will shrink after hitting... something, except collision isn't working right,
         # but they never grow back up to full size after obstacles have passed
@@ -175,21 +170,21 @@ class Vector:
         for x in frange(0, MAX_LENGTH, 0.1):
             y = slope * x + 0 # y=mx+b, b value might need to be something different so leaving in here for now
 
+            coords = centerCoordinates(round(x), round(y))[::-1]
+
+            #FIXME stopgap measure to not kill my laptop, need to figure something out for this function
+            if abs(x) > MAX_LENGTH or abs(y) > MAX_LENGTH:
+                self.setPolar(self.angle, MAX_LENGTH)
+                return
+
             # print(mask[centerCoordinates(round(x), round(y))])
             # print(f"({self.x}, {self.y}) => ({x}, {y}) => ({centerCoordinates(x, y)[0]}, {centerCoordinates(x, y)[1]})")
-
-            coords = centerCoordinates(round(x), round(y))[::-1]
             # print(f"slope: {slope} | stepVal: {stepVal} | coords: {coords}")
 
-            try:
-                # if the pixel at that location is NOT empty space (ie it is an obstacle)
-                if mask[coords].any() > 0:
-                    # then we've reached our new length, so update that
-                    self.setXY(x, y)
-                    return
-            except IndexError as e:
-                print(e)
-                self.setPolar(self.angle, MAX_LENGTH)
+            # if the pixel at that location is NOT empty space (ie it is an obstacle)
+            if mask[coords].any() > 0:
+                # then we've reached our new length, so update that
+                self.setXY(x, y)
                 return
 
 class Robot:
@@ -275,18 +270,22 @@ while video.isOpened() and not done:
 
     for feeler in robot.feelers:
         feeler.update(mask)
-        
+
+    # these are in a seperate loop to avoid drawing on the mask while the other feelers still need it blank to update themselves
+    for feeler in robot.feelers:
         feeler.draw(mask)
         feeler.draw(image) # draw on both of them so it doesn't matter which output is actually displayed
-    
+
+
     robot.update()
     robot.draw(image)
 
     cv2.imshow("image", image)
+    # cv2.imshow("image", mask)
     cv2.waitKey(0) #TODO do we want to make this match the 8 fps or something? or videoWrite and not bother with real-time output?
 
     # done = True
-    if frame > 300:
+    if frame > 500:
         done = True
 
 video.release()
