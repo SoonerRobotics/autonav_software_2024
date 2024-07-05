@@ -1,15 +1,24 @@
 import cv2
-from math import cos, sin, atan, radians, degrees
+from math import cos, sin, atan, radians, degrees, sqrt
 import tkinter
 from tkinter import filedialog
 
-MAX_LENGTH = 100
+MAX_LENGTH = 200
 
 # colors
 WHITE = (255, 255, 255)
+BLUE = (0, 0, 255)
 
 WIDTH = 800
 HEIGHT = 800
+
+#TODO find original implementation
+def frange(start, stop, step=1):
+    i = start
+    while abs(i + step) < abs(stop): # absolute value here is very important, because we're passing in negative numbers
+        i += step
+        yield i
+    yield stop
 
 #FIXME do we want this to be a class method of vector or feeler or whatever?
 # convert x and y coordinates so that they are relative to the center of the image
@@ -67,10 +76,16 @@ class Vector:
         self.updateCartesian()
     
     def __add__(self, other):
-        return self.x + other.x, self.y + other.y
+        ret = Vector()
+        ret.setXY(self.x + other.x, self.y + other.y)
+        
+        return ret
     
     def __sub__(self, other):
-        return self.x + other.x, self.y + other.y
+        ret = Vector()
+        ret.setXY(self.x - other.x, self.y - other.y)
+        
+        return ret
     
     # called when polar coords have been set and need to update the associated cartesian ones
     def updateCartesian(self):
@@ -81,20 +96,53 @@ class Vector:
     
     # called for when cartesian coords are updated but need to update the polar ones
     def updatePolar(self):
-        # good 'ol distance formula (assuming (0,0) is the origin for both polar and cartesian)
-        self.length = sqrt(self.x**2 + self.y**2)
-        self.angle = degrees(atan(self.y / self.x)) #TODO verify if this is correct
+        try: 
+            # good 'ol distance formula (assuming (0,0) is the origin for both polar and cartesian)
+            self.length = sqrt(self.x**2 + self.y**2)
+            self.angle = degrees(atan(self.y / self.x)) #TODO verify if this is correct
+        except ZeroDivisionError:
+            # if self.x is 0, then atan(y / x) will error because divide by 0, but that just means degrees should be 0 (or 360, not sure)
+            self.angle = 0 #FIXME 360 instead?
 
     # draw the feeler on the given image
     def draw(self, image):
-        cv2.line(image, centerCoordinates(0, 0), centerCoordinates(self.x, self.y))
+        startPt = centerCoordinates(0, 0)
+        endPt = centerCoordinates(self.x, self.y)
+
+        endPt = round(endPt[0]), round(endPt[1])
+
+        cv2.line(image, startPt, endPt, BLUE)
     
     # mask is supposed to be a binary openCV image I think
     def update(self, mask):
+        # centeredX, centeredY = centerCoordinates(self.x, self.y)
+
+        # max # of pixels is MAX_LENGTH, right? so step should be MAX_LENGTH / x_length, and x_length is just x
+        # which means we need frange
+        stepVal = MAX_LENGTH / self.x #TODO what if this is 0
+        slope = self.y / self.x # rise over run, and we're assuming everything starts at (0, 0)
+
+        # print(f"({self.x}, {self.y}) => ({centerCoordinates(self.x, self.y)[0]}, {centerCoordinates(self.x, self.y)[1]})")
+
+        # print(stepVal)
+
+        # print(self.x)
+
+        # print(slope)
+
+        #TODO we don't need to loop up to self.x, we need to loop up to what self.x would be if it was at max length
+        # because right now the vectors will shrink after hitting... something, except collision isn't working right,
+        # but they never grow back up to full size after obstacles have passed
+
         # for each coordinate/pixel value in the vector
-        for coords in lerp(self.x), lerp(self.y):
+        for x in frange(0, self.x, stepVal):
+            y = slope * x + 0 # y=mx+b, b value might need to be something different so leaving in here for now
+
+            # print(mask[centerCoordinates(round(x), round(y))])
+            # print(f"({self.x}, {self.y}) => ({x}, {y}) => ({centerCoordinates(x, y)[0]}, {centerCoordinates(x, y)[1]})")
+
             # if the pixel at that location is NOT empty space (ie it is an obstacle)
-            if mask[centerCoordinates(coords[0], coords[1])] > 0:
+            if mask[centerCoordinates(round(x), round(y))].any() > 0:
                 # then we've reached our new length, so update that
                 self.setXY(x, y)
 
@@ -121,11 +169,16 @@ class Robot:
         self.heading_arrow.setPolar(0, 0)
 
         for feeler in self.feelers:
-            # make a vector from the end of the current vector if it was at max length to the end of the vector at its current length
-            error = Vector(MAX_LENGTH, feeler.angle) - feeler
+            # make a vector, from the end of the current vector if it was at max length, to the end of the vector at its current length
+            # in practice, because everything starts at (0, 0), just add 180 to the angle so it's pointing the opposite direction and set its length to the length of the error
+            error_vec = Vector()
+            error = MAX_LENGTH - feeler.length
+            error_vec.setPolar((feeler.angle + 180) % 360, error)
+
+            # print(type(self.heading_arrow))
 
             # add this vector to main heading arrow
-            self.heading_arrow += error
+            self.heading_arrow += error_vec
         
         #TODO I think there's something else we need to do?
     
@@ -143,7 +196,9 @@ PATH = filedialog.askopenfilename()
 video = cv2.VideoCapture(PATH)
 
 done = False # while debugging don't need to do every frame, waste of battery power
+frame = 0
 while video.isOpened() and not done:
+# while video.isOpened():
     ret, image = video.read()
 
     if not ret:
@@ -163,7 +218,11 @@ while video.isOpened() and not done:
     cv2.imshow("image", image)
     cv2.waitKey(0) #TODO do we want to make this match the 8 fps or something? or videoWrite and not bother with real-time output?
 
-    done = True
+    # done = True
+    frame += 1
+
+    if frame > 100:
+        done = True
 
 video.release()
 cv2.destroyAllWindows()
