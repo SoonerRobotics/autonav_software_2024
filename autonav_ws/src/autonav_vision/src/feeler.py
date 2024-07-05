@@ -1,16 +1,49 @@
 import cv2
+import numpy as np
 from math import cos, sin, atan, radians, degrees, sqrt
 import tkinter
 from tkinter import filedialog
 
-MAX_LENGTH = 200
+MAX_LENGTH = 150
 
 # colors
 WHITE = (255, 255, 255)
-BLUE = (0, 0, 255)
+RED = (0, 0, 255)
+BLUE = (255, 0, 0)
+GREEN = (0, 255, 0)
 
-WIDTH = 800
-HEIGHT = 800
+# image shape is 800x1600x3; 1600 because it's two 800x800 side by side because dual camera
+WIDTH = 960
+HEIGHT = 640
+
+def threshold(image):
+    vertices = (
+        (285, 303),
+        (616, 303),
+        (262, 638),
+        (722, 638)
+    )
+
+    # print(vertices)
+
+    img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    lower = (0, 0, 0)
+    upper = (255, 95, 210)
+    mask = cv2.inRange(img, lower, upper)
+    mask = 255 - mask
+
+    mask = cv2.fillConvexPoly(mask, np.array(vertices, dtype=np.int32), (0))
+    
+    return mask
+
+# === copypastad from transformations.py ===
+def regionOfDisinterest(img, vertices):
+    mask = np.ones_like(img) * 255
+    cv2.fillPoly(mask, vertices, 0)
+    masked_image = cv2.bitwise_and(img, mask)
+    return masked_image
+# === /copypasta ===
+
 
 #TODO find original implementation
 def frange(start, stop, step=1):
@@ -44,6 +77,8 @@ class Vector:
         self.y = 0
         self.angle = 0
         self.legnth = 0
+
+        self.color = BLUE
 
     # def __init__(self, x, y):
     #     self.x = x
@@ -111,7 +146,7 @@ class Vector:
 
         endPt = round(endPt[0]), round(endPt[1])
 
-        cv2.line(image, startPt, endPt, BLUE)
+        cv2.line(image, startPt, endPt, self.color, thickness=5)
     
     # mask is supposed to be a binary openCV image I think
     def update(self, mask):
@@ -135,16 +170,27 @@ class Vector:
         # but they never grow back up to full size after obstacles have passed
 
         # for each coordinate/pixel value in the vector
-        for x in frange(0, self.x, stepVal):
+        # for x in frange(0, self.x, stepVal):
+        # for x in frange(0, MAX_LENGTH, stepVal):
+        for x in frange(0, MAX_LENGTH, 0.1):
             y = slope * x + 0 # y=mx+b, b value might need to be something different so leaving in here for now
 
             # print(mask[centerCoordinates(round(x), round(y))])
             # print(f"({self.x}, {self.y}) => ({x}, {y}) => ({centerCoordinates(x, y)[0]}, {centerCoordinates(x, y)[1]})")
 
-            # if the pixel at that location is NOT empty space (ie it is an obstacle)
-            if mask[centerCoordinates(round(x), round(y))].any() > 0:
-                # then we've reached our new length, so update that
-                self.setXY(x, y)
+            coords = centerCoordinates(round(x), round(y))[::-1]
+            # print(f"slope: {slope} | stepVal: {stepVal} | coords: {coords}")
+
+            try:
+                # if the pixel at that location is NOT empty space (ie it is an obstacle)
+                if mask[coords].any() > 0:
+                    # then we've reached our new length, so update that
+                    self.setXY(x, y)
+                    return
+            except IndexError as e:
+                print(e)
+                self.setPolar(self.angle, MAX_LENGTH)
+                return
 
 class Robot:
     def __init__(self):
@@ -159,10 +205,15 @@ class Robot:
             v.setPolar(angle, MAX_LENGTH)
 
             self.feelers.append(v)
+        
+
+        self.feelers[30].color = RED
+
 
         # start pointing straight
         self.heading_arrow = Vector()
         self.heading_arrow.setPolar(0, MAX_LENGTH)
+        self.heading_arrow.color = GREEN
     
     def update(self):
         # reset our heading
@@ -183,6 +234,7 @@ class Robot:
         #TODO I think there's something else we need to do?
     
     def draw(self, image):
+        self.heading_arrow.draw(image)
         pass #TODO
 
 
@@ -201,16 +253,31 @@ while video.isOpened() and not done:
 # while video.isOpened():
     ret, image = video.read()
 
+    # for item in dir(image):
+    #     print(item)
+
+    # print(image.shape)
+
     if not ret:
         break # the end of the video
+
+    frame += 1
+
+    if frame < 150:
+        continue # skip the first 100 frames because it's just the robot sitting there
+    # elif frame == 152:
+    #     cv2.imwrite("frame.png", image)
     
     # for now just use recorded threshold, so don't have to bother about cutting robot out and warpPerspective-ing
-    # mask = threshold(image)
-    mask = image
+    mask = threshold(image)
+    # image = cv2.bitwise_and(mask, image)
+    # mask = image
 
     for feeler in robot.feelers:
         feeler.update(mask)
-        feeler.draw(image) #TODO do we want to output the mask or the image?
+        
+        feeler.draw(mask)
+        feeler.draw(image) # draw on both of them so it doesn't matter which output is actually displayed
     
     robot.update()
     robot.draw(image)
@@ -219,9 +286,7 @@ while video.isOpened() and not done:
     cv2.waitKey(0) #TODO do we want to make this match the 8 fps or something? or videoWrite and not bother with real-time output?
 
     # done = True
-    frame += 1
-
-    if frame > 100:
+    if frame > 300:
         done = True
 
 video.release()
