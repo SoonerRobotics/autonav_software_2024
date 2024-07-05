@@ -16,17 +16,16 @@ HEIGHT = 800
 def centerCoordinates(x, y):
     return (x + WIDTH//2), (y + HEIGHT//2)
 
-# can you overload functions like this in python? no idea
-# but anyways yeah just assume all polar/cartesian rubbish starts at 0 or something
-def lerp(end):
-    lerp(0, end, 0.5)
-
 # taken from the wikipedia page on linear interpolation
-def lerp(start, end, step):
+def lerp(end):
+    #FIXME play with these values?
+    # but anyways yeah just assume all polar/cartesian rubbish starts at 0 or something
+    start = 0
+    step = 0.5
     # this is giving me major frange() vibes, which we honestly might need
-    for x in range(start, end):
-        yield start + (step * (end - start))
-    yield end # just in case?
+    for x in range(start, round(end)):
+        yield round(start + (step * (end - start)))
+    # yield end # just in case?
 
 class Vector:
     # so there's no confusion when creating a vector because we are mixing coordinate systems all over the place,
@@ -93,9 +92,9 @@ class Vector:
     # mask is supposed to be a binary openCV image I think
     def update(self, mask):
         # for each coordinate/pixel value in the vector
-        for x, y in round(lerp(self.x)), round(lerp(self.y)):
+        for coords in lerp(self.x), lerp(self.y):
             # if the pixel at that location is NOT empty space (ie it is an obstacle)
-            if mask[centerCoordinates(x, y)] > 0:
+            if mask[centerCoordinates(coords[0], coords[1])] > 0:
                 # then we've reached our new length, so update that
                 self.setXY(x, y)
 
