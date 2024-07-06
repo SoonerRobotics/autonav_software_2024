@@ -1,10 +1,10 @@
 import cv2
 import numpy as np
-from math import cos, sin, atan, radians, degrees, sqrt
+from math import cos, sin, atan, radians, degrees, sqrt, pi
 import tkinter
 from tkinter import filedialog
 
-MAX_LENGTH = 175
+MAX_LENGTH = 250
 
 # colors
 WHITE = (255, 255, 255)
@@ -127,8 +127,11 @@ class Vector:
     def updateCartesian(self):
         #SOH CAH TOA
         #sin(theta) = x / length
-        self.x = self.length * cos(self.angle)
-        self.y = self.length * sin(self.angle)
+        self.x = self.length * cos(degrees(self.angle))
+        self.y = self.length * sin(degrees(self.angle))
+
+        #FIXME I don't trust this f-string
+        print(f"{self.x:.2f}, {self.y:.2f} | {self.angle:.2f}, {self.length:.2f}")
     
     # called for when cartesian coords are updated but need to update the polar ones
     def updatePolar(self):
@@ -194,25 +197,34 @@ class Robot:
         self.vel = 0
         self.heading = 0
 
-        self.feelers = []
-        for angle in range(0, 360, 10):
-            v = Vector()
-            v.setPolar(angle, MAX_LENGTH)
+        # self.feelers = []
+        # for angle in range(0, 360, 10):
+        #     v = Vector()
+        #     v.setPolar(angle, MAX_LENGTH)
 
-            self.feelers.append(v)
+        #     self.feelers.append(v)
         
 
-        self.feelers[30].color = RED
+        # self.feelers[30].color = RED
+
+        self.feelers = []
+        a = Vector()
+        a.setPolar(0, MAX_LENGTH)
+        self.feelers.append(a)
+
+        b = Vector()
+        b.setPolar(180, MAX_LENGTH)
+        self.feelers.append(b)
 
 
         # start pointing straight
-        self.heading_arrow = Vector()
-        self.heading_arrow.setPolar(0, MAX_LENGTH)
-        self.heading_arrow.color = GREEN
+        # self.heading_arrow = Vector()
+        # self.heading_arrow.setPolar(0, MAX_LENGTH)
+        # self.heading_arrow.color = GREEN
     
     def update(self):
         # reset our heading
-        self.heading_arrow.setPolar(0, 0)
+        # self.heading_arrow.setPolar(0, 0)
 
         for feeler in self.feelers:
             # make a vector, from the end of the current vector if it was at max length, to the end of the vector at its current length
@@ -224,12 +236,13 @@ class Robot:
             # print(type(self.heading_arrow))
 
             # add this vector to main heading arrow
-            self.heading_arrow += error_vec
+            # self.heading_arrow += error_vec
         
         #TODO I think there's something else we need to do?
     
     def draw(self, image):
-        self.heading_arrow.draw(image)
+        # self.heading_arrow.color = GREEN
+        # self.heading_arrow.draw(image)
         pass #TODO
 
 
@@ -268,6 +281,8 @@ while video.isOpened() and not done:
     # image = cv2.bitwise_and(mask, image)
     # mask = image
 
+    print()
+
     for feeler in robot.feelers:
         feeler.update(mask)
 
@@ -285,7 +300,7 @@ while video.isOpened() and not done:
     cv2.waitKey(0) #TODO do we want to make this match the 8 fps or something? or videoWrite and not bother with real-time output?
 
     # done = True
-    if frame > 500:
+    if frame > 400:
         done = True
 
 video.release()
