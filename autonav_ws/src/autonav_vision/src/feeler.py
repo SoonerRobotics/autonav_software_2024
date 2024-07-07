@@ -4,6 +4,8 @@ from math import cos, sin, atan, radians, degrees, sqrt, pi
 import tkinter
 from tkinter import filedialog
 
+DEBUG = False
+
 MAX_LENGTH = 250
 
 # colors
@@ -16,8 +18,15 @@ GREEN = (0, 255, 0)
 WIDTH = 960
 HEIGHT = 640
 
+#FIXME I think there' sa built-in for this
+def sign(x):
+    if x < 0:
+        return -1
+    return 1
+
 def threshold(image):
     # order is top-left, top-right, bottom-right, bottom-left
+    #TODO this doesn't need to be assigned to a variable every time, make it a global or something
     vertices = (
         (285, 303),
         (616, 303),
@@ -37,14 +46,6 @@ def threshold(image):
     
     return mask
 
-# === copypastad from transformations.py ===
-def regionOfDisinterest(img, vertices):
-    mask = np.ones_like(img) * 255
-    cv2.fillPoly(mask, vertices, 0)
-    masked_image = cv2.bitwise_and(img, mask)
-    return masked_image
-# === /copypasta ===
-
 
 #TODO find original implementation
 def frange(start, stop, step=1):
@@ -59,17 +60,6 @@ def frange(start, stop, step=1):
 def centerCoordinates(x, y):
     return (x + WIDTH//2), (y + HEIGHT//2)
 
-# taken from the wikipedia page on linear interpolation
-def lerp(end):
-    #FIXME play with these values?
-    # but anyways yeah just assume all polar/cartesian rubbish starts at 0 or something
-    start = 0
-    step = 0.5
-    # this is giving me major frange() vibes, which we honestly might need
-    for x in range(start, round(end)):
-        yield round(start + (step * (end - start)))
-    # yield end # just in case?
-
 class Vector:
     # so there's no confusion when creating a vector because we are mixing coordinate systems all over the place,
     # just make a 0 vector and then you're supposed to call either setXY or setPolar to actually change the values
@@ -77,31 +67,25 @@ class Vector:
         self.x = 0
         self.y = 0
         self.angle = 0
-        self.legnth = 0
+        self.length = 0
 
         self.color = BLUE
-
-    # def __init__(self, x, y):
-    #     self.x = x
-    #     self.y = y
-    #     self.updatePolar()
     
-    # def __init__(self, angle, length):
-    #     self.angle = angle
-    #     self.lenght = length
-    #     self.updateCartesian()
-    
+    # get x and y cartesian coordinates as a tuple, from (0,0) so not centered in the image
     def getXY(self):
         return self.x, self.y
     
+    # get polar coordinates
     def getPolar(self):
         return self.angle, self.length
     
+    # set the x and y cartesian coordinates of the vector, other attributes will be updated accordingly
     def setXY(self, x, y):
         self.x = x
         self.y = y
         self.updatePolar()
     
+    # set the polar coordinates of the vector, other attributes will be updated accordingly
     def setPolar(self, angle, length):
         self.angle = angle
         self.length = length
@@ -111,6 +95,70 @@ class Vector:
         self.length = length
         self.updateCartesian()
     
+    # called when polar coords have been set and need to update the associated cartesian ones
+    def updateCartesian(self):
+        #SOH CAH TOA
+        #sin(theta) = x / length
+        # python trig functions expect radians, and angle is supposed to be in degrees, so convert it
+        self.x = self.length * sin(radians(self.angle))
+        self.y = self.length * cos(radians(self.angle))
+
+        #FIXME I don't trust this f-string
+        if DEBUG:
+            print(f"{self.x:.2f}, {self.y:.2f} | {self.angle:.2f}, {self.length:.2f}")
+    
+    # called for when cartesian coords are updated but need to update the polar ones
+    def updatePolar(self):
+        # good 'ol distance formula (assuming (0,0) is the origin for both polar and cartesian)
+        self.length = sqrt(self.x**2 + self.y**2)
+
+        try: 
+            self.angle = degrees(atan(self.y / self.x))
+        except ZeroDivisionError:
+            # if self.x is 0, then atan(y / x) will error because divide by 0, but that just means degrees should be 0 (or 360, not sure)
+            self.angle = 0 #FIXME 360 instead?
+
+    # draw the feeler on the given image
+    def draw(self, image):
+        startPt = centerCoordinates(0, 0)
+        endPt = centerCoordinates(self.x, self.y)
+        endPt = round(endPt[0]), round(endPt[1])
+
+        cv2.line(image, startPt, endPt, self.color, thickness=5)
+    
+    # mask is supposed to be a binary openCV image I think
+    def update(self, mask):
+        # max # of pixels is MAX_LENGTH, right? so step should be MAX_LENGTH / x_length, and x_length is just x
+        # which means we need frange
+        # stepVal = MAX_LENGTH / self.x #TODO what if this is 0
+        try:
+            slope = self.y / self.x # rise over run, and we're assuming everything starts at (0, 0)
+        except ZeroDivisionError as e:
+            if DEBUG:
+                print(e)
+            slope = 999 #FIXME this is a bad fix
+
+        # but they never grow back up to full size after obstacles have passed
+
+        # for each coordinate/pixel value in the vector
+        for x in frange(0, MAX_LENGTH, 0.1):
+            y = slope * x + 0 # y=mx+b, b value might need to be something different so leaving in here for now
+
+            coords = centerCoordinates(round(x), round(y))[::-1]
+
+            #FIXME stopgap measure to not kill my laptop, need to figure something out for this function
+            if abs(x) > MAX_LENGTH or abs(y) > MAX_LENGTH:
+                self.setPolar(self.angle, MAX_LENGTH)
+                return
+
+            # if the pixel at that location is NOT empty space (ie it is an obstacle)
+            if mask[coords].any() > 0:
+                # then we've reached our new length, so update that
+                signx = sign(self.x)
+                signy = sign(self.y)
+                self.setXY(x*signx, y*signy)
+                return
+
     def __add__(self, other):
         ret = Vector()
         ret.setXY(self.x + other.x, self.y + other.y)
@@ -122,73 +170,8 @@ class Vector:
         ret.setXY(self.x - other.x, self.y - other.y)
         
         return ret
-    
-    # called when polar coords have been set and need to update the associated cartesian ones
-    def updateCartesian(self):
-        #SOH CAH TOA
-        #sin(theta) = x / length
-        self.x = self.length * cos(degrees(self.angle))
-        self.y = self.length * sin(degrees(self.angle))
 
-        #FIXME I don't trust this f-string
-        print(f"{self.x:.2f}, {self.y:.2f} | {self.angle:.2f}, {self.length:.2f}")
-    
-    # called for when cartesian coords are updated but need to update the polar ones
-    def updatePolar(self):
-        try: 
-            # good 'ol distance formula (assuming (0,0) is the origin for both polar and cartesian)
-            self.length = sqrt(self.x**2 + self.y**2)
-            self.angle = degrees(atan(self.y / self.x)) #TODO verify if this is correct
-        except ZeroDivisionError:
-            # if self.x is 0, then atan(y / x) will error because divide by 0, but that just means degrees should be 0 (or 360, not sure)
-            self.angle = 0 #FIXME 360 instead?
 
-    # draw the feeler on the given image
-    def draw(self, image):
-        startPt = centerCoordinates(0, 0)
-        endPt = centerCoordinates(self.x, self.y)
-
-        endPt = round(endPt[0]), round(endPt[1])
-
-        cv2.line(image, startPt, endPt, self.color, thickness=5)
-    
-    # mask is supposed to be a binary openCV image I think
-    def update(self, mask):
-        # centeredX, centeredY = centerCoordinates(self.x, self.y)
-
-        # max # of pixels is MAX_LENGTH, right? so step should be MAX_LENGTH / x_length, and x_length is just x
-        # which means we need frange
-        stepVal = MAX_LENGTH / self.x #TODO what if this is 0
-        slope = self.y / self.x # rise over run, and we're assuming everything starts at (0, 0)
-
-        # print(f"({self.x}, {self.y}) => ({centerCoordinates(self.x, self.y)[0]}, {centerCoordinates(self.x, self.y)[1]})")
-
-        #TODO we don't need to loop up to self.x, we need to loop up to what self.x would be if it was at max length
-        # because right now the vectors will shrink after hitting... something, except collision isn't working right,
-        # but they never grow back up to full size after obstacles have passed
-
-        # for each coordinate/pixel value in the vector
-        # for x in frange(0, self.x, stepVal):
-        # for x in frange(0, MAX_LENGTH, stepVal):
-        for x in frange(0, MAX_LENGTH, 0.1):
-            y = slope * x + 0 # y=mx+b, b value might need to be something different so leaving in here for now
-
-            coords = centerCoordinates(round(x), round(y))[::-1]
-
-            #FIXME stopgap measure to not kill my laptop, need to figure something out for this function
-            if abs(x) > MAX_LENGTH or abs(y) > MAX_LENGTH:
-                self.setPolar(self.angle, MAX_LENGTH)
-                return
-
-            # print(mask[centerCoordinates(round(x), round(y))])
-            # print(f"({self.x}, {self.y}) => ({x}, {y}) => ({centerCoordinates(x, y)[0]}, {centerCoordinates(x, y)[1]})")
-            # print(f"slope: {slope} | stepVal: {stepVal} | coords: {coords}")
-
-            # if the pixel at that location is NOT empty space (ie it is an obstacle)
-            if mask[coords].any() > 0:
-                # then we've reached our new length, so update that
-                self.setXY(x, y)
-                return
 
 class Robot:
     def __init__(self):
@@ -209,11 +192,11 @@ class Robot:
 
         self.feelers = []
         a = Vector()
-        a.setPolar(0, MAX_LENGTH)
+        a.setPolar(90, MAX_LENGTH)
         self.feelers.append(a)
 
         b = Vector()
-        b.setPolar(180, MAX_LENGTH)
+        b.setPolar(270, MAX_LENGTH)
         self.feelers.append(b)
 
 
@@ -271,7 +254,7 @@ while video.isOpened() and not done:
 
     frame += 1
 
-    if frame < 150:
+    if frame < 400:
         continue # skip the first 100 frames because it's just the robot sitting there
     # elif frame == 152:
     #     cv2.imwrite("frame.png", image)
@@ -281,7 +264,8 @@ while video.isOpened() and not done:
     # image = cv2.bitwise_and(mask, image)
     # mask = image
 
-    print()
+    if DEBUG:
+        print()
 
     for feeler in robot.feelers:
         feeler.update(mask)
@@ -300,7 +284,7 @@ while video.isOpened() and not done:
     cv2.waitKey(0) #TODO do we want to make this match the 8 fps or something? or videoWrite and not bother with real-time output?
 
     # done = True
-    if frame > 400:
+    if frame > 650:
         done = True
 
 video.release()
