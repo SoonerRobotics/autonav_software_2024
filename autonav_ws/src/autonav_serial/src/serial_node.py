@@ -8,7 +8,8 @@ import threading
 import struct
 from autonav_msgs.msg import MotorInput, MotorFeedback, MotorControllerDebug, SafetyLights, Conbus
 from scr.node import Node
-from scr.states import DeviceStateEnum, SystemStateEnum, SystemState
+from scr.states import DeviceStateEnum, SystemStateEnum, SystemStateEnum
+# from scr_msgs.msg import SystemState
 
 
 MOTOR_CONTROL_ID = 10
@@ -68,12 +69,29 @@ class SerialMotors(Node):
         except can.CanError:
             pass
 
-    def system_state_transition(self, old: SystemState, updated: SystemState):
+    def system_state_transition(self, old: SystemStateEnum, updated: SystemStateEnum):
         if old.state != SystemStateEnum.DISABLED and updated.state == SystemStateEnum.DISABLED:
             self.zero_motors()
         
         if old.state == SystemStateEnum.AUTONOMOUS and updated.state == SystemStateEnum.MANUAL:
             self.zero_motors()
+
+        # If we enter autonomous mode, we need to send a stop message to the motors
+        if old.state != SystemStateEnum.AUTONOMOUS and updated.state == SystemStateEnum.AUTONOMOUS:
+            self.set_system_mobility(False)
+            can_msg = can.Message(arbitration_id=MOBILITY_STOP_ID, data=bytes([0]))
+            try:
+                self.can.send(can_msg)
+            except can.CanError:
+                pass
+
+        if old.state == SystemStateEnum.AUTONOMOUS and updated.state != SystemStateEnum.AUTONOMOUS:
+            self.set_system_mobility(False)
+            can_msg = can.Message(arbitration_id=MOBILITY_STOP_ID, data=bytes([0]))
+            try:
+                self.can.send(can_msg)
+            except can.CanError:
+                pass
 
         if old.state == SystemStateEnum.MANUAL and updated.state == SystemStateEnum.AUTONOMOUS:
             self.zero_motors()
@@ -87,7 +105,7 @@ class SerialMotors(Node):
                 continue
             if self.can is not None:
                 try:
-                    msg = self.can.recv(timeout=1)
+                    msg = self.can.recv(timeout=0.01)
                     if msg is not None:
                         self.onCanMessageReceived(msg)
                 except can.CanError:
@@ -106,8 +124,8 @@ class SerialMotors(Node):
             feedback.delta_x = deltaX / 10000.0
             self.motorFeedbackPublisher.publish(feedback)
 
-        # if arb_id == ESTOP_ID:
-        #     self.setEStop(True)
+        if arb_id == ESTOP_ID:
+            self.set_system_mobility(False)
 
         if arb_id == MOBILITY_STOP_ID:
             self.set_system_mobility(False)
@@ -148,14 +166,14 @@ class SerialMotors(Node):
 
     def canWorker(self):
         try:
-            with open("/dev/autonav-can-835", "r") as f:
+            with open("/dev/ttyACM0", "r") as f:
                 pass
 
             if self.can is not None:
                 return
 
             self.can = can.ThreadSafeBus(
-                bustype="slcan", channel="/dev/autonav-can-835", bitrate=100000)
+                bustype="slcan", channel="/dev/ttyACM0", bitrate=100000)
             self.set_device_state(DeviceStateEnum.OPERATING)
         except:
             if self.can is not None:
@@ -171,7 +189,7 @@ class SerialMotors(Node):
         packed_data = SafetyLightsPacket()
         packed_data.autonomous = lights.autonomous
         packed_data.eco = False
-        packed_data.mode = 0
+        packed_data.mode = 0 if not lights.autonomous else 2
         packed_data.brightness = lights.brightness
         packed_data.red = lights.red
         packed_data.green = lights.green

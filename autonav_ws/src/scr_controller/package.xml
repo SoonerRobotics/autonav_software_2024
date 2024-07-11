@@ -3,7 +3,7 @@
 <package format="3">
 	<name>scr_controller</name>
 	<version>1.0.0</version>
-	<description>Manages state between all nodes</description>
+	<description>Manages state between all nodes (maybe)</description>
 	<maintainer email="dylan.zemlin@gmail.com">Dylan Zemlin</maintainer>
 	<license>MIT</license>
 

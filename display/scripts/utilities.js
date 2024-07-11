@@ -135,7 +135,7 @@ const formatToFixed = (str, precision) => {
 }
 
 const radiansToDegrees = (radians) => {
-	return (radians * (180 / Math.PI) + 360) % 360;
+	return ((radians * -1) * (180 / Math.PI) + 360) % 360;
 }
 
 const deviceStateToName = (state) => {
