@@ -1,20 +1,7 @@
 #!/bin/bash
 
-# Check if vectorsecrets.txt exists
-if [ ! -f vectorsecrets.txt ]; then
-    echo "vectorsecrets.txt does not exist. Creating it now:"
-    echo -n "Please enter your login: "
-    read username
-    echo -n "Please enter your password: "
-    read -s password
-    echo -n "machine files.dylanzeml.in login $username password $password" > vectorsecrets.txt
-fi
-
 sudo apt update
 sudo apt install wget unzip -y
-
-# Vectornav Dependencies
-bash etc/vnav.sh
 
 # Steam Controller Dependencies
 bash etc/steam.sh
