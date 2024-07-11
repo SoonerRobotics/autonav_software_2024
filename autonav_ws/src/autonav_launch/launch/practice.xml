@@ -27,10 +27,6 @@
     <!-- Serial Nodes -->
     <node pkg="autonav_serial" exec="serial_node.py" />
     <node pkg="autonav_serial" exec="camera.py" />
-<<<<<<< HEAD
-=======
-    <node pkg="autonav_serial" exec="vectornav_node" />
->>>>>>> origin/main
 
     <!-- Other -->
     <node pkg="autonav_display" exec="display.py" />
