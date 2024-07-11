@@ -6,6 +6,9 @@ sudo apt install wget unzip -y
 # Steam Controller Dependencies
 bash etc/steam.sh
 
+# V4L2
+sudo apt install v4l-utils
+
 # Python deps
 sudo apt install python3-pip -y
 pip3 install python-can[serial]
