@@ -128,6 +128,10 @@ class Vector:
     
     # mask is supposed to be a binary openCV image I think
     def update(self, mask):
+        #FIXME
+        if self.length > MAX_LENGTH:
+            self.setLength(MAX_LENGTH)
+
         # max # of pixels is MAX_LENGTH, right? so step should be MAX_LENGTH / x_length, and x_length is just x
         # which means we need frange
         # stepVal = MAX_LENGTH / self.x #TODO what if this is 0
@@ -141,7 +145,7 @@ class Vector:
         # but they never grow back up to full size after obstacles have passed
 
         # for each coordinate/pixel value in the vector
-        for x in frange(0, MAX_LENGTH, 0.1):
+        for x in frange(0, MAX_LENGTH*sign(self.x), 0.1*sign(self.x)):
             y = slope * x + 0 # y=mx+b, b value might need to be something different so leaving in here for now
 
             coords = centerCoordinates(round(x), round(y))[::-1]
@@ -154,9 +158,7 @@ class Vector:
             # if the pixel at that location is NOT empty space (ie it is an obstacle)
             if mask[coords].any() > 0:
                 # then we've reached our new length, so update that
-                signx = sign(self.x)
-                signy = sign(self.y)
-                self.setXY(x*signx, y*signy)
+                self.setXY(x, y)
                 return
 
     def __add__(self, other):
@@ -181,7 +183,7 @@ class Robot:
         self.heading = 0
 
         # self.feelers = []
-        # for angle in range(0, 360, 10):
+        # for angle in range(0, 90, 30):
         #     v = Vector()
         #     v.setPolar(angle, MAX_LENGTH)
 
@@ -192,40 +194,58 @@ class Robot:
 
         self.feelers = []
         a = Vector()
-        a.setPolar(90, MAX_LENGTH)
+        a.setPolar(115, MAX_LENGTH)
+        print("=== initial ===")
+        print(f"length: {a.length} | angle: {a.angle} | x: {a.x} | y: {a.y}")
+        a.color = WHITE
         self.feelers.append(a)
 
-        b = Vector()
-        b.setPolar(270, MAX_LENGTH)
-        self.feelers.append(b)
+        # b = Vector()
+        # b.setPolar(270, MAX_LENGTH)
+        # self.feelers.append(b)
 
 
         # start pointing straight
-        # self.heading_arrow = Vector()
-        # self.heading_arrow.setPolar(0, MAX_LENGTH)
-        # self.heading_arrow.color = GREEN
+        self.heading_arrow = Vector()
+        self.heading_arrow.setPolar(0, MAX_LENGTH)
+        self.heading_arrow.color = GREEN
     
     def update(self):
         # reset our heading
-        # self.heading_arrow.setPolar(0, 0)
+        self.heading_arrow.setPolar(0, 0)
 
         for feeler in self.feelers:
+            print(f"feeler length: {feeler.length} | feeler angle: {feeler.angle} | feeler x: {feeler.x} | feeler y: {feeler.y}")
             # make a vector, from the end of the current vector if it was at max length, to the end of the vector at its current length
             # in practice, because everything starts at (0, 0), just add 180 to the angle so it's pointing the opposite direction and set its length to the length of the error
             error_vec = Vector()
             error = MAX_LENGTH - feeler.length
-            error_vec.setPolar((feeler.angle + 180) % 360, error)
+            # error_vec.setPolar((feeler.angle + 180) % 360, error)
+            error_vec.setPolar((feeler.angle + 180) % 360, 100)
+            # error_vec.setPolar(feeler.angle, error)
+            # feeler.updateCartesian()
+            
+            # error_vec.setPolar(feeler.angle, feeler.length)
+
+
+            print(f"feeler: {feeler.angle} | error_vec: {error_vec.angle}")
+
+            error_vec.color = RED
+            error_vec.draw(image)
+
+            # print(error)
+            # print()
 
             # print(type(self.heading_arrow))
 
             # add this vector to main heading arrow
-            # self.heading_arrow += error_vec
+            self.heading_arrow += error_vec
         
         #TODO I think there's something else we need to do?
     
     def draw(self, image):
-        # self.heading_arrow.color = GREEN
-        # self.heading_arrow.draw(image)
+        self.heading_arrow.color = GREEN
+        self.heading_arrow.draw(image)
         pass #TODO
 
 
@@ -266,6 +286,8 @@ while video.isOpened() and not done:
 
     if DEBUG:
         print()
+    
+    print()
 
     for feeler in robot.feelers:
         feeler.update(mask)
@@ -279,12 +301,15 @@ while video.isOpened() and not done:
     robot.update()
     robot.draw(image)
 
+    print(f"{robot.feelers[0].x:.2f}, {robot.feelers[0].y:.2f} | {robot.feelers[0].angle:.2f}, {robot.feelers[0].length:.2f}")
+
+
     cv2.imshow("image", image)
     # cv2.imshow("image", mask)
     cv2.waitKey(0) #TODO do we want to make this match the 8 fps or something? or videoWrite and not bother with real-time output?
 
     # done = True
-    if frame > 650:
+    if frame > 410:
         done = True
 
 video.release()
