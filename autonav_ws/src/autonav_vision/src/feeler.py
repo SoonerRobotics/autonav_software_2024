@@ -99,85 +99,75 @@ class Feeler:
         # (Δx)y = (Δy)x + (Δx)b
         # f(x, y) = 0 = (Δy)x - (Δx)y + (Δx)b
         # in our case, b = 0, and the start of the line is always (0, 0) so this simplifies to f(x, y) = 0 = (self.original_y * x)  -  (self.original_x * y)
-        """plotLine(x0, y0, x1, y1)
-            dx = x1 - x0
-            dy = y1 - y0
-            D = 2*dy - dx
-            y = y0
-
-            for x from x0 to x1
-                plot(x, y)
-                if D > 0
-                    y = y + 1
-                    D = D - 2*dx
+        """
+        plotLine(x0, y0, x1, y1):
+            dx = abs(x1 - x0)
+            sx = x0 < x1 ? 1 : -1
+            dy = -abs(y1 - y0)
+            sy = y0 < y1 ? 1 : -1
+            error = dx + dy
+            
+            while true
+                plot(x0, y0)
+                if x0 == x1 && y0 == y1 break
+                e2 = 2 * error
+                if e2 >= dy
+                    if x0 == x1 break
+                    error = error + dy
+                    x0 = x0 + sx
                 end if
-                D = D + 2*dy"""
-        # for our case x0 and y0 are always going to be 0 and 0 (i.e. the origin)
-        y = 0
-        x = 0
+                if e2 <= dx
+                    if y0 == y1 break
+                    error = error + dx
+                    y0 = y0 + sy
+                end if
+            end while
+        """
 
-        y_dir = -1 if self.original_y < 0 else 1
-        x_dir = -1 if self.original_x < 0 else 1
+        #FIXME self.original_y may need to be negated everywhere
 
-        try:
-            # slope is rise / run, and starting point is always (0, 0) (i.e. y-intercept is 0)
-            slope = self.original_y / self.original_x
-        except ZeroDivisionError: # if x is 0, then it's a vertical line,
-            slope = 2 # so it needs to be drawn by the y algorithm instead of the x one (i.e. the 2nd for loop)
+        sign_x = sign(self.original_x)
+        sign_y = sign(self.original_y)
+        
+        error = self.original_x + self.original_y
 
-        print(slope)
+        frame = 0
+        while True:
+            print(frame)
+            frame += 1
 
-        # if the slope is less than 1 that means if we increment x, y will increase by either 0 or 1
-        if abs(slope) <= 1:
-            difference = (2 * self.original_y) - abs(self.original_x) #FIXME not sure if this needs to be absolutely valued or not
+            #TODO check x and y coords
+            if mask[self.x, self.y].any() > 0:
+                self.setXY(self.x, self.y)
 
-            # for each x in all the x coords we need to iterate through
-            for x in range(0, self.original_x, x_dir):
-               # get the coordinates for the image (because the origin of the image is in the top left corner but our coordinates have the origin at the center of the image)
-                centered_x, centered_y = centerCoordinates(x, y)
+                print("FOUND IT")
+                return
 
-                # if the pixel at that location is NOT empty space (ie it is an obstacle)
-                if mask[centered_y, centered_x].any() > 0:
-                    # then we've reached our new length, so update that
-                    self.setXY(x, y)
+            # check and see if we've made it to the end of the line
+            #FIXME this .setXY is probably unecessary?
+            if self.x == self.original_x and self.y == self.original_y and False:
+                # if we've made it through the loop without encountering any obstacles, then bring us back up to original length
+                self.setXY(self.original_x, self.original_y)
 
-                    return # and stop iterating so we don't break something
-
-                # figure out if y needs to increase or stay the same
-                if difference > 0:
-                    y += y_dir
-                    difference += 2 * (self.original_y - self.original_x) #TODO does this need to be abs()'ed?
-                else:
-                    difference += 2 * self.original_y
-
-        # if it's larger than 1 then we need to do it the opposite: if we increment y, x will increase by either 0 or 1
-        else:
-            difference = (2 * self.original_x) - abs(self.original_y)
-
-            # print(f"{centered_x}, {centered_y}")
-
-            # for each y in all the y coords we need to iterate through
-            for y in range(0, self.original_y, y_dir):
-                # get the coordinates for the image (because the origin of the image is in the top left corner but our coordinates have the origin at the center of the image)
-                centered_x, centered_y = centerCoordinates(x, y)
+                print("END OF THE LINE")
                 
-                # if the pixel at that location is NOT empty space (ie it is an obstacle)
-                if mask[centered_y, centered_x].any() > 0:
-                    # then we've reached our new length, so update that
-                    self.setXY(x, y)
+                return
 
-                    return # and stop iterating so we don't break something
+            e2 = 2*error
 
-                # figure out if x needs to increase or stay the same
-                if difference > 0:
-                    x += x_dir
-                    difference += 2 * (self.original_x - self.original_y) #TODO does this need to be abs()'ed?
-                else:
-                    difference += 2 * self.original_x
+            if e2 >= self.original_y:
+                # if self.x == self.original_x:
+                #     return #TODO
+                error += self.original_y
+                self.x += sign_x
+            
+            if e2 <= self.original_x:
+                # if self.y == self.original_y:
+                #     return #TODO
+                error += self.original_x
+                self.y += sign_y
 
 
-        # if we've made it through the loop without encountering any obstacles, then bring us back up to original length
-        self.setXY(self.original_x, self.original_y)
 
     def __add__(self, other):
         ret = Feeler(self.x + other.x, self.y + other.y)
@@ -292,8 +282,8 @@ while video.isOpened() and not done:
     # print(f"{robot.feelers[0].x:.2f}, {robot.feelers[0].y:.2f} | {robot.feelers[0].angle:.2f}, {robot.feelers[0].length:.2f}")
 
 
-    cv2.imshow("image", image)
-    # cv2.imshow("image", mask)
+    # cv2.imshow("image", image)
+    cv2.imshow("image", mask)
     cv2.waitKey(0) #TODO do we want to make this match the 8 fps or something? or videoWrite and not bother with real-time output?
 
     # done = True
