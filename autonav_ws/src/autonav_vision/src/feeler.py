@@ -27,8 +27,8 @@ def sign(x):
 VERTICIES = (
     (285, 303),
     (616, 303),
-    (722, 638),
-    (262, 638)
+    (722, 500),
+    (262, 500)
 )
 
 # HSV thresholding values for obstacle detection
@@ -117,8 +117,7 @@ class Feeler:
         try:
             slope = self.original_y / self.original_x
         except ZeroDivisionError:
-            slope = 10000
-            pass #TODO
+            slope = None
 
         frame = 0
 
@@ -128,8 +127,15 @@ class Feeler:
             frame += 1
             # print(frame)
 
-            # if slope is shallow, so that x is the independent variable
-            if abs(slope) <= 1:
+            # vertical line, just need to move along the y-axis
+            if slope is None:
+                y += 1
+            # horizontal line, just move along th x-axis
+            elif slope == 0:
+                x += 1
+
+            # if slope is shallow, make x the independent variable
+            elif abs(slope) <= 1:
                 # get the y as a function of x
                 new_y = abs(slope) * x
 
@@ -147,7 +153,9 @@ class Feeler:
 
             # slope is steep, do y as independent variable
             else:
-                new_x = slope * y
+                # print("Y is independent")
+                #FIXME comment all of this stuff
+                new_x = abs(1/slope) * y
 
                 if (new_x - prev_x) > 0:
                     x += 1
@@ -169,7 +177,7 @@ class Feeler:
 
                 return # and quit so we don't keep looping 'cause we found an obstacle
             
-            elif abs(x) >= abs(self.original_x) or abs(y) >= abs(self.original_y): # if we're past our original farthest point
+            elif abs(x) > abs(self.original_x) or abs(y) > abs(self.original_y): # if we're past our original farthest point
                 # print("ORIGINAL LENGTH")
 
                 self.setXY(self.original_x, self.original_y) # reset our position
@@ -202,14 +210,14 @@ class Robot:
         self.heading = 0
 
         self.feelers = []
-        # for angle in range(200, 359, 20):
-        angle = 250
-        # given an angle, with a length of MAX_LENGTH (i.e. polar coordinates)
-        # SOH CAH TOA
-        x = round(MAX_LENGTH * cos(radians(angle)))
-        y = round(MAX_LENGTH * sin(radians(angle)))
-    
-        self.feelers.append(Feeler(x, y))
+        for angle in range(0, 359, 10):
+        # angle = 0
+            # given an angle, with a length of MAX_LENGTH (i.e. polar coordinates)
+            # SOH CAH TOA
+            x = round(MAX_LENGTH * cos(radians(angle)))
+            y = round(MAX_LENGTH * sin(radians(angle)))
+        
+            self.feelers.append(Feeler(x, y))
         
 
         # start pointing straight
@@ -225,9 +233,20 @@ class Robot:
             
             # make a vector, from the end of the current vector if it was at max length, to the end of the vector at its current length
             # in practice, because everything starts at (0, 0), just add 180 to the angle so it's pointing the opposite direction and set its length to the length of the error
+
+
             error_vec = Feeler(0, 0)
-            # error = MAX_LENGTH - feeler.length
-            # error_vec.setPolar((feeler.angle + 180) % 360, error * 2)
+            error = (MAX_LENGTH - feeler.length) / 2
+
+            try:
+                angle = degrees(atan(feeler.y / feeler.x)) #FIXME this needs to account for atan not returning result in a 360 degree circle something something positive negative signs
+            except ZeroDivisionError: #FIXME freaking straight lines man
+                continue
+
+            x = round((error) * cos(radians(angle + 180)))
+            y = round((error) * sin(radians(angle + 180)))
+
+            error_vec.setXY(x, y)
 
             # print(f"feeler: {feeler.angle} | error_vec: {error_vec.angle}")
 
@@ -254,6 +273,8 @@ PATH = filedialog.askopenfilename()
 # bg_img = cv2.imread(PATH)
 video = cv2.VideoCapture(PATH)
 
+videoOut = cv2.VideoWriter("./camera.mp4", cv2.VideoWriter.fourcc(*"mp4v"), 8.0, (960, 640))
+
 done = False # while debugging don't need to do every frame, waste of battery power
 frame = 0
 while video.isOpened() and not done:
@@ -265,7 +286,7 @@ while video.isOpened() and not done:
 
     frame += 1
 
-    if frame < 400:
+    if frame < 500:
         continue # skip the first 100 frames because it's just the robot sitting there
     # elif frame == 152:
     #     cv2.imwrite("frame.png", image)
@@ -285,18 +306,21 @@ while video.isOpened() and not done:
 
 
     robot.update()
-    robot.draw(image)
+    # robot.draw(image)
 
     # print(f"{robot.feelers[0].x:.2f}, {robot.feelers[0].y:.2f} | {robot.feelers[0].angle:.2f}, {robot.feelers[0].length:.2f}")
 
 
     # cv2.imshow("image", image)
-    cv2.imshow("image", mask)
-    cv2.waitKey(0) #TODO do we want to make this match the 8 fps or something? or videoWrite and not bother with real-time output?
+    # cv2.imshow("image", mask)
+    # cv2.waitKey(0) #TODO do we want to make this match the 8 fps or something? or videoWrite and not bother with real-time output?
+
+    videoOut.write(image)
 
     # done = True
-    if frame > 401:
+    if frame > 700:
         done = True
 
 video.release()
+videoOut.release()
 cv2.destroyAllWindows()
