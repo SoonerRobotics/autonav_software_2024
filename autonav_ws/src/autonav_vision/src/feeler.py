@@ -4,8 +4,6 @@ from math import cos, sin, atan, radians, degrees, sqrt, pi
 import tkinter
 from tkinter import filedialog
 
-DEBUG = False
-
 MAX_LENGTH = 300
 
 # colors
@@ -18,7 +16,7 @@ GREEN = (0, 255, 0)
 WIDTH = 960
 HEIGHT = 640
 
-#FIXME I think there's a built-in for this
+# return the sign of the number
 def sign(x):
     return -1 if x < 0 else 1
 
@@ -50,7 +48,6 @@ def threshold(image):
     
     return mask
 
-#FIXME do we want this to be a class method of vector or feeler or whatever?
 # convert x and y coordinates so that they are relative to the center of the image
 def centerCoordinates(x, y):
     return (x + WIDTH//2), (y + HEIGHT//2)
@@ -90,16 +87,6 @@ class Feeler:
     
     # mask is supposed to be a binary openCV image I think
     def update(self, mask):
-        #TEMP XXX BUG FIXME TODO
-        # for row in mask:
-        #     for column in row:
-        #         if column > 0:
-        #             print(column)
-        # else:
-        #     print("nothing found")
-        # </TEMP>
-        # print(mask[264][694])
-
         x = 0
         y = 0
         
@@ -112,21 +99,13 @@ class Feeler:
         x_dir = sign(self.original_x)
         y_dir = sign(self.original_y)
 
-        # print(y_dir)
-
+        # for vertical lines, assign a slope of None and treat them as a special case in the main loop
         try:
             slope = self.original_y / self.original_x
         except ZeroDivisionError:
             slope = None
 
-        frame = 0
-
-        # print(f"SLOPE: {slope}")
-
         while True:
-            frame += 1
-            # print(frame)
-
             # vertical line, just need to move along the y-axis
             if slope is None:
                 y += 1
@@ -139,49 +118,33 @@ class Feeler:
                 # get the y as a function of x
                 new_y = abs(slope) * x
 
-                # if the new y is higher than the previous one TODO this doesn't work if slope is negative I don't think
-                # if ((new_y - prev_y) > 0 and y_dir == 1) or ((new_y - prev_y) < 0 and y_dir == -1):
+                # if the new y is higher than the previous one
                 if (new_y - prev_y) > 0:
                     y += 1 # then go up by 1 y
-                else: # otherwise do nothing
-                    pass
 
                 x += 1
                 prev_y = y
 
-                # print(f"FRAME: {frame} | X: {x} | Y: {y}")
-
             # slope is steep, do y as independent variable
             else:
-                # print("Y is independent")
-                #FIXME comment all of this stuff
+                # get x as a function of y
                 new_x = abs(1/slope) * y
 
+                # and then if the new x is larger than the old one
                 if (new_x - prev_x) > 0:
-                    x += 1
-                else:
-                    pass
+                    x += 1 # go up by one
 
                 y += 1
                 prev_x = x
             
-            # print(mask[*centerCoordinates(x*x_dir, y*y_dir)[::-1]])
-            # print(centerCoordinates(x*x_dir, y*y_dir)[::-1])
-
-            # if any of RGB numbers > 0 then 
+            # if any of the pixel's color values (in RGB I think) are > 0 then 
             if mask[*centerCoordinates(x*x_dir, y*y_dir)[::-1]].any() > 0:
                 # that is our new length
                 self.setXY(x*x_dir, y*y_dir)
-
-                # print(f"FOUND IT! | {x}, {y}")
-
                 return # and quit so we don't keep looping 'cause we found an obstacle
             
             elif abs(x) > abs(self.original_x) or abs(y) > abs(self.original_y): # if we're past our original farthest point
-                # print("ORIGINAL LENGTH")
-
-                self.setXY(self.original_x, self.original_y) # reset our position
-
+                self.setXY(self.original_x, self.original_y) # then we found no obstacle, and should stop looping
                 return
 
 
@@ -211,7 +174,6 @@ class Robot:
 
         self.feelers = []
         for angle in range(0, 359, 10):
-        # angle = 0
             # given an angle, with a length of MAX_LENGTH (i.e. polar coordinates)
             # SOH CAH TOA
             x = round(MAX_LENGTH * cos(radians(angle)))
@@ -229,35 +191,19 @@ class Robot:
         self.heading_arrow.setXY(0, 0)
 
         for feeler in self.feelers:
-            # print(f"feeler length: {feeler.length} | feeler angle: {feeler.angle} | feeler x: {feeler.x} | feeler y: {feeler.y}")
-            
             # make a vector, from the end of the current vector if it was at max length, to the end of the vector at its current length
-            # in practice, because everything starts at (0, 0), just add 180 to the angle so it's pointing the opposite direction and set its length to the length of the error
-
-
-            error_vec = Feeler(0, 0)
-            error = (MAX_LENGTH - feeler.length) / 2
-
-            try:
-                angle = degrees(atan(feeler.y / feeler.x)) #FIXME this needs to account for atan not returning result in a 360 degree circle something something positive negative signs
-            except ZeroDivisionError: #FIXME freaking straight lines man
-                continue
-
-            x = round((error) * cos(radians(angle + 180)))
-            y = round((error) * sin(radians(angle + 180)))
-
-            error_vec.setXY(x, y)
-
-            # print(f"feeler: {feeler.angle} | error_vec: {error_vec.angle}")
+            # we can use simple vector subtraction because math
+            original_feeler = Feeler(feeler.original_x, feeler.original_y)
+            error_vec = feeler - original_feeler
 
             error_vec.color = RED
             # error_vec.draw(image)
 
+            error_vec.length /= 2
+
             # add this vector to main heading arrow
             self.heading_arrow += error_vec
-        
-        #TODO I think there's something else we need to do?
-    
+
     # draw the heading vector to the screen
     def draw(self, image):
         self.heading_arrow.color = GREEN
@@ -270,15 +216,12 @@ root = tkinter.Tk()
 root.withdraw()
 
 PATH = filedialog.askopenfilename()
-# bg_img = cv2.imread(PATH)
 video = cv2.VideoCapture(PATH)
-
-videoOut = cv2.VideoWriter("./camera.mp4", cv2.VideoWriter.fourcc(*"mp4v"), 8.0, (960, 640))
+# videoOut = cv2.VideoWriter("./camera.mp4", cv2.VideoWriter.fourcc(*"mp4v"), 8.0, (960, 640))
 
 done = False # while debugging don't need to do every frame, waste of battery power
 frame = 0
 while video.isOpened() and not done:
-# while video.isOpened():
     ret, image = video.read()
 
     if not ret:
@@ -287,13 +230,10 @@ while video.isOpened() and not done:
     frame += 1
 
     if frame < 500:
-        continue # skip the first 100 frames because it's just the robot sitting there
-    # elif frame == 152:
-    #     cv2.imwrite("frame.png", image)
+        continue
     
     mask = threshold(image)
     # image = cv2.bitwise_and(mask, image)
-    # mask = image
 
     # perform the lidar
     for feeler in robot.feelers:
@@ -306,21 +246,18 @@ while video.isOpened() and not done:
 
 
     robot.update()
-    # robot.draw(image)
+    robot.draw(image)
 
-    # print(f"{robot.feelers[0].x:.2f}, {robot.feelers[0].y:.2f} | {robot.feelers[0].angle:.2f}, {robot.feelers[0].length:.2f}")
-
-
-    # cv2.imshow("image", image)
+    cv2.imshow("image", image)
     # cv2.imshow("image", mask)
-    # cv2.waitKey(0) #TODO do we want to make this match the 8 fps or something? or videoWrite and not bother with real-time output?
+    cv2.waitKey(0)
 
-    videoOut.write(image)
+    # videoOut.write(image)
 
     # done = True
-    if frame > 700:
+    if frame > 550:
         done = True
 
 video.release()
-videoOut.release()
+# videoOut.release()
 cv2.destroyAllWindows()
