@@ -90,83 +90,91 @@ class Feeler:
     
     # mask is supposed to be a binary openCV image I think
     def update(self, mask):
-        # from https://en.wikipedia.org/wiki/Bresenham%27s_line_algorithm
-        # regular slope-intercept equation:
-        # f(x) = y = mx + b
-        # equation of a line in terms of x and y:
-        # m = Δy/Δx
-        # y = (Δy/Δx)x + b
-        # (Δx)y = (Δy)x + (Δx)b
-        # f(x, y) = 0 = (Δy)x - (Δx)y + (Δx)b
-        # in our case, b = 0, and the start of the line is always (0, 0) so this simplifies to f(x, y) = 0 = (self.original_y * x)  -  (self.original_x * y)
-        """
-        plotLine(x0, y0, x1, y1):
-            dx = abs(x1 - x0)
-            sx = x0 < x1 ? 1 : -1
-            dy = -abs(y1 - y0)
-            sy = y0 < y1 ? 1 : -1
-            error = dx + dy
-            
-            while true
-                plot(x0, y0)
-                if x0 == x1 && y0 == y1 break
-                e2 = 2 * error
-                if e2 >= dy
-                    if x0 == x1 break
-                    error = error + dy
-                    x0 = x0 + sx
-                end if
-                if e2 <= dx
-                    if y0 == y1 break
-                    error = error + dx
-                    y0 = y0 + sy
-                end if
-            end while
-        """
+        #TEMP XXX BUG FIXME TODO
+        # for row in mask:
+        #     for column in row:
+        #         if column > 0:
+        #             print(column)
+        # else:
+        #     print("nothing found")
+        # </TEMP>
+        # print(mask[264][694])
 
-        #FIXME self.original_y may need to be negated everywhere
-
-        sign_x = sign(self.original_x)
-        sign_y = sign(self.original_y)
+        x = 0
+        y = 0
         
-        error = self.original_x + self.original_y
+        prev_x = 0
+        prev_y = 0
+
+        new_x = 0
+        new_y = 0
+
+        x_dir = sign(self.original_x)
+        y_dir = sign(self.original_y)
+
+        # print(y_dir)
+
+        try:
+            slope = self.original_y / self.original_x
+        except ZeroDivisionError:
+            slope = 10000
+            pass #TODO
 
         frame = 0
+
+        # print(f"SLOPE: {slope}")
+
         while True:
-            print(frame)
             frame += 1
+            # print(frame)
 
-            #TODO check x and y coords
-            if mask[self.x, self.y].any() > 0:
-                self.setXY(self.x, self.y)
+            # if slope is shallow, so that x is the independent variable
+            if abs(slope) <= 1:
+                # get the y as a function of x
+                new_y = abs(slope) * x
 
-                print("FOUND IT")
-                return
+                # if the new y is higher than the previous one TODO this doesn't work if slope is negative I don't think
+                # if ((new_y - prev_y) > 0 and y_dir == 1) or ((new_y - prev_y) < 0 and y_dir == -1):
+                if (new_y - prev_y) > 0:
+                    y += 1 # then go up by 1 y
+                else: # otherwise do nothing
+                    pass
 
-            # check and see if we've made it to the end of the line
-            #FIXME this .setXY is probably unecessary?
-            if self.x == self.original_x and self.y == self.original_y and False:
-                # if we've made it through the loop without encountering any obstacles, then bring us back up to original length
-                self.setXY(self.original_x, self.original_y)
+                x += 1
+                prev_y = y
 
-                print("END OF THE LINE")
-                
-                return
+                # print(f"FRAME: {frame} | X: {x} | Y: {y}")
 
-            e2 = 2*error
+            # slope is steep, do y as independent variable
+            else:
+                new_x = slope * y
 
-            if e2 >= self.original_y:
-                # if self.x == self.original_x:
-                #     return #TODO
-                error += self.original_y
-                self.x += sign_x
+                if (new_x - prev_x) > 0:
+                    x += 1
+                else:
+                    pass
+
+                y += 1
+                prev_x = x
             
-            if e2 <= self.original_x:
-                # if self.y == self.original_y:
-                #     return #TODO
-                error += self.original_x
-                self.y += sign_y
+            # print(mask[*centerCoordinates(x*x_dir, y*y_dir)[::-1]])
+            # print(centerCoordinates(x*x_dir, y*y_dir)[::-1])
 
+            # if any of RGB numbers > 0 then 
+            if mask[*centerCoordinates(x*x_dir, y*y_dir)[::-1]].any() > 0:
+                # that is our new length
+                self.setXY(x*x_dir, y*y_dir)
+
+                # print(f"FOUND IT! | {x}, {y}")
+
+                return # and quit so we don't keep looping 'cause we found an obstacle
+            
+            elif abs(x) >= abs(self.original_x) or abs(y) >= abs(self.original_y): # if we're past our original farthest point
+                # print("ORIGINAL LENGTH")
+
+                self.setXY(self.original_x, self.original_y) # reset our position
+
+                return
 
 
     def __add__(self, other):
@@ -194,13 +202,13 @@ class Robot:
         self.heading = 0
 
         self.feelers = []
-        # for angle in range(10, 360, 30):
-        angle = 315
+        # for angle in range(200, 359, 20):
+        angle = 250
         # given an angle, with a length of MAX_LENGTH (i.e. polar coordinates)
         # SOH CAH TOA
         x = round(MAX_LENGTH * cos(radians(angle)))
         y = round(MAX_LENGTH * sin(radians(angle)))
-        
+    
         self.feelers.append(Feeler(x, y))
         
 
