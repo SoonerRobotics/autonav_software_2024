@@ -93,5 +93,6 @@
         "source_location": "cpp"
     },
     "cmake.configureOnOpen": false,
-    "ros.distro": "humble"
+    "ros.distro": "humble",
+    "files.eol": "\n"
 }

@@ -1,8 +1,29 @@
+#!/usr/bin/env python3
+
+import rclpy
 import cv2
 import numpy as np
 from math import cos, sin, atan, radians, degrees, sqrt, pi
-import tkinter
-from tkinter import filedialog
+import json
+from cv_bridge import CvBridge
+
+from scr.node import Node
+from scr.states import DeviceStateEnum
+
+# from nav_msgs.msg import MapMetaData, OccupancyGrid
+# from sensor_msgs.msg import CompressedImage
+# from geometry_msgs.msg import Pose, PoseStamped, Point
+# from nav_msgs.msg import OccupancyGrid, Path
+# from autonav_msgs.msg import Position, IMUData, PathingDebug, SafetyLights, MotorInput
+# from scr_msgs.msg import SystemState
+
+from sensor_msgs.msg import CompressedImage
+from autonav_msgs.msg import Position, MotorInput
+
+def clamp(val, min, max):
+    return max(min(val, max), min)
+
+CV_BRIDGE = CvBridge()
 
 MAX_LENGTH = 300
 
@@ -19,38 +40,6 @@ HEIGHT = 640
 # return the sign of the number
 def sign(x):
     return -1 if x < 0 else 1
-
-# verticies for region-of-disinterest
-# order is top-left, top-right, bottom-right, bottom-left
-VERTICIES = (
-    (285, 303),
-    (616, 303),
-    (722, 500),
-    (262, 500)
-)
-
-# HSV thresholding values for obstacle detection
-lower = (0, 0, 0)
-upper = (255, 95, 210)
-
-# kernel for erode/dilate
-kernel = cv2.getStructuringElement(2, (2, 2))
-
-def threshold(image):
-    img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-    mask = cv2.inRange(img, lower, upper)
-    mask = 255 - mask
-
-    mask = cv2.fillConvexPoly(mask, np.array(VERTICIES, dtype=np.int32), (0))
-
-    mask = cv2.erode(mask, kernel)
-    mask = cv2.dilate(mask, kernel)
-    
-    return mask
-
-# convert x and y coordinates so that they are relative to the center of the image
-def centerCoordinates(x, y):
-    return (x + WIDTH//2), (y + HEIGHT//2)
 
 class Feeler:
     # create a 2 dimensional vector with cartesian coordinates
@@ -70,6 +59,15 @@ class Feeler:
     # get x and y cartesian coordinates as a tuple, from (0,0) so not centered in the image
     def getXY(self):
         return self.x, self.y
+
+    # get the vector as an angle and length FIXME
+    def toPolar(self):
+        try:
+            angle = self.atan(self.y / self.x)
+        except ZeroDivisionError:
+            angle = 180
+
+        return angle, self.length
     
     # set the x and y cartesian coordinates of the vector, other attributes will be updated accordingly
     def setXY(self, x, y):
@@ -78,10 +76,14 @@ class Feeler:
 
         self.length = self.dist(x, y)
     
+    # convert x and y coordinates so that they are relative to the center of the image
+    def centerCoordinates(x, y):
+        return (x + WIDTH//2), (y + HEIGHT//2)
+
     # draw the feeler on the given image
     def draw(self, image):
-        startPt = centerCoordinates(0, 0)
-        endPt = centerCoordinates(self.x, self.y)
+        startPt = self.centerCoordinates(0, 0)
+        endPt = self.centerCoordinates(self.x, self.y)
         
         cv2.line(image, startPt, endPt, self.color, thickness=5)
     
@@ -137,8 +139,9 @@ class Feeler:
                 y += 1
                 prev_x = x
             
-            # if any of the pixel's color values (in RGB I think) are > 0 then 
-            if mask[*centerCoordinates(x*x_dir, y*y_dir)[::-1]].any() > 0:
+            # if any of the pixel's color values (in RGB I think) are > 0 then
+            check_x, check_y = self.centerCoordinates(x*x_dir, y*y_dir)
+            if mask[check_y, check_x].any() > 0:
                 # that is our new length
                 self.setXY(x*x_dir, y*y_dir)
                 return # and quit so we don't keep looping 'cause we found an obstacle
@@ -165,9 +168,38 @@ class Feeler:
         return sqrt(x**2 + y**2)
 
 
+# verticies for region-of-disinterest
+# order is top-left, top-right, bottom-right, bottom-left
+VERTICIES = (
+    (285, 303),
+    (616, 303),
+    (722, 500),
+    (262, 500)
+)
 
-class Robot:
+# HSV thresholding values for obstacle detection
+lower = (0, 0, 0)
+upper = (255, 95, 210)
+
+# kernel for erode/dilate
+kernel = cv2.getStructuringElement(2, (2, 2))
+
+
+class FeelerNode(Node):
     def __init__(self):
+        super().__init__("autonav_feelers")
+    
+    def init(self):
+        self.image_left_subscriber = self.create_subscription(CompressedImage, "/autonav/camera/compressed/left", self.on_left_image_received, self.qos_profile)
+        self.image_right_subscriber = self.create_subscription(CompressedImage, "/autonav/camera/compressed/right", self.on_right_image_received, self.qos_profile)
+        self.position_subscriber = self.create_subscription(Position, "/autonav/position", self.on_position_received, 1)
+
+        self.filtered_image_left_publisher = self.create_publisher(CompressedImage, "/autonav/cfg_space/raw/image/left_small", self.qos_profile)        
+        self.filtered_image_right_publisher = self.create_publisher(CompressedImage, "/autonav/cfg_space/raw/image/right_small", self.qos_profile)        
+        self.motor_publisher = self.create_publisher(MotorInput, "/autonav/MotorInput", 1)
+
+        #TODO make self.qos_profile
+
         self.x = 0
         self.y = 0
         self.heading = 0
@@ -181,10 +213,13 @@ class Robot:
         
             self.feelers.append(Feeler(x, y))
         
-
-        # start pointing straight
-        self.heading_arrow = Feeler(0, MAX_LENGTH)
+        self.heading_arrow = Feeler(0, 0)
         self.heading_arrow.color = GREEN
+
+        self.left_image = None
+        self.right_image = None
+
+        self.position = None
     
     def update(self):
         # reset our heading
@@ -204,60 +239,85 @@ class Robot:
             # add this vector to main heading arrow
             self.heading_arrow += error_vec
 
+    #TODO document this
+    def threshold(image):
+        img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        mask = cv2.inRange(img, lower, upper)
+        mask = 255 - mask
+
+        mask = cv2.fillConvexPoly(mask, np.array(VERTICIES, dtype=np.int32), (0))
+
+        mask = cv2.erode(mask, kernel)
+        mask = cv2.dilate(mask, kernel)
+        
+        return mask
+
     # draw the heading vector to the screen
     def draw(self, image):
         self.heading_arrow.color = GREEN
         self.heading_arrow.draw(image)
 
+    def on_left_image_received(self, image: CompressedImage):
+        # Decompress image
+        img = CV_BRIDGE.compressed_imgmsg_to_cv2(image)
 
-robot = Robot()
+        self.left_image = img
 
-root = tkinter.Tk()
-root.withdraw()
+    def on_right_image_received(self, image: CompressedImage):
+        # Decompress image
+        img = CV_BRIDGE.compressed_imgmsg_to_cv2(image)
 
-PATH = filedialog.askopenfilename()
-video = cv2.VideoCapture(PATH)
-# videoOut = cv2.VideoWriter("./camera.mp4", cv2.VideoWriter.fourcc(*"mp4v"), 8.0, (960, 640))
+        self.right_image = img
 
-done = False # while debugging don't need to do every frame, waste of battery power
-frame = 0
-while video.isOpened() and not done:
-    ret, image = video.read()
+        if self.left_image is None or self.right_image is None:
+            return
 
-    if not ret:
-        break # the end of the video
+        # try to combine the images now
+        combined = np.concatenate((self.left_image, self.right_image), axis=1)
 
-    frame += 1
+        mask = self.threshold(combined)
 
-    if frame < 500:
-        continue
-    
-    mask = threshold(image)
-    # image = cv2.bitwise_and(mask, image)
+        # split the big image into two images again to publish them (copy/pasted from unet_model_copy/split_images_in_half.py)
+        self.left_filtered_image = mask[:, :WIDTH//2]
+        self.right_filtered_image = mask[:, WIDTH//2:]
 
-    # perform the lidar
-    for feeler in robot.feelers:
-        feeler.update(mask)
+        # perform the lidar
+        for feeler in self.feelers:
+            feeler.update(mask)
+        
+        # these are in a seperate loop to avoid drawing on the mask while the other feelers still need it blank to update themselves
+        for feeler in self.feelers:
+            feeler.draw(mask)
+            feeler.draw(image) # draw on both of them so it doesn't matter which output is actually displayed
+        
+        self.update()
+        self.draw(image)
 
-    # these are in a seperate loop to avoid drawing on the mask while the other feelers still need it blank to update themselves
-    for feeler in robot.feelers:
-        feeler.draw(mask)
-        feeler.draw(image) # draw on both of them so it doesn't matter which output is actually displayed
+        self.image_filtered_left_publisher.publish(CV_BRIDGE.cv2_to_compressed_imgmsg(self.left_filtered_image))
+        self.image_filtered_right_publisher.publish(CV_BRIDGE.cv2_to_compressed_imgmsg(self.right_filtered_image))
+
+        inputPacket = MotorInput()
+        angle, speed = self.heading_arrow.toPolar()
+
+        # clamp speed temporarily FIXME
+        speed = clamp(speed, -1, 1)
+
+        # not sure if we need the getAngleDifference() from astar.py or not
+        angle_difference = (angle - self.position.theta) % 2*pi
+
+        inputPacket.forward_velocity, inputPacket.angular_velocity = speed, angle_difference*0.5
+
+        self.motor_publisher.publish(inputPacket)
+
+    def on_position_received(self, msg):
+        self.position = msg
 
 
-    robot.update()
-    robot.draw(image)
+def main():
+    rclpy.init()
+    node = FeelerNode()
+    Node.run_node(node)
+    rclpy.shutdown()
 
-    cv2.imshow("image", image)
-    # cv2.imshow("image", mask)
-    cv2.waitKey(0)
-
-    # videoOut.write(image)
-
-    # done = True
-    if frame > 550:
-        done = True
-
-video.release()
-# videoOut.release()
-cv2.destroyAllWindows()
+if __name__ == "__main__":
+    main()

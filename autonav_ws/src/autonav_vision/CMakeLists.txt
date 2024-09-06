@@ -23,6 +23,7 @@ find_package(image_transport REQUIRED)
 install(PROGRAMS
   src/transformations.py
   src/combination.py
+  src/feeler.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
