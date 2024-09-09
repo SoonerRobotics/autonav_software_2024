@@ -10,22 +10,22 @@ from cv_bridge import CvBridge
 from scr.node import Node
 from scr.states import DeviceStateEnum
 
-# from nav_msgs.msg import MapMetaData, OccupancyGrid
-# from sensor_msgs.msg import CompressedImage
-# from geometry_msgs.msg import Pose, PoseStamped, Point
-# from nav_msgs.msg import OccupancyGrid, Path
-# from autonav_msgs.msg import Position, IMUData, PathingDebug, SafetyLights, MotorInput
-# from scr_msgs.msg import SystemState
+from nav_msgs.msg import MapMetaData, OccupancyGrid
+from sensor_msgs.msg import CompressedImage
+from geometry_msgs.msg import Pose, PoseStamped, Point
+from nav_msgs.msg import OccupancyGrid, Path
+from autonav_msgs.msg import Position, IMUData, PathingDebug, SafetyLights, MotorInput
+from scr_msgs.msg import SystemState
 
 from sensor_msgs.msg import CompressedImage
 from autonav_msgs.msg import Position, MotorInput
 
-def clamp(val, min, max):
-    return max(min(val, max), min)
+def clamp(val, min_, max_):
+    return max(min(val, max_), min_)
 
 CV_BRIDGE = CvBridge()
 
-MAX_LENGTH = 300
+MAX_LENGTH = 200
 
 # colors
 WHITE = (255, 255, 255)
@@ -63,7 +63,7 @@ class Feeler:
     # get the vector as an angle and length FIXME
     def toPolar(self):
         try:
-            angle = self.atan(self.y / self.x)
+            angle = atan(self.y / self.x)
         except ZeroDivisionError:
             angle = 180
 
@@ -77,8 +77,8 @@ class Feeler:
         self.length = self.dist(x, y)
     
     # convert x and y coordinates so that they are relative to the center of the image
-    def centerCoordinates(x, y):
-        return (x + WIDTH//2), (y + HEIGHT//2)
+    def centerCoordinates(self, x, y):
+        return (x + WIDTH//2), (y + HEIGHT//2 + 100)
 
     # draw the feeler on the given image
     def draw(self, image):
@@ -171,10 +171,10 @@ class Feeler:
 # verticies for region-of-disinterest
 # order is top-left, top-right, bottom-right, bottom-left
 VERTICIES = (
-    (285, 303),
-    (616, 303),
-    (722, 500),
-    (262, 500)
+    (285, 450),
+    (616, 450),
+    (722, 639),
+    (262, 639)
 )
 
 # HSV thresholding values for obstacle detection
@@ -194,24 +194,29 @@ class FeelerNode(Node):
         self.image_right_subscriber = self.create_subscription(CompressedImage, "/autonav/camera/compressed/right", self.on_right_image_received, self.qos_profile)
         self.position_subscriber = self.create_subscription(Position, "/autonav/position", self.on_position_received, 1)
 
-        self.filtered_image_left_publisher = self.create_publisher(CompressedImage, "/autonav/cfg_space/raw/image/left_small", self.qos_profile)        
-        self.filtered_image_right_publisher = self.create_publisher(CompressedImage, "/autonav/cfg_space/raw/image/right_small", self.qos_profile)        
+        self.camera_publisher_left = self.create_publisher(CompressedImage, "/autonav/camera/compressed/left/cutout", self.qos_profile)
+        self.camera_publisher_right = self.create_publisher(CompressedImage, "/autonav/camera/compressed/right/cutout", self.qos_profile)
+        self.filtered_image_left_publisher = self.create_publisher(CompressedImage, "/autonav/cfg_space/raw/image/left_small", self.qos_profile)
+        self.filtered_image_right_publisher = self.create_publisher(CompressedImage, "/autonav/cfg_space/raw/image/right_small", self.qos_profile)
         self.motor_publisher = self.create_publisher(MotorInput, "/autonav/MotorInput", 1)
-
-        #TODO make self.qos_profile
 
         self.x = 0
         self.y = 0
         self.heading = 0
 
         self.feelers = []
-        for angle in range(0, 359, 10):
+        # for angle in range(0, 359, 10):
+        for angle in range(0, 359, 30):
             # given an angle, with a length of MAX_LENGTH (i.e. polar coordinates)
             # SOH CAH TOA
             x = round(MAX_LENGTH * cos(radians(angle)))
             y = round(MAX_LENGTH * sin(radians(angle)))
         
             self.feelers.append(Feeler(x, y))
+        # self.feelers.append(Feeler(MAX_LENGTH, 0))
+        # self.feelers.append(Feeler(-MAX_LENGTH, 0))
+        # self.feelers.append(Feeler(0, MAX_LENGTH))
+        # self.feelers.append(Feeler(0, -MAX_LENGTH))
         
         self.heading_arrow = Feeler(0, 0)
         self.heading_arrow.color = GREEN
@@ -220,6 +225,8 @@ class FeelerNode(Node):
         self.right_image = None
 
         self.position = None
+
+        self.set_device_state(DeviceStateEnum.OPERATING)
     
     def update(self):
         # reset our heading
@@ -240,7 +247,7 @@ class FeelerNode(Node):
             self.heading_arrow += error_vec
 
     #TODO document this
-    def threshold(image):
+    def threshold(self, image):
         img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
         mask = cv2.inRange(img, lower, upper)
         mask = 255 - mask
@@ -263,6 +270,8 @@ class FeelerNode(Node):
 
         self.left_image = img
 
+        self.camera_publisher_left.publish(image)
+
     def on_right_image_received(self, image: CompressedImage):
         # Decompress image
         img = CV_BRIDGE.compressed_imgmsg_to_cv2(image)
@@ -274,6 +283,8 @@ class FeelerNode(Node):
 
         # try to combine the images now
         combined = np.concatenate((self.left_image, self.right_image), axis=1)
+
+        #TODO flatten image
 
         mask = self.threshold(combined)
 
@@ -288,26 +299,50 @@ class FeelerNode(Node):
         # these are in a seperate loop to avoid drawing on the mask while the other feelers still need it blank to update themselves
         for feeler in self.feelers:
             feeler.draw(mask)
-            feeler.draw(image) # draw on both of them so it doesn't matter which output is actually displayed
+            feeler.draw(img) # draw on both of them so it doesn't matter which output is actually displayed
         
         self.update()
-        self.draw(image)
+        self.draw(img)
 
-        self.image_filtered_left_publisher.publish(CV_BRIDGE.cv2_to_compressed_imgmsg(self.left_filtered_image))
-        self.image_filtered_right_publisher.publish(CV_BRIDGE.cv2_to_compressed_imgmsg(self.right_filtered_image))
+        self.filtered_image_left_publisher.publish(CV_BRIDGE.cv2_to_compressed_imgmsg(self.left_filtered_image))
+        self.filtered_image_right_publisher.publish(CV_BRIDGE.cv2_to_compressed_imgmsg(self.right_filtered_image))
 
         inputPacket = MotorInput()
         angle, speed = self.heading_arrow.toPolar()
 
+        # print(f"speed: {speed} | angle: {angle}")
+        # self.get_logger().info(f"speed: {speed} | angle: {angle}")
+
         # clamp speed temporarily FIXME
         speed = clamp(speed, -1, 1)
+
+        # print(f"post-clamp speed: {speed} | angle: {angle}")
+        # self.get_logger().info(f"post-clamp speed: {speed} | angle: {angle}")
 
         # not sure if we need the getAngleDifference() from astar.py or not
         angle_difference = (angle - self.position.theta) % 2*pi
 
-        inputPacket.forward_velocity, inputPacket.angular_velocity = speed, angle_difference*0.5
+        inputPacket.forward_velocity = float(speed) # it is very important that this is a float
+        inputPacket.angular_velocity = angle_difference*0.5
+
+        inputPacket.forward_velocity = float(0.5)
+
+        # if degrees(self.heading_arrow.toPolar()[0]) > 10:
+        if self.heading_arrow.toPolar()[0] > 0.1:
+            # go left
+            inputPacket.angular_velocity = float(0.05)
+        # elif degrees(self.heading_arrow.toPolar()[0]) < -10:
+        elif self.heading_arrow.toPolar()[0] < 0.1:
+            # go right
+            inputPacket.angular_velocity = float(-0.05)
+        else:
+            inputPacket.angular_velocity = float(0)
+        
+        # inputPacket.angular_velocity = float(0)
 
         self.motor_publisher.publish(inputPacket)
+
+        self.camera_publisher_right.publish(image)
 
     def on_position_received(self, msg):
         self.position = msg
