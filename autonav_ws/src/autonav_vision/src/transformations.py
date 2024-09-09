@@ -79,9 +79,9 @@ class ImageTransformer(Node):
 
     def init(self):
         self.camera_subscriber = self.create_subscription(CompressedImage, self.directionify("/autonav/camera/compressed") , self.onImageReceived, self.qos_profile)
-        self.camera_debug_publisher = self.create_publisher(CompressedImage, self.directionify("/autonav/camera/compressed") + "/cutout", self.qos_profile)
-        self.grid_publisher = self.create_publisher(OccupancyGrid, self.directionify("/autonav/cfg_space/raw"), 1)
-        self.grid_image_publisher = self.create_publisher(CompressedImage, self.directionify("/autonav/cfg_space/raw/image") + "_small", self.qos_profile)
+        self.camera_debug_publisher = self.create_publisher(CompressedImage, self.directionify("/autonav/camera/compressed") + "/pre_cutout", 1)
+        self.transformed_publisher = self.create_publisher(CompressedImage, self.directionify("/autonav/cfg_space/raw"), 1)
+        self.grid_image_publisher = self.create_publisher(CompressedImage, self.directionify("/autonav/cfg_space/raw/image") + "_small", 1)
 
         self.set_device_state(DeviceStateEnum.OPERATING)
 
@@ -191,11 +191,8 @@ class ImageTransformer(Node):
         masked_image = cv2.bitwise_and(img, mask)
         return masked_image
 
-    def publish_occupancy_grid(self, img):
-        datamap = cv2.resize(img, dsize=(self.config.map_res, self.config.map_res), interpolation=cv2.INTER_LINEAR) / 2
-        flat = list(datamap.flatten().astype(int))
-        msg = OccupancyGrid(info=g_mapData, data=flat)
-        self.grid_publisher.publish(msg)
+    def publish_transformed_image(self, img):
+        self.transformed_publisher.publish(g_bridge.cv2_to_compressed_imgmsg(img))
 
         # Publish msg as a 80x80 image
         preview_image = cv2.resize(img, dsize=(80, 80), interpolation=cv2.INTER_LINEAR)
@@ -281,8 +278,10 @@ class ImageTransformer(Node):
         # Apply perspective transform
         img = self.apply_perspective_transform(img)
 
+        img = cv2.resize(img, (480, 640))
+
         # Actually generate the map
-        self.publish_occupancy_grid(img)
+        self.publish_transformed_image(img)
 
 
 def main():

@@ -168,36 +168,22 @@ class Feeler:
         return sqrt(x**2 + y**2)
 
 
-# verticies for region-of-disinterest
-# order is top-left, top-right, bottom-right, bottom-left
-VERTICIES = (
-    (285, 450),
-    (616, 450),
-    (722, 639),
-    (262, 639)
-)
-
-# HSV thresholding values for obstacle detection
-lower = (0, 0, 0)
-upper = (255, 95, 210)
-
-# kernel for erode/dilate
-kernel = cv2.getStructuringElement(2, (2, 2))
-
 
 class FeelerNode(Node):
     def __init__(self):
         super().__init__("autonav_feelers")
     
     def init(self):
-        self.image_left_subscriber = self.create_subscription(CompressedImage, "/autonav/camera/compressed/left", self.on_left_image_received, self.qos_profile)
-        self.image_right_subscriber = self.create_subscription(CompressedImage, "/autonav/camera/compressed/right", self.on_right_image_received, self.qos_profile)
+        # feelers takes the combined image from combination.py and spits out motor commands
+        self.image_subscriber = self.create_subscription(CompressedImage, "/autonav/cfg_space/combined", self.on_image_received, 1)
+        # does not need to draw them on the masks though, just the images so we need to divert that publication
+        self.combined_debug_camera_subscriber = self.create_subscription(CompressedImage, "autonav/camera/compressed/combined/pre_cutout", self.on_debug_received, 1)
         self.position_subscriber = self.create_subscription(Position, "/autonav/position", self.on_position_received, 1)
-
-        self.camera_publisher_left = self.create_publisher(CompressedImage, "/autonav/camera/compressed/left/cutout", self.qos_profile)
-        self.camera_publisher_right = self.create_publisher(CompressedImage, "/autonav/camera/compressed/right/cutout", self.qos_profile)
-        self.filtered_image_left_publisher = self.create_publisher(CompressedImage, "/autonav/cfg_space/raw/image/left_small", self.qos_profile)
-        self.filtered_image_right_publisher = self.create_publisher(CompressedImage, "/autonav/cfg_space/raw/image/right_small", self.qos_profile)
+        
+        # draws the feelers in color (plus the heading arrow) on the big image then splits it into two images to publish to left and right on the dashboard
+        self.debug_camera_publisher_left = self.create_publisher(CompressedImage, "/autonav/camera/compressed/left/cutout", self.qos_profile)
+        self.debug_camera_publisher_right = self.create_publisher(CompressedImage, "/autonav/camera/compressed/right/cutout", self.qos_profile)
+        
         self.motor_publisher = self.create_publisher(MotorInput, "/autonav/MotorInput", 1)
 
         self.x = 0
@@ -205,7 +191,6 @@ class FeelerNode(Node):
         self.heading = 0
 
         self.feelers = []
-        # for angle in range(0, 359, 10):
         for angle in range(0, 359, 30):
             # given an angle, with a length of MAX_LENGTH (i.e. polar coordinates)
             # SOH CAH TOA
@@ -213,16 +198,9 @@ class FeelerNode(Node):
             y = round(MAX_LENGTH * sin(radians(angle)))
         
             self.feelers.append(Feeler(x, y))
-        # self.feelers.append(Feeler(MAX_LENGTH, 0))
-        # self.feelers.append(Feeler(-MAX_LENGTH, 0))
-        # self.feelers.append(Feeler(0, MAX_LENGTH))
-        # self.feelers.append(Feeler(0, -MAX_LENGTH))
-        
+
         self.heading_arrow = Feeler(0, 0)
         self.heading_arrow.color = GREEN
-
-        self.left_image = None
-        self.right_image = None
 
         self.position = None
 
@@ -246,78 +224,42 @@ class FeelerNode(Node):
             # add this vector to main heading arrow
             self.heading_arrow += error_vec
 
-    #TODO document this
-    def threshold(self, image):
-        img = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-        mask = cv2.inRange(img, lower, upper)
-        mask = 255 - mask
-
-        mask = cv2.fillConvexPoly(mask, np.array(VERTICIES, dtype=np.int32), (0))
-
-        mask = cv2.erode(mask, kernel)
-        mask = cv2.dilate(mask, kernel)
-        
-        return mask
-
     # draw the heading vector to the screen
     def draw(self, image):
         self.heading_arrow.color = GREEN
         self.heading_arrow.draw(image)
-
-    def on_left_image_received(self, image: CompressedImage):
-        # Decompress image
+    
+    def on_debug_received(self, image: CompressedImage):
         img = CV_BRIDGE.compressed_imgmsg_to_cv2(image)
 
-        self.left_image = img
-
-        self.camera_publisher_left.publish(image)
-
-    def on_right_image_received(self, image: CompressedImage):
-        # Decompress image
-        img = CV_BRIDGE.compressed_imgmsg_to_cv2(image)
-
-        self.right_image = img
-
-        if self.left_image is None or self.right_image is None:
-            return
-
-        # try to combine the images now
-        combined = np.concatenate((self.left_image, self.right_image), axis=1)
-
-        #TODO flatten image
-
-        mask = self.threshold(combined)
+        # go ahead and draw the feelers on them I guess
+        for feeler in self.feelers:
+            feeler.draw(img)
+        self.draw(img)
 
         # split the big image into two images again to publish them (copy/pasted from unet_model_copy/split_images_in_half.py)
-        self.left_filtered_image = mask[:, :WIDTH//2]
-        self.right_filtered_image = mask[:, WIDTH//2:]
+        left_debug_image = img[:, :WIDTH//2]
+        right_debug_image = img[:, WIDTH//2:]
+
+        self.debug_camera_publisher_left.publish(CV_BRIDGE.cv2_to_compressed_imgmsg(left_debug_image))
+        self.debug_camera_publisher_right.publish(CV_BRIDGE.cv2_to_compressed_imgmsg(right_debug_image))
+
+
+    def on_image_received(self, image: CompressedImage):
+        # Decompress image
+        img = CV_BRIDGE.compressed_imgmsg_to_cv2(image)
 
         # perform the lidar
         for feeler in self.feelers:
-            feeler.update(mask)
-        
-        # these are in a seperate loop to avoid drawing on the mask while the other feelers still need it blank to update themselves
-        for feeler in self.feelers:
-            feeler.draw(mask)
-            feeler.draw(img) # draw on both of them so it doesn't matter which output is actually displayed
+            feeler.update(img)
         
         self.update()
-        self.draw(img)
-
-        self.filtered_image_left_publisher.publish(CV_BRIDGE.cv2_to_compressed_imgmsg(self.left_filtered_image))
-        self.filtered_image_right_publisher.publish(CV_BRIDGE.cv2_to_compressed_imgmsg(self.right_filtered_image))
 
         inputPacket = MotorInput()
         angle, speed = self.heading_arrow.toPolar()
 
-        # print(f"speed: {speed} | angle: {angle}")
-        # self.get_logger().info(f"speed: {speed} | angle: {angle}")
-
         # clamp speed temporarily FIXME
         speed = clamp(speed, -1, 1)
-
-        # print(f"post-clamp speed: {speed} | angle: {angle}")
-        # self.get_logger().info(f"post-clamp speed: {speed} | angle: {angle}")
 
         # not sure if we need the getAngleDifference() from astar.py or not
         angle_difference = (angle - self.position.theta) % 2*pi
@@ -338,11 +280,7 @@ class FeelerNode(Node):
         else:
             inputPacket.angular_velocity = float(0)
         
-        # inputPacket.angular_velocity = float(0)
-
         self.motor_publisher.publish(inputPacket)
-
-        self.camera_publisher_right.publish(image)
 
     def on_position_received(self, msg):
         self.position = msg
