@@ -63,6 +63,8 @@ public:
 
         // Set mode timer
         mode_timer = this->create_wall_timer(std::chrono::seconds(5), std::bind(&CoreNode::mode_timer_callback, this));
+
+        // god help me
     }
 
 private:

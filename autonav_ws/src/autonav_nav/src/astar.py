@@ -27,10 +27,9 @@ CV_BRIDGE = cv_bridge.CvBridge()
 # [(35.19510000, -97.43895000), (35.19491000, -97.43896000), (35.1948357, -97.43896), (35.19467540, -97.43895)],  # NORTH
 
 competition_waypoints = [
-    [(35.19517, -97.43847), (35.19519, -97.43852), (35.19516, -97.43855), (35.19519, -97.43856), (35.195167, -97.4386587), (35.1951870, -97.438810), (35.195178, -97.438847), (35.19519, -97.43892), (35.195166, -97.43894), (35.1948357, -97.43894), (35.194681, -97.43894), (35.19461, -97.43885), (35.19458, -97.43838), (35.194871, -97.43828)],  # NORTH
-    [(35.19519, -97.43851), (35.19516, -97.43854), (35.19519, -97.43858), (35.19517, -97.43873), (35.19518, -97.43892), (35.19510000, -97.43895000), (35.19491000, -97.43896000), (35.1948357, -97.43896), (35.19467540, -97.43895), (35.19462, -97.43832), (35.19488, -97.43829)],  # NORTH
-    [(35.19467540, -97.43895), (35.1948357, -97.43896), (35.19491000, -97.43896000), (35.19510000, -97.43895000)],  # SOUTH
-    [(35.194725, -97.43858), (35.1947823, -97.4387), (35.1948547, -97.43876), (35.1949272, -97.43867), (35.1950035, -97.43881)], # PRACTICE
+    [(42.6682623, -83.2193709), (42.6681206, -83.2193606), (42.6680766, -83.2193592), (42.6679277, -83.2193276), (42.6679216, -83.2189126), (42.668130236144883, -83.21889785301433)],  # NORTH
+    [(42.668086, -83.218446)], #
+    []
 ]
 
 practice_waypoints = [
@@ -122,21 +121,21 @@ class AStarNode(Node):
         self.waypoint_start_time = 0
 
     def get_waypoints_for_dir(self):
-        if not self.config.calculateWaypointDirection:
-            return simulation_waypoints[self.config.waypointDirection] if self.system_mode == SystemModeEnum.SIMULATION else competition_waypoints[self.config.waypointDirection] if self.system_mode == SystemModeEnum.COMPETITION else practice_waypoints[self.config.waypointDirection]
+        # if not self.config.calculateWaypointDirection:
+        return simulation_waypoints[self.config.waypointDirection] if self.system_mode == SystemModeEnum.SIMULATION else competition_waypoints[self.config.waypointDirection] if self.system_mode == SystemModeEnum.COMPETITION else practice_waypoints[self.config.waypointDirection]
         
         # Get out current heading and estimate within 180 degrees which direction we are facing (north or south, 0 and 1 respectively)
-        heading = self.position.theta
-        direction_index = 0
-        heading_degrees = abs(heading * 180 / math.pi)
-        self.get_logger().info(f"Heading: {heading_degrees}")
-        if heading_degrees > 120 and heading_degrees < 240:
-            direction_index = 1
-            self.get_logger().info("Facing South")
-        else:
-            self.get_logger().info("Facing North")
-
-        return simulation_waypoints[direction_index] if self.system_mode == SystemModeEnum.SIMULATION else competition_waypoints[direction_index] if self.system_mode == SystemModeEnum.COMPETITION else practice_waypoints[direction_index]
+        # heading = self.position.theta
+        # direction_index = 0
+        # heading_degrees = abs(heading * 180 / math.pi)
+        # self.get_logger().info(f"Heading: {heading_degrees}")
+        # if heading_degrees > 120 and heading_degrees < 240:
+            # direction_index = 1
+            # self.get_logger().info("Facing South")
+        # else:
+            # self.get_logger().info("Facing North")
+        # 
+        # return simulation_waypoints[direction_index] if self.system_mode == SystemModeEnum.SIMULATION else competition_waypoints[direction_index] if self.system_mode == SystemModeEnum.COMPETITION else practice_waypoints[direction_index]
 
     def system_state_transition(self, old: SystemState, updated: SystemState):
         if updated.state == SystemStateEnum.AUTONOMOUS and updated.mobility and len(self.waypoints) == 0:
@@ -174,6 +173,7 @@ class AStarNode(Node):
 
             cv2.circle(cvimg, (self.best_pos[0], self.best_pos[1]), 1, (255, 0, 0), 1)
             cvimg = cv2.resize(cvimg, (320, 320), interpolation=cv2.INTER_NEAREST)
+            
             # Draw a grid on the image that is the scale of the original image, so it should be a 80x80 grid scaled up 4x
             for i in range(80):
                 cv2.line(cvimg, (0, i * 4), (320, i * 4), (85, 85, 85), 1)
