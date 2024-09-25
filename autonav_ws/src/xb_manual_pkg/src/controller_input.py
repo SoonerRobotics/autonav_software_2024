@@ -3,7 +3,8 @@
 import rclpy
 import evdev
 import time
-from rclpy.node import Node
+from scr.node import Node
+from scr.states import DeviceStateEnum, SystemStateEnum
 from evdev import ecodes
 from std_msgs.msg import String
 from autonav_msgs.msg import ControllerInput
@@ -19,6 +20,14 @@ TRIGGER_MAX = 1023
 class ControllerInputNode(Node):
     def __init__(self):
         super().__init__('controller_input')
+
+
+    def init(self):
+        self.get_logger().info("HERE")
+
+        self.set_device_state(DeviceStateEnum.STANDBY)
+
+        self.get_logger().info("HERE")
 
         self.timer_period_s = 0.1
         self.publisher = self.create_publisher(ControllerInput, '/autonav/controller_input', 10)
@@ -62,7 +71,10 @@ class ControllerInputNode(Node):
                 controller = evdev.InputDevice(device.path)
                 self.get_logger().info(f"assigned controller: \nName: {device.name} \nPath: {device.path} \nBluetooth MAC address: {device.uniq}\n" +
                                        f"\nController state will be published on update and every {self.timer_period_s} seconds")
-            
+        
+        if controller is not None:
+            self.set_device_state(DeviceStateEnum.OPERATING)
+
         return controller
     
 
@@ -188,6 +200,11 @@ class ControllerInputNode(Node):
 
 
     def reconnect(self, last_callback_time_s):
+        self.set_device_state(DeviceStateEnum.ERRORED)
+
+        if self.system_state != SystemStateEnum.AUTONOMOUS:
+            self.set_system_state(SystemStateEnum.DISABLED)
+             
         self.controller_state = dict.fromkeys(self.controller_state, 0.0)
         last_callback_time_s = self.clock_routine(last_callback_time_s)
 
@@ -213,12 +230,16 @@ class ControllerInputNode(Node):
         
 
 def main():
+    # rclpy.init()
+    # controller_input = ControllerInputNode()
+
+    # rclpy.spin(controller_input)
+
+    # controller_input.destroy_node() 
+    # rclpy.shutdown()
     rclpy.init()
-    controller_input = ControllerInputNode()
-
-    rclpy.spin(controller_input)
-
-    controller_input.destroy_node() 
+    node = ControllerInputNode()
+    Node.run_node(node)
     rclpy.shutdown()
 
 

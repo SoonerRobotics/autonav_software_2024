@@ -1,0 +1,7 @@
+<launch>
+  <include file="$(find-pkg-share rosbridge_server)/launch/rosbridge_websocket_launch.xml" />
+
+  <node pkg="xb_manual_pkg" exec="controller_input.py"/>
+  <node pkg="xb_manual_pkg" exec="manual_24.py"/>
+  <node pkg="xb_manual_pkg" exec="motormessage_listener.py"/>
+</launch>
