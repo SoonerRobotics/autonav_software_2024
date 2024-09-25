@@ -15,6 +15,8 @@ JOY_MAX = 65535
 TRIGGER_MIN = 0
 TRIGGER_MAX = 1023
 
+# install the bluez bluetooth drivers for ubuntu:
+# sudo apt install bluez
 # enable UserspaceHID=true in /etc/bluetooth/input.conf
 
 class ControllerInputNode(Node):
