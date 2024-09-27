@@ -18,6 +18,7 @@ TRIGGER_MAX = 1023
 # install the bluez bluetooth drivers for ubuntu:
 # sudo apt install bluez
 # enable UserspaceHID=true in /etc/bluetooth/input.conf
+# robot ip: 192.168.1.79
 
 class ControllerInputNode(Node):
     def __init__(self):
@@ -140,7 +141,7 @@ class ControllerInputNode(Node):
 
                 msg = self.construct_controller_state_message()
 
-                self.get_logger().info(f"publishing controller state:\n{str(self.controller_state)}")
+                # self.get_logger().info(f"publishing controller state:\n{str(self.controller_state)}")
                 self.publisher.publish(msg)
 
             except OSError as e: # first disconnect

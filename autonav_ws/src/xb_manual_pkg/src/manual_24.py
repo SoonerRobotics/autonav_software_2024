@@ -5,6 +5,8 @@ from autonav_msgs.msg import ControllerInput, MotorInput
 from scr.node import Node
 from scr.states import DeviceStateEnum, SystemStateEnum, SystemModeEnum
 from scr.states import SystemStateEnum
+import json
+from types import SimpleNamespace
 
 #!/usr/bin/env python3
 
@@ -13,14 +15,21 @@ import numpy as np
 from scr.node import Node
 from autonav_msgs.msg import ControllerInput
 
-class Manual24Node(Node):
+class Manual24Config:
+    def __init__(self):
+        self.max_forward_speed = 3
+        self.max_angular_speed = np.pi
 
+class Manual24Node(Node):
     def __init__(self):
         super().__init__('manual_24')
 
     def init(self):
-        self.max_forward_speed = 1
-        self.max_angular_speed = np.pi/4
+        self.config = self.get_default_config()
+        # self.max_forward_speed = 1
+        self.max_forward_speed = self.config.max_forward_speed
+        # self.max_angular_speed = np.pi/4
+        self.max_angular_speed = self.config.max_angular_speed
 
         self.controller_state = {}
 
@@ -41,6 +50,14 @@ class Manual24Node(Node):
         )
 
         self.controllerSubscriber  # prevent unused variable warning
+
+
+    def config_updated(self, jsonObject):
+        self.config = json.loads(self.jdump(jsonObject), object_hook=lambda d: SimpleNamespace(**d))
+
+
+    def get_default_config(self):
+        return Manual24Config()
 
 
     def input_callback(self, msg):
@@ -66,20 +83,26 @@ class Manual24Node(Node):
     
 
     def change_system_state(self):
-        if self.controller_state['btn_start'] == 1.0:
+        new_system_state = self.system_state
+        if self.controller_state['btn_east'] == 1.0:
+            new_system_state = SystemStateEnum.SHUTDOWN
+            
+        elif self.controller_state['btn_start'] == 1.0:
             new_system_state = SystemStateEnum.MANUAL
-            self.get_logger().info("CHANGING SYSTEM STATE")
-            self.set_system_state(new_system_state)
 
         elif self.controller_state['btn_select'] == 1.0:
             new_system_state = SystemStateEnum.DISABLED
-            self.get_logger().info("CHANGING SYSTEM STATE")
-            self.set_system_state(new_system_state)
+
+        self.get_logger().info(f'Setting system state to {new_system_state}')
+        self.set_system_state(new_system_state)
 
 
     def compose_motorinput_message(self):
-        forward_velocity = self.normalize(self.controller_state["abs_gas"] - self.controller_state["abs_brake"], -self.max_forward_speed, self.max_forward_speed, -1, 1)
-        angular_velocity = self.normalize(self.controller_state["abs_x"], self.max_angular_speed, -self.max_angular_speed, -1, 1)
+        forward_velocity = 0.0
+        angular_velocity = 0.0
+        if self.system_state == SystemStateEnum.MANUAL:
+            forward_velocity = self.normalize(self.controller_state["abs_gas"] - self.controller_state["abs_brake"], -self.max_forward_speed, self.max_forward_speed, -1, 1)
+            angular_velocity = self.normalize(self.controller_state["abs_x"], self.max_angular_speed, -self.max_angular_speed, -1, 1)
 
         motor_msg = MotorInput()
         motor_msg.forward_velocity = forward_velocity

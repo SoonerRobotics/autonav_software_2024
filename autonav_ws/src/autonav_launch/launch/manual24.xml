@@ -10,6 +10,7 @@
 
   <!-- Serial Nodes -->
   <node pkg="autonav_serial" exec="serial_node.py" />
+  
   <!-- Other -->
   <node pkg="autonav_display" exec="display.py" />
 </launch>
